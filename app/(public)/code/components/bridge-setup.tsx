@@ -40,7 +40,7 @@ export function BridgeSetup({ onConnect, isConnecting, error }: BridgeSetupProps
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/[0.06] bg-card/30 p-6 backdrop-blur-sm">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
         <div className="space-y-1 text-center">
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/10">
             <Loader2 className="size-6 text-primary" />

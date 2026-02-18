@@ -206,7 +206,7 @@ function UserMessage({ text, images, files }: { text: string; images?: string[];
         )}
         {text && (
           <div className="flex items-start gap-1.5 self-end overflow-hidden rounded-xl bg-accent px-4 py-2.5 text-accent-foreground">
-            <p className="min-w-0 flex-1 break-words whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
+            <p className="min-w-0 flex-1 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
             <MessageActions text={text} />
           </div>
         )}
@@ -225,7 +225,7 @@ function AssistantTextMessage({ text, isComplete }: { text: string; isComplete: 
   return (
     <div className="flex justify-start">
       <div className="flex max-w-[85%] items-start gap-1.5 overflow-hidden rounded-xl bg-muted px-4 py-2.5">
-        <div className="min-w-0 flex-1 break-words">
+        <div className="min-w-0 flex-1 wrap-break-word">
           <CollapsibleText text={text} />
           {!isComplete && <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-foreground/60" />}
         </div>

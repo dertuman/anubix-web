@@ -88,7 +88,7 @@ function EditSessionModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
+      className="fixed inset-0 z-100 flex items-center justify-center"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/50" />
@@ -581,8 +581,8 @@ export const CodeSidebar = memo(function CodeSidebar({
                 className={cn(
                   'group flex cursor-pointer items-center gap-1 overflow-hidden rounded-lg py-2 pr-1 pl-3 text-sm transition-colors',
                   activeSessionId === s.id
-                    ? 'bg-foreground/[0.06] text-foreground'
-                    : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
+                    ? 'bg-foreground/6 text-foreground'
+                    : 'text-muted-foreground hover:bg-foreground/4 hover:text-foreground'
                 )}
                 onClick={() => {
                   onSelect(s.id);
