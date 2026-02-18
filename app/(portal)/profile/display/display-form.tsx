@@ -18,13 +18,6 @@ import {
 } from '@/components/ui/form';
 import { toast } from '@/components/ui/use-toast';
 
-const items = [
-  {
-    id: 'recents',
-    label: 'Recents',
-  },
-] as const;
-
 const displayFormSchema = z.object({
   items: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: 'You have to select at least one item.',
@@ -40,6 +33,14 @@ const defaultValues: Partial<DisplayFormValues> = {
 
 export function DisplayForm() {
   const t = useScopedI18n('profile.display');
+
+  const items = [
+    {
+      id: 'recents',
+      label: t('recents'),
+    },
+  ];
+
   const form = useForm<DisplayFormValues>({
     resolver: zodResolver(displayFormSchema),
     defaultValues,
@@ -47,7 +48,7 @@ export function DisplayForm() {
 
   function onSubmit(data: DisplayFormValues) {
     toast({
-      title: 'You submitted the following values:',
+      title: t('submittedValues'),
       description: (
         <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
           <code className="text-white">{JSON.stringify(data, null, 2)}</code>

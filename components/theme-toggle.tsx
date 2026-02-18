@@ -5,9 +5,11 @@ import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
+import { useScopedI18n } from '@/locales/client';
 
 export function ThemeToggle() {
   const { setTheme, theme } = useTheme();
+  const tCommon = useScopedI18n('common');
 
   return (
     <Button
@@ -17,7 +19,7 @@ export function ThemeToggle() {
     >
       <Icons.sun className="h-[1.5rem] w-[1.3rem] dark:hidden" />
       <Icons.moon className="hidden size-6 dark:block" />
-      <span className="sr-only">Toggle theme</span>
+      <span className="sr-only">{tCommon('toggleTheme')}</span>
     </Button>
   );
 }

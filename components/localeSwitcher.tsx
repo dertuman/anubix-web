@@ -20,8 +20,7 @@ import { toast } from '@/components/ui/use-toast';
 import LocaleSwitcherSelect from './localeSwitcherSelect';
 
 const LOCALE_TO_FLAG: Record<Locale, string> = {
-  en: 'gb', // Special case for English
-  es: 'mx',
+  en: 'gb',
 };
 
 export default function LocaleSwitcher() {
@@ -57,7 +56,7 @@ export default function LocaleSwitcher() {
       // Revert back to the previous locale if the mutation fails
       changeLocale(currentLocale as 'en');
       toast({
-        title: 'Error updating language',
+        title: t('errorUpdatingLanguage'),
         variant: 'destructive',
       });
     },

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ArrowLeft, Check, Copy, ExternalLink, Loader2 } from 'lucide-react';
 
 import { PROFILES_TABLE_SQL } from '@/lib/setup/sql-template';
+import { useScopedI18n } from '@/locales/client';
+import { Button } from '@/components/ui/button';
 import type { SetupData } from './setup-wizard';
 
 interface JwtStepProps {
@@ -14,6 +16,8 @@ interface JwtStepProps {
 }
 
 export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
+  const t = useScopedI18n('setup.jwt');
+  const tCommon = useScopedI18n('common');
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -47,11 +51,11 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
       if (result.exists) {
         updateData({ databaseVerified: true });
       } else {
-        setError('Profiles table not found. Run the SQL first, then verify again.');
+        setError(t('tableNotFound'));
         updateData({ databaseVerified: false });
       }
     } catch {
-      setError('Failed to verify. Try again.');
+      setError(t('failedToVerify'));
       updateData({ databaseVerified: false });
     } finally {
       setVerifying(false);
@@ -67,17 +71,21 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-foreground">Connect Clerk &amp; Supabase</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('heading')}
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Two things: enable the Clerk integration and create the database table.
+          {t('description')}
         </p>
       </div>
 
       {/* Clerk ↔ Supabase integration */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-foreground">1. Enable Clerk in Supabase</h3>
-        <div className="rounded border border-border bg-muted p-4">
-          <ol className="list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
+        <h3 className="text-sm font-medium text-foreground">
+          {t('enableClerk')}
+        </h3>
+        <div className="rounded-lg border border-border bg-muted/50 p-4">
+          <ol className="list-inside list-decimal space-y-2 text-sm text-muted-foreground">
             <li>
               Open{' '}
               <a
@@ -86,13 +94,20 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
-                Clerk&rsquo;s Supabase setup page
+                {t('clerkSetupPage')}
                 <ExternalLink className="size-3" />
               </a>{' '}
-              and click <span className="text-highlight font-medium">Activate Supabase integration</span>
+              and click{' '}
+              <span className="font-medium text-highlight">
+                {t('activateIntegration')}
+              </span>
             </li>
             <li>
-              Copy the <span className="text-highlight font-medium">Clerk domain</span> shown after activation
+              Copy the{' '}
+              <span className="font-medium text-highlight">
+                {t('copyClerkDomain')}
+              </span>{' '}
+              shown after activation
             </li>
             <li>
               In Supabase, go to{' '}
@@ -102,18 +117,31 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
-                Authentication &rarr; Sign In / Providers
+                {t('authProviders')}
                 <ExternalLink className="size-3" />
               </a>{' '}
-              &rarr; click the <span className="text-highlight font-medium">Third-Party Auth</span> tab
+              &rarr; click the{' '}
+              <span className="font-medium text-highlight">
+                {t('thirdPartyAuth')}
+              </span>{' '}
+              tab
             </li>
             <li>
-              Click <span className="text-highlight font-medium">Add provider</span> &rarr; select{' '}
-              <span className="text-highlight font-medium">Clerk</span> from the dropdown
+              Click{' '}
+              <span className="font-medium text-highlight">
+                {t('addProvider')}
+              </span>{' '}
+              &rarr; select{' '}
+              <span className="font-medium text-highlight">
+                {t('selectClerk')}
+              </span>{' '}
+              from the dropdown
             </li>
             <li>
               Paste the Clerk domain &rarr; click{' '}
-              <span className="text-highlight font-medium">Create connection</span>
+              <span className="font-medium text-highlight">
+                {t('pasteAndCreate')}
+              </span>
             </li>
           </ol>
         </div>
@@ -121,9 +149,11 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
 
       {/* Database SQL */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-foreground">2. Database Table</h3>
-        <div className="rounded border border-border bg-muted p-4">
-          <ol className="list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
+        <h3 className="text-sm font-medium text-foreground">
+          {t('databaseTable')}
+        </h3>
+        <div className="rounded-lg border border-border bg-muted/50 p-4">
+          <ol className="list-inside list-decimal space-y-2 text-sm text-muted-foreground">
             <li>
               Open the{' '}
               <a
@@ -132,25 +162,32 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
-                SQL Editor
+                {t('sqlEditor')}
                 <ExternalLink className="size-3" />
               </a>{' '}
-              in your Supabase dashboard
+              {t('inYourDashboard')}
             </li>
             <li>
-              Copy the SQL below and paste it into the editor, then click{' '}
-              <span className="text-highlight font-medium">Run</span>
+              {t('copyAndPasteSql')}{' '}
+              <span className="font-medium text-highlight">{t('runSql')}</span>
             </li>
             <li>
               You should see{' '}
-              <span className="text-highlight font-medium">&ldquo;Success. No rows returned&rdquo;</span>{' '}
-              &mdash; that means the table was created
+              <span className="font-medium text-highlight">
+                {t('successMessage')}
+              </span>{' '}
+              &mdash; {t('tableCreated')}
             </li>
             <li>
               To confirm, go to{' '}
-              <span className="text-highlight font-medium">Table Editor</span> in the sidebar &mdash;
-              you should see a <span className="text-highlight font-medium">profiles</span> table
-              (it will be empty, that&rsquo;s expected)
+              <span className="font-medium text-highlight">
+                {t('tableEditor')}
+              </span>{' '}
+              in the sidebar &mdash; you should see a{' '}
+              <span className="font-medium text-highlight">
+                {t('profilesTable')}
+              </span>{' '}
+              table {t('emptyExpected')}
             </li>
           </ol>
         </div>
@@ -158,19 +195,19 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
         <div className="relative">
           <button
             onClick={copySql}
-            className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             {copied ? (
               <>
-                <Check className="size-3" /> Copied
+                <Check className="size-3" /> {tCommon('copied')}
               </>
             ) : (
               <>
-                <Copy className="size-3" /> Copy
+                <Copy className="size-3" /> {tCommon('copy')}
               </>
             )}
           </button>
-          <pre className="max-h-48 overflow-auto rounded border border-border bg-code p-4 text-xs leading-relaxed text-code-foreground">
+          <pre className="max-h-48 overflow-auto rounded-lg border border-border bg-code p-4 text-xs leading-relaxed text-code-foreground">
             <code>{PROFILES_TABLE_SQL}</code>
           </pre>
         </div>
@@ -179,43 +216,43 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center justify-between border-t border-border pt-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" /> Back
-          </button>
-          <button
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft className="mr-1.5 size-3.5" /> {tCommon('back')}
+          </Button>
+          <Button
             onClick={verifyDatabase}
             disabled={verifying}
-            className={`rounded px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+            variant={data.databaseVerified ? 'outline' : 'default'}
+            className={
               data.databaseVerified
-                ? 'border border-success/50 bg-success/10 text-success'
-                : 'bg-foreground text-background hover:bg-foreground/90'
-            }`}
+                ? 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15'
+                : ''
+            }
           >
             {verifying ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="size-3.5 animate-spin" /> Verifying
+                <Loader2 className="size-3.5 animate-spin" />{' '}
+                {t('verifying')}
               </span>
             ) : data.databaseVerified ? (
               <span className="flex items-center gap-2">
-                <Check className="size-3.5" /> Table found
+                <Check className="size-3.5" /> {t('tableFound')}
               </span>
             ) : (
-              'Verify Table'
+              t('verifyTable')
             )}
-          </button>
+          </Button>
         </div>
 
-        <button
+        <Button
           onClick={onNext}
           disabled={!data.databaseVerified}
-          className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-40"
+          variant="outline"
+          className="bg-foreground text-background hover:bg-foreground/80 hover:text-background"
         >
-          Continue
-        </button>
+          {tCommon('continue')}
+        </Button>
       </div>
     </div>
   );

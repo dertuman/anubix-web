@@ -50,7 +50,7 @@ export function generateDefaultMetadata({
       type: 'website',
       locale: translations.ogLocale || currentLocale,
       url: canonical,
-      siteName: translations.ogSiteName || 'PROJECT',
+      siteName: translations.ogSiteName || 'Anubix',
       title: translations.title,
       description: translations.description,
       images: [
@@ -64,7 +64,7 @@ export function generateDefaultMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      site: translations.twitterSite || '@PROJECT',
+      site: translations.twitterSite || '@anubix',
       title: translations.title,
       description: translations.description,
       images: [

@@ -37,7 +37,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.warn('Error fetching profile:', error);
         return null;
       }
 

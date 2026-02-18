@@ -1,8 +1,5 @@
 import '@/styles/globals.css';
 
-import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
-
 import { fontSans } from '@/lib/fonts';
 import { getLocale } from '@/lib/i18n';
 import { generateDefaultMetadata } from '@/lib/metadata-utils';
@@ -11,27 +8,17 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 
-const AnimatedBackground = dynamic(
-  () =>
-    import('@/components/animated-background').then(
-      (mod) => mod.AnimatedBackground
-    ),
-  {
-    loading: () => null,
-  }
-);
-
 export async function generateMetadata() {
   return generateDefaultMetadata({
     currentLocale: 'en',
     path: '/',
     translations: {
-      title: 'PROJECT',
-      description: 'Discover PROJECT, the ultimate platform.',
+      title: 'Anubix — Build apps by talking',
+      description: 'Describe what you want. Anubix builds it, deploys it, and hands you the keys. No code required.',
       ogLocale: 'en',
-      ogSiteName: 'PROJECT',
-      imageAlt: 'PROJECT',
-      twitterSite: '@PROJECT',
+      ogSiteName: 'Anubix',
+      imageAlt: 'Anubix — Build apps by talking',
+      twitterSite: '@anubix',
     },
   });
 }
@@ -64,13 +51,8 @@ async function ConfiguredBody({
           <I18nProviderClient locale={locale}>
             <UserDataProvider>
               <div className="relative flex min-h-dvh flex-col">
-                <Suspense fallback={null}>
-                  <AnimatedBackground />
-                </Suspense>
                 <SiteHeader />
-                <div className="flex flex-1 flex-col items-center">
-                  {children}
-                </div>
+                <div className="flex flex-1 flex-col">{children}</div>
                 <ConditionalFooter />
               </div>
               <TailwindIndicator />
@@ -80,6 +62,25 @@ async function ConfiguredBody({
         </ThemeProvider>
       </ReactQueryProvider>
     </ClerkProvider>
+  );
+}
+
+/**
+ * Unconfigured shell — wraps children with I18nProviderClient and ThemeProvider
+ * so the setup wizard can use i18n hooks.
+ */
+async function UnconfiguredBody({ children }: { children: React.ReactNode }) {
+  const { I18nProviderClient } = await import('@/locales/client');
+
+  return (
+    <ThemeProvider attribute="class" defaultTheme="dark">
+      <I18nProviderClient locale="en">
+        <div className="relative flex min-h-dvh flex-col">
+          <div className="flex flex-1 flex-col items-center">{children}</div>
+        </div>
+        <Toaster />
+      </I18nProviderClient>
+    </ThemeProvider>
   );
 }
 
@@ -110,7 +111,7 @@ export default async function RootLayout({
               name="apple-mobile-web-app-status-bar-style"
               content="default"
             />
-            <meta name="apple-mobile-web-app-title" content="Project" />
+            <meta name="apple-mobile-web-app-title" content="Anubix" />
             <meta name="mobile-web-app-capable" content="yes" />
           </>
         )}
@@ -128,14 +129,7 @@ export default async function RootLayout({
         {configured ? (
           <ConfiguredBody locale={locale}>{children}</ConfiguredBody>
         ) : (
-          <ThemeProvider attribute="class" defaultTheme="dark">
-            <div className="relative flex min-h-dvh flex-col">
-              <div className="flex flex-1 flex-col items-center">
-                {children}
-              </div>
-            </div>
-            <Toaster />
-          </ThemeProvider>
+          <UnconfiguredBody>{children}</UnconfiguredBody>
         )}
       </body>
     </html>

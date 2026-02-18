@@ -4,95 +4,83 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
-import { FaLinkedin } from 'react-icons/fa';
-
-import { cn } from '@/lib/utils';
-
-import { Button } from './ui/button';
 
 export function SiteFooter() {
   const t = useScopedI18n('footer');
 
+  const columns = [
+    {
+      title: t('product'),
+      links: [
+        { label: t('features'), href: '/#features' },
+        { label: t('howItWorks'), href: '/#how-it-works' },
+        { label: t('pricing'), href: '#' },
+      ],
+    },
+    {
+      title: t('resources'),
+      links: [
+        { label: t('documentation'), href: '#' },
+        { label: t('community'), href: '#' },
+        { label: t('support'), href: '#' },
+      ],
+    },
+    {
+      title: t('legal'),
+      links: [
+        { label: t('privacy'), href: '#' },
+        { label: t('terms'), href: '#' },
+      ],
+    },
+  ];
+
   return (
-    <footer className={cn('text-foreground bg-card border-t py-12')}>
-      <div className="container mx-auto grid grid-cols-1 gap-8 md:grid-cols-3">
-        {/* Company Info */}
-        <div className="flex flex-col items-center space-y-4 lg:items-start">
-          <Link
-            href="/"
-            className="flex items-center space-x-3 transition-all duration-200 md:hover:translate-x-1"
-          >
-            <Image
-              src="/logo.png"
-              alt="logo"
-              width={40}
-              height={40}
-              className="brightness-[0.85]"
-            />
-            <span className="font-odor text-xl font-bold tracking-wider">
-              PROJECT
-            </span>
-          </Link>
-          <p className="text-muted-foreground text-center text-sm lg:text-left">
-            {t('companyDescription')}
-          </p>
-          <Button variant="link" className="m-0 p-0">
-            <Link href="" target="_blank" rel="noopener noreferrer">
-              PROJECT
+    <footer className="border-border bg-background border-t">
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+          {/* Brand column */}
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="mb-4 inline-flex items-center gap-2">
+              <Image
+                src="/logo.webp"
+                alt={t('logoAlt')}
+                width={28}
+                height={28}
+              />
+              <span className="text-base font-bold tracking-tight">Anubix</span>
             </Link>
-          </Button>
-          <p className="text-muted-foreground text-center text-sm lg:text-left">
+            <p className="text-muted-foreground mt-3 max-w-xs text-sm">
+              {t('companyDescription')}
+            </p>
+          </div>
+
+          {/* Link columns */}
+          {columns.map((column) => (
+            <div key={column.title}>
+              <p className="text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase">
+                {column.title}
+              </p>
+              <ul className="space-y-2.5">
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-border mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row">
+          <p className="text-muted-foreground text-xs">
             {t('allRightsReserved', { year: new Date().getFullYear() })}
           </p>
-        </div>
-
-        {/* Contact Info */}
-        <div className="flex flex-col items-center space-y-4">
-          <h3 className="font-odor text-xl font-semibold tracking-wider">
-            {t('contactUs')}
-          </h3>
-          <p className="text-sm">
-            <strong>{t('email')}</strong>{' '}
-            <Link href="mailto:support@project.com">support@project.com</Link>
-          </p>
-          <p className="text-sm">
-            <strong>{t('whatsapp')}</strong>{' '}
-            <Link
-              href="https://wa.me/441234567890"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              +44 1234 567890
-            </Link>
-            {/* TODO: add contact */}
-          </p>
-        </div>
-
-        {/* Social Media Links */}
-        <div className="flex flex-col items-center space-y-4">
-          <h3 className="font-odor text-xl font-semibold tracking-wider">
-            {t('followUs')}
-          </h3>
-          <div className="flex space-x-4">
-            <Link
-              href="https://www.linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary"
-              aria-label="LinkedIn"
-            >
-              <FaLinkedin size={24} />
-            </Link>
-            {/* <Link
-              href="https://wa.me/441234567890"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary"
-              aria-label="WhatsApp"
-            >
-              <FaWhatsapp size={24} />
-            </Link> */}
-          </div>
         </div>
       </div>
     </footer>

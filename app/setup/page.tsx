@@ -15,7 +15,7 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="container flex min-h-dvh max-w-2xl flex-col items-center justify-center px-4 py-10">
+    <div className="container flex min-h-dvh max-w-2xl flex-col items-center justify-center px-4 py-12 md:py-16">
       <SetupWizard />
     </div>
   );

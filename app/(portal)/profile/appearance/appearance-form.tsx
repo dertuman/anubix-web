@@ -79,7 +79,7 @@ export function AppearanceForm() {
     onError: (error) => {
       console.error('Error updating appearance:', error);
       toast({
-        title: 'Error updating appearance',
+        title: t('errorUpdatingAppearance'),
         variant: 'destructive',
       });
     },

@@ -196,7 +196,7 @@ export function ProfileForm() {
                   src={imagePreview || field.value || defaultProfilePicture}
                   width={280}
                   height={0}
-                  alt="PROJECT Profile Picture"
+                  alt={t('profilePictureAlt')}
                   style={{
                     objectFit: 'cover',
                     objectPosition: 'center',
@@ -239,7 +239,7 @@ export function ProfileForm() {
               <FormControl>
                 <Input
                   type="file"
-                  placeholder={t('PROJECTProfileImage')}
+                  placeholder={t('anubixProfileImage')}
                   onChange={handleImageChange}
                   className="mx-auto cursor-pointer hover:animate-pulse hover:bg-muted lg:max-w-[50%]"
                 />
@@ -276,7 +276,7 @@ export function ProfileForm() {
           name="bio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bio</FormLabel>
+              <FormLabel>{t('bioLabel')}</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder={t('bio')}

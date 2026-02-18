@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 
 import { ClerkStep } from './clerk-step';
 import { SupabaseStep } from './supabase-step';
 import { JwtStep } from './jwt-step';
 import { DeployStep } from './deploy-step';
+import { useScopedI18n } from '@/locales/client';
 
 export interface SetupData {
   clerkPublishableKey: string;
@@ -19,14 +20,22 @@ export interface SetupData {
   databaseVerified: boolean;
 }
 
-const STEPS = [
-  { title: 'Auth', description: 'Clerk' },
-  { title: 'Database', description: 'Supabase' },
-  { title: 'Connect', description: 'Clerk + Table' },
-  { title: 'Deploy', description: 'GitHub + Vercel' },
-];
-
 export function SetupWizard() {
+  const t = useScopedI18n('setup');
+
+  const STEPS = [
+    { title: t('steps.auth'), description: t('steps.clerkDescription') },
+    {
+      title: t('steps.database'),
+      description: t('steps.supabaseDescription'),
+    },
+    {
+      title: t('steps.connect'),
+      description: t('steps.connectDescription'),
+    },
+    { title: t('steps.deploy'), description: t('steps.deployDescription') },
+  ];
+
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<SetupData>({
     clerkPublishableKey: '',
@@ -59,15 +68,21 @@ export function SetupWizard() {
     <div className="w-full space-y-8">
       {/* Header */}
       <div className="text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-          Setup
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          {t('title')}
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-          Configure your site
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+          {t('configureYourSite')}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Connect authentication and database. About 5 minutes.
+          {t('connectAndConfigure')}
         </p>
+
+        {/* Skip for now */}
+        <button className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <Eye className="size-3.5" />
+          {t('skipForNow')}
+        </button>
       </div>
 
       {/* Step indicators */}
@@ -78,25 +93,29 @@ export function SetupWizard() {
               onClick={() => {
                 if (i < currentStep) setCurrentStep(i);
               }}
-              className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 i === currentStep
                   ? 'bg-primary text-primary-foreground'
                   : i < currentStep
-                    ? 'cursor-pointer bg-muted text-success hover:bg-accent'
+                    ? 'cursor-pointer bg-muted text-primary hover:bg-accent'
                     : 'cursor-default bg-muted text-muted-foreground'
               }`}
             >
               {i < currentStep ? (
                 <Check className="size-3" />
               ) : (
-                <span className={`text-[10px] ${i === currentStep ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{i + 1}</span>
+                <span
+                  className={`text-[10px] ${i === currentStep ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}
+                >
+                  {i + 1}
+                </span>
               )}
               {step.title}
             </button>
             {i < STEPS.length - 1 && (
               <div
                 className={`mx-1 h-px w-6 ${
-                  i < currentStep ? 'bg-border' : 'bg-muted'
+                  i < currentStep ? 'bg-primary/30' : 'bg-border'
                 }`}
               />
             )}
@@ -105,7 +124,7 @@ export function SetupWizard() {
       </div>
 
       {/* Step Content */}
-      <div className="rounded-lg border border-border bg-background p-6">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         {currentStep === 0 && (
           <ClerkStep data={data} updateData={updateData} onNext={nextStep} />
         )}

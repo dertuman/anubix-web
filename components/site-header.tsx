@@ -11,16 +11,15 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
 import { MainNav } from '@/components/main-nav';
 
-import LocaleSwitcher from './localeSwitcher';
 import { ThemeToggle } from './theme-toggle';
 import { buttonVariants } from './ui/button';
 
 export function SiteHeader() {
   const t = useScopedI18n('siteHeader');
+  const tCommon = useScopedI18n('common');
   const { profile } = useUserData();
   const siteConfig = {
-    description:
-      'PROJECT empowers your business with cutting-edge technology solutions.',
+    description: t('description'),
     mainNav: [
       {
         title: t('about'),
@@ -45,10 +44,10 @@ export function SiteHeader() {
   const closeSheet = () => setMobileMenuSheetOpen(false);
 
   return (
-    <header className="bg-card sticky top-0 z-40 w-full border-b shadow-lg">
+    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
       <div className="container flex h-16 items-center pe-2 ps-4 sm:justify-between sm:space-x-0 md:pe-4">
         <MainNav items={siteConfig.mainNav} />
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-3">
           <nav className="flex items-center space-x-2">
             <ThemeToggle />
             <SignedOut>
@@ -57,17 +56,13 @@ export function SiteHeader() {
                   className={
                     buttonVariants({
                       variant: 'ghost',
-                    }) + ' px-9'
+                    }) + ' px-6'
                   }
                 >
                   <span>{t('login')}</span>
                 </div>
               </Link>
             </SignedOut>
-
-            <div className="hidden md:block">
-              <LocaleSwitcher />
-            </div>
 
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
@@ -84,23 +79,22 @@ export function SiteHeader() {
                     variant: 'ghost',
                   })}
                 >
-                  <Icons.menu className="size-7 fill-current" />
-                  <span className="sr-only">Burger button</span>
+                  <Icons.menu className="size-6 fill-current" />
+                  <span className="sr-only">{tCommon('burgerButton')}</span>
                 </div>
               </SheetTrigger>
-              <SheetContent className="bg-card">
-                <DialogTitle className="sr-only">Mobile menu</DialogTitle>
+              <SheetContent className="bg-background">
+                <DialogTitle className="sr-only">
+                  {tCommon('mobileMenu')}
+                </DialogTitle>
                 <DialogDescription className="sr-only">
-                  Mobile menu
+                  {tCommon('mobileMenu')}
                 </DialogDescription>
                 {siteConfig.mainNav?.length ? (
-                  <nav className="mt-2 flex flex-col items-center gap-2">
-                    <div className="mt-2 flex justify-between">
-                      <h2 className="font-montserrat p-3 pl-2 text-lg font-black tracking-wide">
-                        PROJECT
-                      </h2>
-                      <LocaleSwitcher />
-                    </div>
+                  <nav className="mt-6 flex flex-col gap-1 px-2">
+                    <p className="mb-3 px-3 text-lg font-bold tracking-tight">
+                      Anubix
+                    </p>
                     {siteConfig.mainNav?.map(
                       (item, index) =>
                         item.href && (
@@ -109,7 +103,7 @@ export function SiteHeader() {
                             key={index}
                             href={item.comingSoon ? '#' : item.href}
                             onClick={closeSheet}
-                            className="border-primary active:bg-muted w-full rounded-md border p-3 text-center"
+                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           >
                             {item.title}
                           </Link>
@@ -119,7 +113,7 @@ export function SiteHeader() {
                       <Link
                         href="/sign-in"
                         onClick={closeSheet}
-                        className="border-primary active:bg-muted w-full rounded-md border p-3 text-center focus:border focus:outline-none"
+                        className="mt-3 rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground"
                       >
                         {t('login')}
                       </Link>

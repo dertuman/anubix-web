@@ -43,7 +43,6 @@ import { toast } from '@/components/ui/use-toast';
 
 const availableLanguages = [
   { label: 'English', value: 'en' },
-  { label: 'Español', value: 'es' },
 ];
 
 const accountFormSchema = z.object({
@@ -87,7 +86,7 @@ export function AccountForm() {
     },
     onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['userData'] });
-      changeLocale(variables.language as 'en' | 'es');
+      changeLocale(variables.language as 'en');
 
       toast({
         title: `${getPreferencesTranslation(variables.language)} ${getRandomAnimalEmoji()}`,

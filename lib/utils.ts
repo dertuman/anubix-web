@@ -132,27 +132,10 @@ export const getRandomAnimalEmoji = () => {
   return animals[Math.floor(Math.random() * animals.length)];
 };
 
-export const preferencesTranslationMessages: { [key: string]: string } = {
-  en: 'Language preferences updated',
-  es: 'Preferencias de idioma actualizadas',
-  de: 'Spracheinstellungen aktualisiert',
-  fr: 'Préférences linguistiques mises à jour',
+export const getPreferencesTranslation = (_locale?: string) => {
+  return 'Language preferences updated';
 };
 
-export const getPreferencesTranslation = (locale: string) => {
-  return (
-    preferencesTranslationMessages[locale] ||
-    preferencesTranslationMessages['en']
-  );
-};
-
-export const loginTranslationMessages: { [key: string]: string } = {
-  en: 'Logged in successfully',
-  es: 'Sesión iniciada con éxito',
-  de: 'Erfolgreich eingeloggt',
-  fr: 'Connexion réussie',
-};
-
-export const getLoginTranslation = (locale: string) => {
-  return loginTranslationMessages[locale] || loginTranslationMessages['en'];
+export const getLoginTranslation = (_locale?: string) => {
+  return 'Logged in successfully';
 };

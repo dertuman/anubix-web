@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Check, ExternalLink, Loader2 } from 'lucide-react';
 
+import { useScopedI18n } from '@/locales/client';
+import { Button } from '@/components/ui/button';
+
 import type { SetupData } from './setup-wizard';
 
 interface ClerkStepProps {
@@ -13,9 +16,6 @@ interface ClerkStepProps {
 
 /**
  * Parse the block Clerk gives you when you hit "Copy" on the API Keys page.
- * Handles formats like:
- *   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_abc123
- *   CLERK_SECRET_KEY=sk_test_xyz789
  */
 function parseClerkEnvBlock(text: string): {
   publishableKey: string;
@@ -33,6 +33,8 @@ function parseClerkEnvBlock(text: string): {
 }
 
 export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
+  const t = useScopedI18n('setup.clerk');
+  const tCommon = useScopedI18n('common');
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState('');
   const [pasteValue, setPasteValue] = useState('');
@@ -78,11 +80,11 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
       if (result.success) {
         updateData({ clerkVerified: true });
       } else {
-        setError(result.error || 'Invalid keys. Double-check them.');
+        setError(result.error || t('invalidKeys'));
         updateData({ clerkVerified: false });
       }
     } catch {
-      setError('Failed to connect. Try again.');
+      setError(t('failedToConnect'));
       updateData({ clerkVerified: false });
     } finally {
       setTesting(false);
@@ -92,17 +94,19 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-foreground">Authentication</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('heading')}
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Clerk handles sign-in, sign-up, and user management.
+          {t('description')}
         </p>
       </div>
 
-      <div className="rounded border border-border bg-muted p-4">
+      <div className="rounded-lg border border-border bg-muted/50 p-4">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Instructions
+          {t('instructions')}
         </p>
-        <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
+        <ol className="mt-3 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
           <li>
             Open{' '}
             <a
@@ -111,50 +115,57 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
             >
-              dashboard.clerk.com
+              {t('openDashboard')}
               <ExternalLink className="size-3" />
             </a>
           </li>
-          <li>Create an account &amp; application</li>
+          <li>{t('createAccount')}</li>
           <li>
-            Go to <span className="text-highlight font-medium">API Keys</span> and hit{' '}
-            <span className="text-highlight font-medium">Copy</span>
+            Go to{' '}
+            <span className="font-medium text-highlight">{t('goToApiKeys')}</span>{' '}
+            and hit{' '}
+            <span className="font-medium text-highlight">{t('hitCopy')}</span>
           </li>
-          <li>Paste the whole block below</li>
+          <li>{t('pasteBelow')}</li>
         </ol>
       </div>
 
-      {/* Single paste area */}
+      {/* Paste area */}
       <div className="space-y-1.5">
-        <label htmlFor="clerk-paste" className="text-sm font-medium text-foreground">
-          Paste your Clerk keys
+        <label
+          htmlFor="clerk-paste"
+          className="text-sm font-medium text-foreground"
+        >
+          {t('pasteYourKeys')}
         </label>
         <textarea
           id="clerk-paste"
           rows={3}
-          placeholder={'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...\nCLERK_SECRET_KEY=sk_test_...'}
+          placeholder={
+            'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...\nCLERK_SECRET_KEY=sk_test_...'
+          }
           value={pasteValue}
           onChange={(e) => handlePaste(e.target.value)}
-          className="w-full resize-none rounded border border-border bg-code px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
+          className="w-full resize-none rounded-lg border border-border bg-code px-3 py-2.5 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
         />
         {parsed && (
-          <p className="flex items-center gap-1.5 text-xs text-success">
-            <Check className="size-3" /> Both keys detected
+          <p className="flex items-center gap-1.5 text-xs text-primary">
+            <Check className="size-3" /> {t('bothKeysDetected')}
           </p>
         )}
       </div>
 
       {/* Parsed keys preview */}
       {parsed && (
-        <div className="space-y-2 rounded border border-border bg-muted p-3">
+        <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Publishable Key</span>
+            <span className="text-muted-foreground">{t('publishableKey')}</span>
             <span className="font-mono text-muted-foreground">
               {data.clerkPublishableKey.slice(0, 20)}...
             </span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Secret Key</span>
+            <span className="text-muted-foreground">{t('secretKey')}</span>
             <span className="font-mono text-muted-foreground">
               {data.clerkSecretKey.slice(0, 12)}...
             </span>
@@ -165,35 +176,38 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center justify-between border-t border-border pt-4">
-        <button
+        <Button
           onClick={testConnection}
           disabled={!canTest || testing}
-          className={`rounded px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+          variant={data.clerkVerified ? 'outline' : 'default'}
+          className={
             data.clerkVerified
-              ? 'border border-success/50 bg-success/10 text-success'
-              : 'bg-foreground text-background hover:bg-foreground/90'
-          }`}
+              ? 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15'
+              : ''
+          }
         >
           {testing ? (
             <span className="flex items-center gap-2">
-              <Loader2 className="size-3.5 animate-spin" /> Testing
+              <Loader2 className="size-3.5 animate-spin" />{' '}
+              {tCommon('testing')}
             </span>
           ) : data.clerkVerified ? (
             <span className="flex items-center gap-2">
-              <Check className="size-3.5" /> Connected
+              <Check className="size-3.5" /> {tCommon('connected')}
             </span>
           ) : (
-            'Test Connection'
+            tCommon('testConnection')
           )}
-        </button>
+        </Button>
 
-        <button
+        <Button
           onClick={onNext}
           disabled={!data.clerkVerified}
-          className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-40"
+          variant="outline"
+          className="bg-foreground text-background hover:bg-foreground/80 hover:text-background"
         >
-          Continue
-        </button>
+          {tCommon('continue')}
+        </Button>
       </div>
     </div>
   );
