@@ -27,6 +27,12 @@ export function SiteHeader() {
         isPublic: true,
         comingSoon: false,
       },
+      {
+        title: 'Code',
+        href: '/code',
+        isPublic: true,
+        comingSoon: false,
+      },
       ...(profile?.is_admin
         ? [
             {

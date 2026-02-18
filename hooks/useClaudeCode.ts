@@ -1,0 +1,356 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import type { FileAttachment } from '@/types/code';
+import type { BridgeSession, CodeMessage, SlashCommand } from '@/types/code';
+import {
+  addRecentRepoPath,
+  clearLastSessionId,
+  clearSessionMessages,
+  getLastSessionId,
+  setLastSessionId,
+} from '@/lib/stores/bridge-store';
+
+import type { ConnectionHealth } from './useSessionConnection';
+import { useSessionPool, type PoolSessionState } from './useSessionPool';
+
+// ── Helpers ─────────────────────────────────────────────────
+
+function makeId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function httpBase(url: string) {
+  let base = url.replace(/\/ws(\/.*)?$/, '');
+  base = base.replace(/^ws(s?):\/\//, 'http$1://');
+  return base;
+}
+
+// ── Types ───────────────────────────────────────────────────
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
+
+export interface BridgeRepo {
+  name: string;
+  path: string;
+}
+
+export interface FetchReposResult {
+  repos: BridgeRepo[];
+  basePath: string | null;
+}
+
+export interface PullResult {
+  path: string;
+  output?: string;
+  error?: string;
+}
+
+export interface UseClaudeCodeReturn {
+  status: ConnectionStatus;
+  connect: (_url: string, _apiKey: string) => void;
+  disconnect: () => void;
+  connectionError: string | null;
+  sessions: BridgeSession[];
+  activeSessionId: string | null;
+  selectSession: (_id: string) => void;
+  createSession: (_repoPath: string | string[], _name: string) => Promise<BridgeSession | null>;
+  deleteSession: (_id: string) => Promise<void>;
+  updateSession: (_id: string, _updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli' }) => Promise<void>;
+  refreshSessions: () => Promise<void>;
+  pullSession: (_id: string) => Promise<PullResult[] | null>;
+  fetchRepos: () => Promise<FetchReposResult>;
+  messages: CodeMessage[];
+  sendMessage: (_text: string, _files?: FileAttachment[]) => Promise<void>;
+  clearConversation: () => void;
+  approve: () => void;
+  deny: () => void;
+  answerQuestion: (_answers: Record<string, string>) => void;
+  abort: () => void;
+  isBusy: boolean;
+  slashCommands: SlashCommand[];
+  connectionHealth: ConnectionHealth;
+  retry: () => void;
+  sessionLiveStates: Map<string, PoolSessionState>;
+}
+
+// ── Hook ────────────────────────────────────────────────────
+
+export function useClaudeCode(): UseClaudeCodeReturn {
+  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const [sessions, setSessions] = useState<BridgeSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  const baseUrlRef = useRef('');
+  const keyRef = useRef('');
+  const activeSessionRef = useRef<string | null>(null);
+
+  const pool = useSessionPool();
+
+  useEffect(() => { activeSessionRef.current = activeSessionId; }, [activeSessionId]);
+
+  // Derived state from active connection
+  const activeConn = activeSessionId ? pool.getConnection(activeSessionId) : null;
+  const messages = activeConn?.messages ?? [];
+  const isBusy = activeConn?.isBusy ?? false;
+  const connectionHealth: ConnectionHealth = activeConn?.connectionHealth ?? 'disconnected';
+  const slashCommands = activeConn?.slashCommands ?? [];
+  const sessionLiveStates = pool.getSessionStates();
+
+  // ── HTTP helpers ──────────────────────────────────────────
+
+  const apiFetch = useCallback(async (path: string, init?: RequestInit) => {
+    const url = `${httpBase(baseUrlRef.current)}/api${path}`;
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(keyRef.current ? { 'x-api-key': keyRef.current } : {}),
+        ...init?.headers,
+      },
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  }, []);
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      const data = await apiFetch('/sessions');
+      const list = (data.data ?? data) as BridgeSession[];
+      setSessions(list);
+      return list;
+    } catch {
+      setSessions([]);
+      return [];
+    }
+  }, [apiFetch]);
+
+  const fetchRepos = useCallback(async (): Promise<FetchReposResult> => {
+    try {
+      const data = await apiFetch('/sessions/repos');
+      return { repos: (data.data ?? []) as BridgeRepo[], basePath: (data.basePath as string) ?? null };
+    } catch {
+      return { repos: [], basePath: null };
+    }
+  }, [apiFetch]);
+
+  // ── Connect ───────────────────────────────────────────────
+
+  const connect = useCallback(async (url: string, apiKey: string) => {
+    baseUrlRef.current = url.replace(/\/ws(\/.*)?$/, '').replace(/\/$/, '');
+    keyRef.current = apiKey;
+    setStatus('connecting');
+    setConnectionError(null);
+
+    try {
+      const res = await fetch(`${httpBase(baseUrlRef.current)}/api/health`, {
+        headers: keyRef.current ? { 'x-api-key': keyRef.current } : {},
+      });
+      if (!res.ok) {
+        throw new Error(
+          res.status === 401 || res.status === 403
+            ? 'Invalid API key. Please check your credentials.'
+            : `Failed to connect: ${res.status} ${res.statusText}`
+        );
+      }
+
+      setStatus('connected');
+      pool.setCredentials(baseUrlRef.current, apiKey);
+
+      const sessions = await fetchSessions();
+      const lastSid = getLastSessionId();
+      if (lastSid && sessions.some((s) => s.id === lastSid)) {
+        setActiveSessionId(lastSid);
+        pool.connect(lastSid);
+      }
+    } catch (err) {
+      let msg = 'Failed to connect. Please check the URL and try again.';
+      if (err instanceof Error) {
+        msg = err.message === 'Failed to fetch' || err.name === 'TypeError'
+          ? 'Unable to reach bridge server. Check URL and network connection.'
+          : err.message;
+      }
+      setConnectionError(msg);
+      setStatus('disconnected');
+    }
+  }, [fetchSessions, pool]);
+
+  const disconnect = useCallback(() => {
+    pool.disconnectAll();
+    baseUrlRef.current = '';
+    keyRef.current = '';
+    setStatus('disconnected');
+    setSessions([]);
+    setActiveSessionId(null);
+    setConnectionError(null);
+  }, [pool]);
+
+  // ── Session management ────────────────────────────────────
+
+  const selectSession = useCallback((id: string) => {
+    setActiveSessionId(id);
+    setLastSessionId(id);
+    pool.connect(id);
+  }, [pool]);
+
+  const createSession = useCallback(async (repoPath: string | string[], name: string): Promise<BridgeSession | null> => {
+    try {
+      const isMulti = Array.isArray(repoPath);
+      const body = isMulti ? { repoPaths: repoPath, name } : { repoPath, name };
+      const data = await apiFetch('/sessions', { method: 'POST', body: JSON.stringify(body) });
+      const session = (data.data ?? data) as BridgeSession;
+      if (isMulti) repoPath.forEach(addRecentRepoPath);
+      else addRecentRepoPath(repoPath);
+      await fetchSessions();
+      selectSession(session.id);
+      return session;
+    } catch {
+      return null;
+    }
+  }, [apiFetch, fetchSessions, selectSession]);
+
+  const deleteSession = useCallback(async (id: string) => {
+    try {
+      await apiFetch(`/sessions/${id}`, { method: 'DELETE' });
+      clearSessionMessages(id);
+      pool.disconnect(id);
+      if (activeSessionRef.current === id) {
+        setActiveSessionId(null);
+        clearLastSessionId();
+      }
+      await fetchSessions();
+    } catch { /* ignore */ }
+  }, [apiFetch, fetchSessions, pool]);
+
+  const updateSession = useCallback(async (id: string, updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli' }) => {
+    await apiFetch(`/sessions/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
+    await fetchSessions();
+  }, [apiFetch, fetchSessions]);
+
+  const refreshSessions = useCallback(async () => { await fetchSessions(); }, [fetchSessions]);
+
+  const pullSession = useCallback(async (id: string): Promise<PullResult[] | null> => {
+    try {
+      const data = await apiFetch(`/sessions/${id}/pull`, { method: 'POST' });
+      return (data.data ?? null) as PullResult[] | null;
+    } catch {
+      return null;
+    }
+  }, [apiFetch]);
+
+  // ── Chat actions ──────────────────────────────────────────
+
+  const sendMessage = useCallback(async (text: string, files?: FileAttachment[]) => {
+    if (!activeSessionRef.current || (!text.trim() && (!files || files.length === 0))) return;
+
+    const conn = pool.getConnection(activeSessionRef.current);
+    if (!conn) return;
+
+    let finalContent = text.trim();
+
+    // Inject code/text files as fenced blocks
+    const textFiles = files?.filter((f) => f.category === 'text' && f.textContent) ?? [];
+    if (textFiles.length) {
+      const blocks = textFiles.map((f) => {
+        const ext = f.name.split('.').pop() || '';
+        return `\`\`\`${ext} (${f.name})\n${f.textContent}\n\`\`\``;
+      }).join('\n\n');
+      finalContent = finalContent ? `${blocks}\n\n${finalContent}` : blocks;
+    }
+
+    // Transcribe audio/video
+    const audioFiles = files?.filter((f) => (f.category === 'audio' || f.category === 'video') && f.data) ?? [];
+    if (audioFiles.length) {
+      const transcriptions = await Promise.all(audioFiles.map(async (f) => {
+        try {
+          const blob = await (await fetch(f.data!)).blob();
+          const fd = new FormData();
+          fd.append('audio', blob, f.name);
+          const res = await fetch('/api/transcribe', { method: 'POST', body: fd });
+          if (!res.ok) return null;
+          const { transcription } = await res.json();
+          return transcription ? `[Transcription of ${f.name}]:\n${transcription}` : null;
+        } catch { return null; }
+      }));
+      const valid = transcriptions.filter(Boolean).join('\n\n');
+      if (valid) finalContent = finalContent ? `${valid}\n\n${finalContent}` : valid;
+    }
+
+    // Extract PDF text
+    const pdfFiles = files?.filter((f) => f.category === 'pdf' && f.data) ?? [];
+    if (pdfFiles.length) {
+      const pdfTexts = await Promise.all(pdfFiles.map(async (f) => {
+        try {
+          const blob = await (await fetch(f.data!)).blob();
+          const fd = new FormData();
+          fd.append('file', blob, f.name);
+          const res = await fetch('/api/extract-pdf', { method: 'POST', body: fd });
+          if (!res.ok) return null;
+          const { text, pages } = await res.json();
+          return text ? `[Content of ${f.name} (${pages} page${pages !== 1 ? 's' : ''})]:\n${text}` : null;
+        } catch { return null; }
+      }));
+      const valid = pdfTexts.filter(Boolean).join('\n\n');
+      if (valid) finalContent = finalContent ? `${valid}\n\n${finalContent}` : valid;
+    }
+
+    // Extract images for bridge
+    const imageFiles = files?.filter((f) => f.category === 'image' && f.data) ?? [];
+    const bridgeImages = imageFiles.map((f) => ({
+      base64: f.data!.includes(',') ? f.data!.split(',')[1] : f.data!,
+      mimeType: f.mimeType,
+    }));
+
+    const userMsg: CodeMessage = {
+      id: makeId(), ts: Date.now(), type: 'user',
+      text: finalContent,
+      images: imageFiles.length ? imageFiles.map((f) => f.data!) : undefined,
+      files: files?.length ? files : undefined,
+    };
+
+    conn.addUserMessage(userMsg);
+
+    const contentToSend = !finalContent && bridgeImages.length ? 'See attached image(s).' : finalContent;
+    conn.sendMessage(contentToSend, bridgeImages.length ? bridgeImages : undefined);
+  }, [pool]);
+
+  const approve = useCallback(() => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.approve();
+  }, [pool]);
+
+  const deny = useCallback(() => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.deny();
+  }, [pool]);
+
+  const answerQuestion = useCallback((answers: Record<string, string>) => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.answerQuestion(answers);
+  }, [pool]);
+
+  const abortAction = useCallback(() => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.abort();
+  }, [pool]);
+
+  const clearConversation = useCallback(() => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.clearConversation();
+  }, [pool]);
+
+  const retry = useCallback(() => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.retry();
+  }, [pool]);
+
+  useEffect(() => {
+    return () => { pool.disconnectAll(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    status, connect, disconnect, connectionError,
+    sessions, activeSessionId, selectSession,
+    createSession, deleteSession, updateSession, refreshSessions, pullSession,
+    fetchRepos, messages, sendMessage, clearConversation,
+    approve, deny, answerQuestion, abort: abortAction, isBusy,
+    slashCommands, connectionHealth, retry, sessionLiveStates,
+  };
+}

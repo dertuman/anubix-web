@@ -194,7 +194,7 @@ export default {
       title: 'Build from your pocket.',
       titleHighlight: 'Without the lock-in.',
       subtitle:
-        'Describe what you want. Anubix builds it, deploys it to your Vercel, your Supabase, your GitHub — and hands you the keys.',
+        "Describe what you want. Anubix builds it, deploys it to your Vercel, your Supabase, your GitHub — you're in control.",
       cta: 'Start building',
       ctaSecondary: 'See how it works',
     },
@@ -203,7 +203,7 @@ export default {
     },
     features: {
       label: 'Features',
-      title: 'Everything you need, nothing you don\'t',
+      title: "Everything you need, nothing you don't",
       subtitle:
         'From idea to deployed app in minutes. Anubix handles the complexity so you can focus on what matters.',
       conversational: {
@@ -292,7 +292,7 @@ export default {
       description:
         'The gap between having an idea and launching an app has never been wider. You need to learn frameworks, configure databases, set up hosting, manage deployments. Anubix eliminates all of that. We built a platform where you talk to AI and it builds your app — in real-time, with full ownership of everything it creates.',
       description2:
-        'We\'re not building another no-code drag-and-drop tool. Anubix generates real, production-grade code using the same technologies professional developers use. The difference is you don\'t need to be one.',
+        "We're not building another no-code drag-and-drop tool. Anubix generates real, production-grade code using the same technologies professional developers use. The difference is you don't need to be one.",
     },
     values: {
       label: 'What we stand for',
@@ -322,30 +322,36 @@ export default {
       label: 'The stack',
       title: 'Built on tools you can trust',
       subtitle:
-        'Every Anubix app is a full-stack Next.js application backed by best-in-class services. Here\'s what powers your apps.',
+        "Every Anubix app is a full-stack Next.js application backed by best-in-class services. Here's what powers your apps.",
       nextjs: {
         title: 'Next.js',
-        description: 'React framework for the web. Server components, API routes, and optimized performance out of the box.',
+        description:
+          'React framework for the web. Server components, API routes, and optimized performance out of the box.',
       },
       clerk: {
         title: 'Clerk',
-        description: 'Authentication and user management. Sign-in, sign-up, profiles, and session handling — all handled.',
+        description:
+          'Authentication and user management. Sign-in, sign-up, profiles, and session handling — all handled.',
       },
       supabase: {
         title: 'Supabase',
-        description: 'Postgres database with row-level security, real-time subscriptions, and built-in file storage.',
+        description:
+          'Postgres database with row-level security, real-time subscriptions, and built-in file storage.',
       },
       vercel: {
         title: 'Vercel',
-        description: 'Global edge hosting with automatic deployments. Your site goes live in seconds, fast everywhere.',
+        description:
+          'Global edge hosting with automatic deployments. Your site goes live in seconds, fast everywhere.',
       },
       github: {
         title: 'GitHub',
-        description: 'Your code is pushed to your own repository. Version history, collaboration, and full portability.',
+        description:
+          'Your code is pushed to your own repository. Version history, collaboration, and full portability.',
       },
       claude: {
         title: 'Claude',
-        description: 'Anthropic\'s AI writes the code. Understands context, follows patterns, and builds features end-to-end.',
+        description:
+          "Anthropic's AI writes the code. Understands context, follows patterns, and builds features end-to-end.",
       },
     },
     cta: {
@@ -358,11 +364,11 @@ export default {
   setup: {
     title: 'Setup',
     configureYourSite: 'Configure your site',
-    connectAndConfigure: 'Connect authentication and database. About 5 minutes.',
+    connectAndConfigure:
+      'Connect authentication and database. About 5 minutes.',
     skipForNow: 'Skip for now — preview your site',
     metaTitle: 'Setup — Configure Your Site',
-    metaDescription:
-      'Set up your authentication and database to get started.',
+    metaDescription: 'Set up your authentication and database to get started.',
     steps: {
       auth: 'Auth',
       database: 'Database',
@@ -518,6 +524,72 @@ export default {
       tokenPrefix: 'github_pat_',
       permissionsWarning:
         'You should see both Administration and Contents listed under Repositories before continuing.',
+    },
+  },
+  code: {
+    bridgeSetup: {
+      title: 'Claude Code Bridge',
+      description: 'Connect to a running Claude Code Bridge server.',
+      urlLabel: 'Bridge URL',
+      urlPlaceholder: 'wss://your-bridge-server.com/ws',
+      keyLabel: 'API Key',
+      keyPlaceholder: 'Optional API key',
+      connect: 'Connect',
+      disconnect: 'Disconnect',
+      connecting: 'Connecting...',
+      connectionFailed: 'Connection failed',
+    },
+    sessions: {
+      title: 'Sessions',
+      newSession: 'New Session',
+      repoPath: 'Repository Path',
+      repoPathPlaceholder: '/path/to/your/repo',
+      name: 'Session Name',
+      namePlaceholder: 'My Session',
+      create: 'Create',
+      delete: 'Delete',
+      deleteConfirm: 'Delete this session?',
+      noSessions: 'No sessions yet',
+      recent: 'Recent Repos',
+      selectSession: 'Select or create a session',
+      availableRepos: 'Available repos',
+      searchRepos: 'Filter repos...',
+      noMatchingRepos: 'No matching repos',
+      noReposFound: 'No repositories found',
+      noReposHint: 'Check that repos exist in the configured path',
+      scanning: 'Scanning',
+      loadingRepos: 'Loading repos...',
+      selected: 'Selected',
+      add: 'Add',
+      orTypePath: 'Or type a path...',
+      edit: 'Edit',
+      editSession: 'Edit Session',
+      save: 'Save',
+    },
+    messages: {
+      scrollToBottom: 'Scroll to bottom',
+      approve: 'Approve',
+      deny: 'Deny',
+      answered: 'Answered',
+      toolRunning: 'Running',
+      toolComplete: 'Complete',
+      toolGroupCount: '({count})',
+      toolSuperGroupLabel: 'Exploring...',
+      toolSuperGroupCount: '({count})',
+      elapsed: 'elapsed',
+      tokens: 'tokens',
+      cost: 'cost',
+      free: 'Free',
+      noMessages: 'Send a message to get started',
+      inputPlaceholder: 'Message Claude Code...',
+    },
+    status: {
+      connected: 'Connected',
+      disconnected: 'Disconnected',
+      connecting: 'Connecting',
+      idle: 'Idle',
+      busy: 'Busy',
+      error: 'Error',
     },
   },
 } as const;
