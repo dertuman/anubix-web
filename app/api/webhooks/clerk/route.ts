@@ -89,13 +89,26 @@ export async function POST(req: Request) {
   if (evt.type === 'user.deleted') {
     const { id } = evt.data;
 
-    const { error } = await supabase
+    console.log('[webhook] user.deleted event received. Full data:', JSON.stringify(evt.data));
+
+    if (!id) {
+      console.error('[webhook] user.deleted event has no id in data');
+      return NextResponse.json(
+        { error: 'No user id in delete event' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
       .from('profiles')
       .update({
         is_deleted: true,
         deleted_at: new Date().toISOString(),
       })
-      .eq('id', id);
+      .eq('id', id)
+      .select();
+
+    console.log('[webhook] user.deleted update result:', { id, data, error });
 
     if (error) {
       console.error('Error soft-deleting profile:', error);
@@ -103,6 +116,10 @@ export async function POST(req: Request) {
         { error: 'Failed to delete profile' },
         { status: 500 }
       );
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('[webhook] user.deleted: no profile found for id:', id);
     }
   }
 

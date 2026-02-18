@@ -256,6 +256,22 @@ export default {
           'Hit deploy and your app goes live. Share the URL with the world.',
       },
     },
+    founders: {
+      label: 'Meet the founders',
+      title: 'The people behind Anubix',
+      subtitle:
+        'Two builders who believe everyone should be able to create software — no matter their background.',
+      alex: {
+        name: 'Alex',
+        role: 'Co-Founder & Engineering',
+        bio: 'The architect behind Anubix. Alex designed and built the platform from the ground up — from infrastructure to the AI pipeline. Happiest when deep in code and solving hard problems.',
+      },
+      fionn: {
+        name: 'Fionn',
+        role: 'Co-Founder & Growth',
+        bio: 'The voice of Anubix. Fionn drives product strategy, partnerships, and making sure the world knows what Anubix can do. Focused on turning a great product into a great business.',
+      },
+    },
     cta: {
       title: 'Ready to build something?',
       subtitle:

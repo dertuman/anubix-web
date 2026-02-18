@@ -32,12 +32,12 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 -- Users can read their own profile
 CREATE POLICY "Users can read own profile"
   ON public.profiles FOR SELECT
-  USING ((select auth.uid())::text = id);
+  USING ((select (auth.jwt()->>'sub')) = id);
 
 -- Users can update their own profile
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
-  USING ((select auth.uid())::text = id);
+  USING ((select (auth.jwt()->>'sub')) = id);
 
 -- Service role has full access (used by Clerk webhooks)
 CREATE POLICY "Service role full access"

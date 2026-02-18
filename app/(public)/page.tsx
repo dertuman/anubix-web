@@ -4,6 +4,7 @@ import { HeroSection } from './home-components/hero-section';
 import { LogosSection } from './home-components/logos-section';
 import { FeaturesSection } from './home-components/features-section';
 import { HowItWorksSection } from './home-components/how-it-works-section';
+import { FoundersSection } from './home-components/founders-section';
 import { CtaSection } from './home-components/cta-section';
 
 export default function HomePage() {
@@ -13,6 +14,7 @@ export default function HomePage() {
       <LogosSection />
       <FeaturesSection />
       <HowItWorksSection />
+      <FoundersSection />
       <CtaSection />
     </main>
   );
