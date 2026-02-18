@@ -59,13 +59,13 @@ export function SetupWizard() {
     <div className="w-full space-y-8">
       {/* Header */}
       <div className="text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-neutral-500">
+        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
           Setup
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
           Configure your site
         </h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Connect authentication and database. About 5 minutes.
         </p>
       </div>
@@ -80,23 +80,23 @@ export function SetupWizard() {
               }}
               className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
                 i === currentStep
-                  ? 'bg-white text-black'
+                  ? 'bg-primary text-primary-foreground'
                   : i < currentStep
-                    ? 'cursor-pointer bg-neutral-800 text-emerald-400 hover:bg-neutral-700'
-                    : 'cursor-default bg-neutral-900 text-neutral-600'
+                    ? 'cursor-pointer bg-muted text-success hover:bg-accent'
+                    : 'cursor-default bg-muted text-muted-foreground'
               }`}
             >
               {i < currentStep ? (
                 <Check className="size-3" />
               ) : (
-                <span className="text-[10px] text-neutral-500">{i + 1}</span>
+                <span className={`text-[10px] ${i === currentStep ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{i + 1}</span>
               )}
               {step.title}
             </button>
             {i < STEPS.length - 1 && (
               <div
                 className={`mx-1 h-px w-6 ${
-                  i < currentStep ? 'bg-neutral-600' : 'bg-neutral-800'
+                  i < currentStep ? 'bg-border' : 'bg-muted'
                 }`}
               />
             )}
@@ -105,7 +105,7 @@ export function SetupWizard() {
       </div>
 
       {/* Step Content */}
-      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-6">
+      <div className="rounded-lg border border-border bg-background p-6">
         {currentStep === 0 && (
           <ClerkStep data={data} updateData={updateData} onNext={nextStep} />
         )}

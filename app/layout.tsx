@@ -2,11 +2,11 @@ import '@/styles/globals.css';
 
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { getLocale } from '@/lib/i18n';
-import { isAppConfigured } from '@/lib/setup/config';
 
 import { fontSans } from '@/lib/fonts';
+import { getLocale } from '@/lib/i18n';
 import { generateDefaultMetadata } from '@/lib/metadata-utils';
+import { isAppConfigured } from '@/lib/setup/config';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -54,12 +54,8 @@ async function ConfiguredBody({
     '@/components/react-query-provider'
   );
   const { SiteHeader } = await import('@/components/site-header');
-  const { ConditionalFooter } = await import(
-    '@/components/conditional-footer'
-  );
-  const { TailwindIndicator } = await import(
-    '@/components/tailwind-indicator'
-  );
+  const { ConditionalFooter } = await import('@/components/conditional-footer');
+  const { TailwindIndicator } = await import('@/components/tailwind-indicator');
 
   return (
     <ClerkProvider>
@@ -96,7 +92,7 @@ export default async function RootLayout({
   const configured = isAppConfigured();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className="dark" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.png" />
         {configured && (

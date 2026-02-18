@@ -30,15 +30,15 @@ const badgeVariants = cva(
         default:
           'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
         green: 'border-transparent bg-primary text-primary-foreground',
-        greenOutline: 'bg-white border-primary/70 dark:bg-black',
+        greenOutline: 'bg-background border-primary/70',
         red: 'border-transparent bg-destructive text-destructive-foreground',
-        orange: 'border-transparent bg-orange-500 text-primary-foreground',
-        blue: 'border-transparent bg-blue-500 text-primary-foreground',
+        orange: 'border-transparent bg-warning text-warning-foreground',
+        blue: 'border-transparent bg-primary text-primary-foreground',
         secondary:
           'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         destructive:
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        exciting: 'border-orange-500 text-muted-foreground',
+        exciting: 'border-warning text-muted-foreground',
         outline: 'text-foreground',
       },
     },

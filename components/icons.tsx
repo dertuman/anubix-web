@@ -1,4 +1,3 @@
-import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import {
   ArrowDownNarrowWide,
   ArrowUpNarrowWide,
@@ -8,7 +7,9 @@ import {
   LucideProps,
   Mails,
   Menu,
+  Moon,
   SlidersHorizontal,
+  Sun,
   Trash,
   User,
 } from 'lucide-react';
@@ -22,8 +23,8 @@ export const Icons = {
   profile: User,
   notifications: Bell,
   messages: Mails,
-  sun: SunIcon,
-  moon: MoonIcon,
+  sun: Sun,
+  moon: Moon,
   checkSquare: CheckSquare,
   trash: Trash,
   twitter: (props: LucideProps) => (

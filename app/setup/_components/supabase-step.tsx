@@ -110,24 +110,24 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-white">Database</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h2 className="text-lg font-medium text-foreground">Database</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Supabase provides your Postgres database with row-level security.
         </p>
       </div>
 
-      <div className="rounded border border-neutral-800 bg-neutral-900/50 p-4">
-        <p className="text-xs font-medium uppercase tracking-wider text-neutral-600">
+      <div className="rounded border border-border bg-muted p-4">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           How to get your keys
         </p>
-        <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm text-neutral-400">
+        <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
           <li>
             Open{' '}
             <a
               href="https://supabase.com/dashboard"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+              className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
             >
               supabase.com/dashboard
               <ExternalLink className="size-3" />
@@ -135,8 +135,8 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
           </li>
           <li>Create an account &amp; new project</li>
           <li>
-            Click <span className="text-white">Connect</span> (top of page) &rarr; copy the{' '}
-            <span className="text-white">.env.local</span> block
+            Click <span className="text-highlight font-medium">Connect</span> (top of page) &rarr; copy the{' '}
+            <span className="text-highlight font-medium">.env.local</span> block
           </li>
           <li>Paste it below</li>
         </ol>
@@ -144,7 +144,7 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
 
       {/* Primary paste area */}
       <div className="space-y-1.5">
-        <label htmlFor="sb-paste" className="text-sm font-medium text-neutral-300">
+        <label htmlFor="sb-paste" className="text-sm font-medium text-foreground">
           Paste your Supabase .env.local
         </label>
         <textarea
@@ -153,10 +153,10 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
           placeholder={'NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_...'}
           value={pasteValue}
           onChange={(e) => handlePaste(e.target.value)}
-          className="w-full resize-none rounded border border-neutral-800 bg-black px-3 py-2 font-mono text-xs text-white placeholder:text-neutral-700 focus:border-neutral-600 focus:outline-none"
+          className="w-full resize-none rounded border border-border bg-code px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
         />
         {parsedCount > 0 && (
-          <p className="flex items-center gap-1.5 text-xs text-emerald-400">
+          <p className="flex items-center gap-1.5 text-xs text-success">
             <Check className="size-3" /> {parsedCount} value{parsedCount > 1 ? 's' : ''} detected
           </p>
         )}
@@ -164,19 +164,19 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
 
       {/* Parsed values preview */}
       {parsedCount > 0 && (
-        <div className="space-y-2 rounded border border-neutral-800 bg-neutral-900/50 p-3">
+        <div className="space-y-2 rounded border border-border bg-muted p-3">
           {data.supabaseUrl && (
             <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Project URL</span>
-              <span className="font-mono text-neutral-400">
+              <span className="text-muted-foreground">Project URL</span>
+              <span className="font-mono text-muted-foreground">
                 {data.supabaseUrl}
               </span>
             </div>
           )}
           {data.supabasePublishableKey && (
             <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Publishable Key</span>
-              <span className="font-mono text-neutral-400">
+              <span className="text-muted-foreground">Publishable Key</span>
+              <span className="font-mono text-muted-foreground">
                 {data.supabasePublishableKey.slice(0, 24)}...
               </span>
             </div>
@@ -186,15 +186,15 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
 
       {/* Secret key — separate input */}
       <div className="space-y-1.5">
-        <label htmlFor="sb-secret" className="text-sm font-medium text-neutral-300">
+        <label htmlFor="sb-secret" className="text-sm font-medium text-foreground">
           Secret Key
         </label>
-        <p className="text-xs text-neutral-600">
+        <p className="text-xs text-muted-foreground">
           In your Supabase dashboard, go to{' '}
-          <span className="text-neutral-400">Settings</span> &rarr;{' '}
-          <span className="text-neutral-400">API Keys</span> &rarr;{' '}
-          under <span className="text-neutral-400">&ldquo;Secret keys&rdquo;</span>, click the copy icon next to the{' '}
-          <span className="text-neutral-400">default</span> key. Stored server-side only, never exposed to the browser.
+          <span className="text-highlight">Settings</span> &rarr;{' '}
+          <span className="text-highlight">API Keys</span> &rarr;{' '}
+          under <span className="text-highlight">&ldquo;Secret keys&rdquo;</span>, click the copy icon next to the{' '}
+          <span className="text-highlight">default</span> key. Stored server-side only, never exposed to the browser.
         </p>
         <input
           id="sb-secret"
@@ -205,17 +205,17 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
             updateData({ supabaseSecretKey: e.target.value.trim(), supabaseVerified: false });
             setError('');
           }}
-          className="w-full rounded border border-neutral-800 bg-black px-3 py-2 text-sm text-white placeholder:text-neutral-700 focus:border-neutral-600 focus:outline-none"
+          className="w-full rounded border border-border bg-code px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
         />
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center justify-between border-t border-neutral-800 pt-4">
+      <div className="flex items-center justify-between border-t border-border pt-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-neutral-500 hover:text-white"
+            className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" /> Back
           </button>
@@ -224,8 +224,8 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
             disabled={!canTest || testing}
             className={`rounded px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               data.supabaseVerified
-                ? 'border border-emerald-900 bg-emerald-950/50 text-emerald-400'
-                : 'bg-white text-black hover:bg-neutral-200'
+                ? 'border border-success/50 bg-success/10 text-success'
+                : 'bg-foreground text-background hover:bg-foreground/90'
             }`}
           >
             {testing ? (
@@ -245,7 +245,7 @@ export function SupabaseStep({ data, updateData, onNext, onBack }: SupabaseStepP
         <button
           onClick={onNext}
           disabled={!data.supabaseVerified}
-          className="rounded bg-white px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Continue
         </button>

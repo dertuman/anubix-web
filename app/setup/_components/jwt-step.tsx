@@ -67,32 +67,32 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-white">Connect Clerk &amp; Supabase</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h2 className="text-lg font-medium text-foreground">Connect Clerk &amp; Supabase</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Two things: enable the Clerk integration and create the database table.
         </p>
       </div>
 
       {/* Clerk ↔ Supabase integration */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-neutral-300">1. Enable Clerk in Supabase</h3>
-        <div className="rounded border border-neutral-800 bg-neutral-900/50 p-4">
-          <ol className="list-inside list-decimal space-y-1.5 text-sm text-neutral-400">
+        <h3 className="text-sm font-medium text-foreground">1. Enable Clerk in Supabase</h3>
+        <div className="rounded border border-border bg-muted p-4">
+          <ol className="list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
             <li>
               Open{' '}
               <a
                 href="https://dashboard.clerk.com/setup/supabase"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 Clerk&rsquo;s Supabase setup page
                 <ExternalLink className="size-3" />
               </a>{' '}
-              and click <span className="text-white">Activate Supabase integration</span>
+              and click <span className="text-highlight font-medium">Activate Supabase integration</span>
             </li>
             <li>
-              Copy the <span className="text-white">Clerk domain</span> shown after activation
+              Copy the <span className="text-highlight font-medium">Clerk domain</span> shown after activation
             </li>
             <li>
               In Supabase, go to{' '}
@@ -100,20 +100,20 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
                 href={supabaseAuthUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 Authentication &rarr; Sign In / Providers
                 <ExternalLink className="size-3" />
               </a>{' '}
-              &rarr; click the <span className="text-white">Third-Party Auth</span> tab
+              &rarr; click the <span className="text-highlight font-medium">Third-Party Auth</span> tab
             </li>
             <li>
-              Click <span className="text-white">Add provider</span> &rarr; select{' '}
-              <span className="text-white">Clerk</span> from the dropdown
+              Click <span className="text-highlight font-medium">Add provider</span> &rarr; select{' '}
+              <span className="text-highlight font-medium">Clerk</span> from the dropdown
             </li>
             <li>
               Paste the Clerk domain &rarr; click{' '}
-              <span className="text-white">Create connection</span>
+              <span className="text-highlight font-medium">Create connection</span>
             </li>
           </ol>
         </div>
@@ -121,16 +121,16 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
 
       {/* Database SQL */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-neutral-300">2. Database Table</h3>
-        <div className="rounded border border-neutral-800 bg-neutral-900/50 p-4">
-          <ol className="list-inside list-decimal space-y-1.5 text-sm text-neutral-400">
+        <h3 className="text-sm font-medium text-foreground">2. Database Table</h3>
+        <div className="rounded border border-border bg-muted p-4">
+          <ol className="list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
             <li>
               Open the{' '}
               <a
                 href={sqlEditorUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 SQL Editor
                 <ExternalLink className="size-3" />
@@ -139,17 +139,17 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
             </li>
             <li>
               Copy the SQL below and paste it into the editor, then click{' '}
-              <span className="text-white">Run</span>
+              <span className="text-highlight font-medium">Run</span>
             </li>
             <li>
               You should see{' '}
-              <span className="text-white">&ldquo;Success. No rows returned&rdquo;</span>{' '}
+              <span className="text-highlight font-medium">&ldquo;Success. No rows returned&rdquo;</span>{' '}
               &mdash; that means the table was created
             </li>
             <li>
               To confirm, go to{' '}
-              <span className="text-white">Table Editor</span> in the sidebar &mdash;
-              you should see a <span className="text-white">profiles</span> table
+              <span className="text-highlight font-medium">Table Editor</span> in the sidebar &mdash;
+              you should see a <span className="text-highlight font-medium">profiles</span> table
               (it will be empty, that&rsquo;s expected)
             </li>
           </ol>
@@ -158,7 +158,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
         <div className="relative">
           <button
             onClick={copySql}
-            className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-white"
+            className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded bg-muted px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             {copied ? (
               <>
@@ -170,19 +170,19 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
               </>
             )}
           </button>
-          <pre className="max-h-48 overflow-auto rounded border border-neutral-800 bg-black p-4 text-xs leading-relaxed text-neutral-400">
+          <pre className="max-h-48 overflow-auto rounded border border-border bg-code p-4 text-xs leading-relaxed text-code-foreground">
             <code>{PROFILES_TABLE_SQL}</code>
           </pre>
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center justify-between border-t border-neutral-800 pt-4">
+      <div className="flex items-center justify-between border-t border-border pt-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-neutral-500 hover:text-white"
+            className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" /> Back
           </button>
@@ -191,8 +191,8 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
             disabled={verifying}
             className={`rounded px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               data.databaseVerified
-                ? 'border border-emerald-900 bg-emerald-950/50 text-emerald-400'
-                : 'bg-white text-black hover:bg-neutral-200'
+                ? 'border border-success/50 bg-success/10 text-success'
+                : 'bg-foreground text-background hover:bg-foreground/90'
             }`}
           >
             {verifying ? (
@@ -212,7 +212,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
         <button
           onClick={onNext}
           disabled={!data.databaseVerified}
-          className="rounded bg-white px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Continue
         </button>

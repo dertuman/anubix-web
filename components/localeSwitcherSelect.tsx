@@ -29,7 +29,7 @@ export default function LocaleSwitcherSelect({
     <div className="relative">
       <p className="sr-only">{label}</p>
       <Select value={defaultValue} onValueChange={onLocaleSelect}>
-        <SelectTrigger className="inline-flex items-center rounded-md border px-2 py-1 hover:bg-slate-500 hover:text-black">
+        <SelectTrigger className="inline-flex items-center rounded-md border px-2 py-1 hover:bg-accent hover:text-accent-foreground">
           <span className={`fi fi-${getCountryCode(defaultValue)} mr-2`} />
         </SelectTrigger>
         <SelectContent className="rounded-md border shadow-lg">

@@ -1,4 +1,4 @@
-import { CalendarIcon } from '@radix-ui/react-icons';
+import { Calendar } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 import { cn } from '@/lib/utils';
@@ -33,7 +33,7 @@ const FancyDate: React.FC<FancyDateProps> = ({
 
   return (
     <span className={cn('flex items-center space-x-2 text-sm', className)}>
-      {showIcon && <CalendarIcon className="size-5 text-[#e45165]" />}
+      {showIcon && <Calendar className="size-5 text-[#e45165]" />}
       <span className={fontWeight}>{formattedDate}</span>
     </span>
   );

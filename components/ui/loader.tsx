@@ -1,5 +1,5 @@
 import React from 'react';
-import { Slot } from '@radix-ui/react-slot';
+import { Slot as SlotPrimitive } from 'radix-ui';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader as LucideLoader } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export interface LoaderProps
 
 const Loader = React.forwardRef<HTMLDivElement, LoaderProps>(
   ({ className, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'div';
+    const Comp = asChild ? SlotPrimitive.Slot : 'div';
     return (
       <Comp
         className={cn(loaderVariants({ size, className }), 'animate-spin')}

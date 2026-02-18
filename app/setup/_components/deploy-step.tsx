@@ -403,14 +403,14 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
   if (allDone) {
     return (
       <div className="space-y-6 py-8 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-emerald-900 bg-emerald-950/50">
-          <Check className="size-6 text-emerald-400" />
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-success/50 bg-success/10">
+          <Check className="size-6 text-success" />
         </div>
         <div>
-          <h2 className="text-lg font-medium text-white">
+          <h2 className="text-lg font-medium text-foreground">
             You&rsquo;re live!
           </h2>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Your code is on GitHub and Vercel is building your site.
             It&rsquo;ll be ready in about 60 seconds.
           </p>
@@ -421,7 +421,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
               href={repoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-white underline underline-offset-4 hover:text-neutral-300"
+              className="inline-flex items-center gap-1.5 text-sm text-foreground underline underline-offset-4 hover:text-muted-foreground"
             >
               View on GitHub
               <ExternalLink className="size-3" />
@@ -432,7 +432,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
               href={deployUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-white underline underline-offset-4 hover:text-neutral-300"
+              className="inline-flex items-center gap-1.5 text-sm text-foreground underline underline-offset-4 hover:text-muted-foreground"
             >
               View deployment
               <ExternalLink className="size-3" />
@@ -447,15 +447,15 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-white">Deploy</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h2 className="text-lg font-medium text-foreground">Deploy</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Push to GitHub and deploy to Vercel &mdash; all in one click.
         </p>
       </div>
 
       {/* Summary */}
-      <div className="rounded border border-neutral-800 bg-neutral-900/50 p-4">
-        <p className="text-xs font-medium uppercase tracking-wider text-neutral-600">
+      <div className="rounded border border-border bg-muted p-4">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Ready
         </p>
         <div className="mt-3 space-y-2 text-sm">
@@ -465,9 +465,9 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
             { label: 'Database', ok: data.databaseVerified },
           ].map(({ label, ok }) => (
             <div key={label} className="flex items-center justify-between">
-              <span className="text-neutral-400">{label}</span>
+              <span className="text-muted-foreground">{label}</span>
               {ok && (
-                <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+                <span className="flex items-center gap-1.5 text-xs text-success">
                   <Check className="size-3" /> Done
                 </span>
               )}
@@ -478,20 +478,20 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
 
       {/* ───── GitHub section ───── */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-neutral-300">1. GitHub</h3>
-        <p className="text-xs text-neutral-600">
+        <h3 className="text-sm font-medium text-foreground">1. GitHub</h3>
+        <p className="text-xs text-muted-foreground">
           GitHub stores your code. We&rsquo;ll create a private repository for
           you.
         </p>
-        <div className="rounded border border-neutral-800 bg-neutral-900/50 p-4">
-          <ol className="list-inside list-decimal space-y-2.5 text-sm text-neutral-400">
+        <div className="rounded border border-border bg-muted p-4">
+          <ol className="list-inside list-decimal space-y-2.5 text-sm text-muted-foreground">
             <li>
               Create a free account at{' '}
               <a
                 href="https://github.com/signup"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 github.com/signup
                 <ExternalLink className="size-3" />
@@ -504,7 +504,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
                 href="https://github.com/settings/tokens?type=beta"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 Fine-grained tokens
                 <ExternalLink className="size-3" />
@@ -513,58 +513,58 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
             </li>
             <li>
               Click the green{' '}
-              <span className="text-white">Generate new token</span> button
+              <span className="text-highlight font-medium">Generate new token</span> button
             </li>
             <li>
               In the{' '}
-              <span className="text-white">Token name</span> field, type
+              <span className="text-highlight font-medium">Token name</span> field, type
               anything (e.g.{' '}
-              <span className="text-neutral-300">&ldquo;My site&rdquo;</span>)
+              <span className="text-foreground">&ldquo;My site&rdquo;</span>)
             </li>
             <li>
-              Leave <span className="text-white">Expiration</span> as-is (30
+              Leave <span className="text-highlight font-medium">Expiration</span> as-is (30
               days is fine)
             </li>
             <li>
               Scroll down to{' '}
-              <span className="text-white">Repository access</span> &mdash; it
+              <span className="text-highlight font-medium">Repository access</span> &mdash; it
               defaults to{' '}
-              <span className="text-neutral-500">Public repositories</span>.{' '}
-              <span className="text-white">
+              <span className="text-muted-foreground">Public repositories</span>.{' '}
+              <span className="text-highlight font-medium">
                 Change it to &ldquo;All repositories&rdquo;
               </span>
             </li>
             <li>
               Scroll down to{' '}
-              <span className="text-white">Permissions</span>. You need to add
+              <span className="text-highlight font-medium">Permissions</span>. You need to add
               two permissions &mdash; make sure you add{' '}
-              <span className="text-white">both</span>:
-              <ul className="ml-5 mt-2 list-none space-y-2 text-neutral-400">
-                <li className="rounded border border-neutral-800 bg-black/50 px-3 py-2">
-                  <span className="text-neutral-500">①</span> Click{' '}
-                  <span className="text-white">+ Add permissions</span>, find{' '}
-                  <span className="text-white">Administration</span>, set it
-                  to <span className="text-white">Read and write</span>
+              <span className="text-highlight font-medium">both</span>:
+              <ul className="ml-5 mt-2 list-none space-y-2 text-muted-foreground">
+                <li className="rounded border border-border bg-muted/50 px-3 py-2">
+                  <span className="text-muted-foreground">①</span> Click{' '}
+                  <span className="text-highlight font-medium">+ Add permissions</span>, find{' '}
+                  <span className="text-highlight font-medium">Administration</span>, set it
+                  to <span className="text-highlight font-medium">Read and write</span>
                 </li>
-                <li className="rounded border border-neutral-800 bg-black/50 px-3 py-2">
-                  <span className="text-neutral-500">②</span> Click{' '}
-                  <span className="text-white">+ Add permissions</span> again,
-                  find <span className="text-white">Contents</span>, set it to{' '}
-                  <span className="text-white">Read and write</span>
+                <li className="rounded border border-border bg-muted/50 px-3 py-2">
+                  <span className="text-muted-foreground">②</span> Click{' '}
+                  <span className="text-highlight font-medium">+ Add permissions</span> again,
+                  find <span className="text-highlight font-medium">Contents</span>, set it to{' '}
+                  <span className="text-highlight font-medium">Read and write</span>
                 </li>
               </ul>
-              <p className="ml-5 mt-1.5 text-xs text-yellow-500/80">
+              <p className="ml-5 mt-1.5 text-xs text-warning">
                 You should see both Administration and Contents listed under
                 Repositories before continuing.
               </p>
             </li>
             <li>
               Scroll to the bottom and click the green{' '}
-              <span className="text-white">Generate token</span> button
+              <span className="text-highlight font-medium">Generate token</span> button
             </li>
             <li>
               Copy the token (starts with{' '}
-              <span className="font-mono text-neutral-300">github_pat_</span>)
+              <span className="font-mono text-foreground">github_pat_</span>)
               and paste it below
             </li>
           </ol>
@@ -575,7 +575,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
         <div className="space-y-1.5">
           <label
             htmlFor="gh-token"
-            className="text-sm font-medium text-neutral-300"
+            className="text-sm font-medium text-foreground"
           >
             GitHub Token
           </label>
@@ -589,14 +589,14 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
               setError('');
             }}
             disabled={isRunning}
-            className="w-full rounded border border-neutral-800 bg-black px-3 py-2 text-sm text-white placeholder:text-neutral-700 focus:border-neutral-600 focus:outline-none disabled:opacity-50"
+            className="w-full rounded border border-border bg-code px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none disabled:opacity-50"
           />
         </div>
 
         <div className="space-y-1.5">
           <label
             htmlFor="repo-name"
-            className="text-sm font-medium text-neutral-300"
+            className="text-sm font-medium text-foreground"
           >
             Repository Name
           </label>
@@ -615,39 +615,39 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
               setError('');
             }}
             disabled={isRunning}
-            className={`w-full rounded border bg-black px-3 py-2 text-sm text-white placeholder:text-neutral-700 focus:outline-none disabled:opacity-50 ${
+            className={`w-full rounded border bg-code px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 ${
               repoCheck === 'taken'
-                ? 'border-red-800 focus:border-red-600'
+                ? 'border-destructive focus:border-destructive'
                 : repoCheck === 'available'
-                  ? 'border-emerald-800 focus:border-emerald-600'
-                  : 'border-neutral-800 focus:border-neutral-600'
+                  ? 'border-success focus:border-success'
+                  : 'border-border focus:border-ring'
             }`}
           />
           <div className="flex items-center gap-1.5">
             {repoCheck === 'checking' && (
-              <span className="flex items-center gap-1 text-xs text-neutral-500">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Loader2 className="size-3 animate-spin" /> Checking
                 availability...
               </span>
             )}
             {repoCheck === 'available' && (
-              <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <span className="flex items-center gap-1 text-xs text-success">
                 <Check className="size-3" /> Name is available
               </span>
             )}
             {repoCheck === 'taken' && (
-              <span className="flex items-center gap-1 text-xs text-red-400">
+              <span className="flex items-center gap-1 text-xs text-destructive">
                 <AlertCircle className="size-3" /> Name already taken &mdash;
                 choose a different name
               </span>
             )}
             {repoCheck === 'idle' && githubToken.length < 10 && (
-              <span className="text-xs text-neutral-600">
+              <span className="text-xs text-muted-foreground">
                 Paste your GitHub token first to check name availability
               </span>
             )}
             {repoCheck === 'idle' && githubToken.length >= 10 && (
-              <span className="text-xs text-neutral-600">
+              <span className="text-xs text-muted-foreground">
                 A new private repository will be created on your GitHub
                 account.
               </span>
@@ -658,25 +658,25 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
 
       {/* ───── Vercel section ───── */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-neutral-300">2. Vercel</h3>
-        <p className="text-xs text-neutral-600">
+        <h3 className="text-sm font-medium text-foreground">2. Vercel</h3>
+        <p className="text-xs text-muted-foreground">
           Vercel hosts your site and makes it available at a public URL.
         </p>
-        <div className="rounded border border-neutral-800 bg-neutral-900/50 p-4">
-          <ol className="list-inside list-decimal space-y-2.5 text-sm text-neutral-400">
+        <div className="rounded border border-border bg-muted p-4">
+          <ol className="list-inside list-decimal space-y-2.5 text-sm text-muted-foreground">
             <li>
               Create a free account at{' '}
               <a
                 href="https://vercel.com/signup"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 vercel.com/signup
                 <ExternalLink className="size-3" />
               </a>{' '}
               (skip if you already have one) &mdash;{' '}
-              <span className="text-white">sign up with GitHub</span> so your
+              <span className="text-highlight font-medium">sign up with GitHub</span> so your
               accounts are linked
             </li>
             <li>
@@ -685,7 +685,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
                 href="https://vercel.com/account/tokens"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white underline underline-offset-4 hover:text-neutral-300"
+                className="inline-flex items-center gap-1 text-foreground underline underline-offset-4 hover:text-muted-foreground"
               >
                 Settings &rarr; Tokens
                 <ExternalLink className="size-3" />
@@ -693,20 +693,20 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
               (this link takes you directly there)
             </li>
             <li>
-              Under <span className="text-white">TOKEN NAME</span>, type
+              Under <span className="text-highlight font-medium">TOKEN NAME</span>, type
               anything (e.g.{' '}
-              <span className="text-neutral-300">&ldquo;My site&rdquo;</span>)
+              <span className="text-foreground">&ldquo;My site&rdquo;</span>)
             </li>
             <li>
-              Leave <span className="text-white">SCOPE</span> as your personal
+              Leave <span className="text-highlight font-medium">SCOPE</span> as your personal
               account (the default)
             </li>
             <li>
-              Set <span className="text-white">EXPIRATION</span> to{' '}
-              <span className="text-white">No Expiration</span>
+              Set <span className="text-highlight font-medium">EXPIRATION</span> to{' '}
+              <span className="text-highlight font-medium">No Expiration</span>
             </li>
             <li>
-              Click <span className="text-white">Create Token</span> &rarr;
+              Click <span className="text-highlight font-medium">Create Token</span> &rarr;
               copy the token and paste it below
             </li>
           </ol>
@@ -717,7 +717,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
         <div className="space-y-1.5">
           <label
             htmlFor="v-token"
-            className="text-sm font-medium text-neutral-300"
+            className="text-sm font-medium text-foreground"
           >
             Vercel Token
           </label>
@@ -731,36 +731,36 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
               setError('');
             }}
             disabled={isRunning}
-            className="w-full rounded border border-neutral-800 bg-black px-3 py-2 text-sm text-white placeholder:text-neutral-700 focus:border-neutral-600 focus:outline-none disabled:opacity-50"
+            className="w-full rounded border border-border bg-code px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none disabled:opacity-50"
           />
         </div>
       </div>
 
       {/* ───── Progress ───── */}
       {(githubStatus !== 'idle' || vercelStatus !== 'idle') && (
-        <div className="space-y-3 rounded border border-neutral-800 bg-neutral-900/50 p-4">
+        <div className="space-y-3 rounded border border-border bg-muted p-4">
           {/* GitHub progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Push to GitHub</span>
+              <span className="text-muted-foreground">Push to GitHub</span>
               <StepIndicator status={githubStatus} />
             </div>
 
             {githubStatus === 'running' && (
               <div className="space-y-1.5">
                 {/* Progress bar */}
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-white transition-all duration-300 ease-out"
+                    className="h-full rounded-full bg-foreground transition-all duration-300 ease-out"
                     style={{ width: `${ghProgress}%` }}
                   />
                 </div>
                 {/* Label + counter */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-neutral-500">
+                  <span className="text-xs text-muted-foreground">
                     {ghProgressLabel}
                   </span>
-                  <span className="text-xs tabular-nums text-neutral-600">
+                  <span className="text-xs tabular-nums text-muted-foreground">
                     {ghFileInfo && ghFileInfo}
                     {!ghFileInfo && ghProgress > 0 && `${ghProgress}%`}
                   </span>
@@ -771,19 +771,19 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
 
           {/* Vercel progress */}
           <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-400">Deploy to Vercel</span>
+            <span className="text-muted-foreground">Deploy to Vercel</span>
             <StepIndicator status={vercelStatus} />
           </div>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center justify-between border-t border-neutral-800 pt-4">
+      <div className="flex items-center justify-between border-t border-border pt-4">
         <button
           onClick={onBack}
           disabled={isRunning}
-          className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-neutral-500 hover:text-white disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-40"
         >
           <ArrowLeft className="size-3.5" /> Back
         </button>
@@ -791,7 +791,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
         <button
           onClick={handleDeploy}
           disabled={!canDeploy || isRunning}
-          className="rounded bg-white px-5 py-2 text-sm font-medium text-black hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded bg-foreground px-5 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isRunning ? (
             <span className="flex items-center gap-2">
@@ -812,19 +812,19 @@ function StepIndicator({ status }: { status: StepStatus }) {
   switch (status) {
     case 'running':
       return (
-        <span className="flex items-center gap-1.5 text-xs text-neutral-400">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="size-3 animate-spin" /> Working
         </span>
       );
     case 'done':
       return (
-        <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+        <span className="flex items-center gap-1.5 text-xs text-success">
           <Check className="size-3" /> Done
         </span>
       );
     case 'error':
-      return <span className="text-xs text-red-400">Failed</span>;
+      return <span className="text-xs text-destructive">Failed</span>;
     default:
-      return <span className="text-xs text-neutral-600">Pending</span>;
+      return <span className="text-xs text-muted-foreground">Pending</span>;
   }
 }

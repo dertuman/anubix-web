@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useChangeLocale, useScopedI18n } from '@/locales/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
+import { ChevronsUpDown, Check } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/nextjs';
 import { useForm } from 'react-hook-form';
@@ -133,7 +133,7 @@ export function AccountForm() {
                             (language) => language.value === field.value
                           )?.label
                         : t('selectLanguage')}
-                      <CaretSortIcon className="ml-2 size-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -152,7 +152,7 @@ export function AccountForm() {
                               setOpen(false);
                             }}
                           >
-                            <CheckIcon
+                            <Check
                               className={cn(
                                 'mr-2 size-4',
                                 language.value === field.value
