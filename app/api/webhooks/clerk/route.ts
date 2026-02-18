@@ -99,16 +99,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({
         is_deleted: true,
         deleted_at: new Date().toISOString(),
       })
-      .eq('id', id)
-      .select();
+      .eq('id', id);
 
-    console.log('[webhook] user.deleted update result:', { id, data, error });
+    console.log('[webhook] user.deleted result:', { id, error });
 
     if (error) {
       console.error('Error soft-deleting profile:', error);
@@ -116,10 +115,6 @@ export async function POST(req: Request) {
         { error: 'Failed to delete profile' },
         { status: 500 }
       );
-    }
-
-    if (!data || data.length === 0) {
-      console.warn('[webhook] user.deleted: no profile found for id:', id);
     }
   }
 

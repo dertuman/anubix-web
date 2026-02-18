@@ -134,7 +134,7 @@ export default {
     errorUpdatingLanguage: 'Error updating language',
   },
   footer: {
-    companyDescription: 'Build apps by talking. No code required.',
+    companyDescription: 'Build from your pocket. Without the lock-in.',
     product: 'Product',
     features: 'Features',
     howItWorks: 'How it works',
@@ -191,10 +191,10 @@ export default {
   home: {
     hero: {
       badge: 'The future of app building',
-      title: 'Build apps by',
-      titleHighlight: 'talking.',
+      title: 'Build from your pocket.',
+      titleHighlight: 'Without the lock-in.',
       subtitle:
-        'Describe what you want. Anubix builds it, deploys it, and hands you the keys. No code, no terminal, no experience needed.',
+        'Describe what you want. Anubix builds it, deploys it to your Vercel, your Supabase, your GitHub — and hands you the keys.',
       cta: 'Start building',
       ctaSecondary: 'See how it works',
     },
