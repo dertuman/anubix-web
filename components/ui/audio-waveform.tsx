@@ -30,7 +30,7 @@ export function AudioWaveform({
     if (!ctx) return;
 
     // Sample amplitude every ~30ms
-    if (now - lastSampleRef.current >= 30) {
+    if (now - lastSampleRef.current >= 15) {
       lastSampleRef.current = now;
       const buf = new Uint8Array(analyser.fftSize);
       analyser.getByteTimeDomainData(buf);
@@ -57,7 +57,7 @@ export function AudioWaveform({
 
     const history = historyRef.current;
     const gap = 1;
-    const barW = Math.max(1.5, (w - gap * (barCount - 1)) / barCount);
+    const barW = Math.max(1, (w - gap * (barCount - 1)) / barCount);
     const cy = h / 2;
     const count = Math.min(history.length, barCount);
     const start = history.length - count;
