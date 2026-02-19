@@ -134,7 +134,7 @@ export default {
     errorUpdatingLanguage: 'Error updating language',
   },
   footer: {
-    companyDescription: 'Build from your pocket. Without the lock-in.',
+    companyDescription: 'Ship real apps from your phone. No code. No lock-in.',
     product: 'Product',
     features: 'Features',
     howItWorks: 'How it works',
@@ -190,47 +190,47 @@ export default {
   },
   home: {
     hero: {
-      badge: 'The future of app building',
-      title: 'Build from your pocket.',
-      titleHighlight: 'Without the lock-in.',
+      badge: 'Now in early access',
+      title: 'Ship real apps from your phone.',
+      titleHighlight: 'No code. No laptop. No lock-in.',
       subtitle:
-        'Bring your own API keys for Claude, GPT, and Gemini. Chat with the best AI models and run Claude Code in the cloud — from any device. Your keys are encrypted. The code is yours.',
+        'Anubix puts a real coding agent in your pocket. Describe what you want, watch it get built, and deploy — all from your phone. Powered by Claude Code, GPT, and Gemini with your own API keys.',
       cta: 'Start building',
       ctaSecondary: 'See how it works',
       trustLine:
-        'No credit card required. Keys encrypted end-to-end. You own everything you build.',
+        'Free to start. Keys encrypted end-to-end. You own everything you build.',
     },
     logos: {
-      title: 'Powered by the tools you already use',
+      title: 'Built on tools developers already trust',
     },
     problem: {
       label: 'The problem',
-      title: "You're juggling too much.",
-      body: 'Three apps. Three API keys. Three conversation histories. Context lost every time you switch. And none of them let you code from your phone.',
+      title: "Building software shouldn't require a desk.",
+      body: "You have ideas everywhere — on walks, on the bus, in the middle of the night. But to act on them, you need a laptop, a terminal, and three different apps open. By the time you sit down, the idea's gone cold.",
       body2:
-        'Bolt and Lovable make API calls — they send prompts and get text back. That works until your project gets complex. Then you need a real coding agent, not a chatbot with a deploy button.',
+        'Tools like Bolt and Lovable promise to fix this. But they just make API calls — they send prompts and get text back. That works for a landing page. It falls apart the moment your project gets real. You need an actual coding agent, not a chatbot with a deploy button.',
       body3:
-        "And if you want to use Claude for reasoning, Gemini for research, and GPT for a quick answer? That's three apps, three histories, zero continuity.",
+        "And if you want Claude for reasoning, Gemini for research, and GPT for a quick answer? That's three subscriptions, three conversation histories, and zero continuity between them.",
       callout:
-        "You shouldn't need a laptop open to build, or three apps open to think.",
+        "Your best ideas don't wait for you to open a laptop. Your tools shouldn't either.",
     },
     howItWorks: {
       label: 'How it works',
-      title: 'Three things. One app.',
+      title: 'One app. Three superpowers.',
       step1: {
-        title: 'Chat with the best AI models',
+        title: 'Build from anywhere',
         description:
-          'Bring your own keys for Claude, GPT, and Gemini. Switch mid-conversation. Your context stays. One interface, one history.',
+          'Phone, tablet, laptop — it doesn\'t matter. Start a build on the bus, review it at lunch, deploy from the couch. Your workspace lives in the cloud, always ready.',
       },
       step2: {
-        title: 'Build real apps',
+        title: 'A real coding agent, not an API wrapper',
         description:
-          'Describe what you want. Anubix spins up Claude Code in a cloud workspace and builds it — full-stack, deployed, yours. Not API calls pretending to code. An actual coding agent with terminal access.',
+          'Anubix runs Claude Code in a full cloud environment. Terminal access, file system, multi-file awareness, real debugging. This is the same agent developers use — now in your pocket.',
       },
       step3: {
-        title: 'Work from anywhere',
+        title: 'Every AI model in one chat',
         description:
-          'Phone, tablet, laptop. Start a build on the bus, review changes at your desk, deploy from the couch. Your workspace lives in the cloud, not on your machine.',
+          'Claude, GPT, and Gemini in a single conversation. Switch models mid-thread without losing context. Bring your own keys — one interface, one history.',
       },
     },
     screenshots: {
@@ -240,59 +240,59 @@ export default {
     },
     differentiator: {
       label: 'Under the hood',
-      title: 'Your keys. Your models. Our cloud.',
-      body: "You already have API keys for the best AI models. But right now you're switching between apps to use them.",
+      title: 'Not another AI toy. A real dev environment.',
+      body: "Most AI builders are wrappers around an API call. They send your prompt, get text back, and paste it into a preview. That's not building software — that's autocomplete with extra steps.",
       body2:
-        'Anubix brings them together. Chat with Claude, GPT, and Gemini in one conversation. Run Claude Code in a full cloud environment — same agent, same capabilities, but accessible from your phone, your tablet, anywhere.',
+        'Anubix runs Claude Code in a full cloud workspace — the same coding agent that professional developers use on their machines. Real terminal access. Multi-file awareness. Actual debugging. But instead of being locked to your laptop, it runs from anywhere.',
       body3:
-        'Real file system access. Multi-file awareness. Actual debugging. Not API calls pretending to code.',
+        'Combine that with multi-model chat — Claude, GPT, and Gemini in one thread — and you have the most capable AI development environment that fits in your pocket.',
       securityCallout:
-        'Your keys are encrypted and never visible — not to us, not to anyone. Stored encrypted, used only to call models on your behalf, never logged or exposed. Delete them anytime.',
+        'Your API keys are encrypted end-to-end. We never see them, never log them, never store them in plain text. Used only to call models on your behalf. Delete them anytime.',
     },
     features: {
       label: 'Features',
       title: "Everything you need, nothing you don't.",
       subtitle: '',
+      mobile: {
+        title: 'Mobile-first',
+        description:
+          'Not a shrunken desktop app. Anubix was designed for your phone from day one. Build, review, and deploy without ever opening a laptop.',
+      },
       multiModel: {
         title: 'Multi-model chat',
         description:
-          'Claude, GPT, and Gemini in one interface. Bring your own keys, switch between models, keep your full conversation history.',
-      },
-      encrypted: {
-        title: 'Encrypted by default',
-        description:
-          "Your API keys are encrypted end-to-end. We never see them, never log them, never store them in plain text. You're always in control.",
+          'Claude, GPT, and Gemini in one interface. Switch mid-conversation, keep your full history. One place for all your AI thinking.',
       },
       livePreview: {
         title: 'Live preview',
         description:
-          'See your app update in real time as Claude Code writes the code. No waiting, no refreshing.',
+          'Watch your app update in real time as Claude Code writes the code. No waiting, no refreshing — just results.',
       },
       oneClickDeploy: {
         title: 'One-click deploy',
         description:
-          'Vercel, GitHub, Supabase — connected and deployed automatically. Your accounts, your infrastructure.',
+          'Vercel, GitHub, Supabase — connected and deployed with one tap. Your accounts, your infrastructure, zero config.',
+      },
+      encrypted: {
+        title: 'Encrypted by default',
+        description:
+          'API keys encrypted end-to-end. We never see them, never log them. You control everything.',
       },
       youOwnEverything: {
-        title: 'You own everything',
+        title: 'Zero lock-in',
         description:
-          'Your code. Your repos. Your database. Nothing locked inside Anubix. Leave anytime with everything you built.',
+          'Your code lives on your GitHub. Your database runs on your Supabase. Walk away anytime with everything you built. Nothing is trapped inside Anubix.',
       },
       patterns: {
         title: 'Patterns library',
         description:
-          'Pre-built, production-ready code patterns. Drag in infinite scroll, vector search, auth flows, payments — entire features drop into your app in seconds.',
-      },
-      mobile: {
-        title: 'Works on mobile',
-        description:
-          'Not a shrunken desktop app. Built for your phone from day one.',
+          'Drop in production-ready features — auth flows, payments, infinite scroll, vector search — and ship in seconds instead of hours.',
       },
     },
     socialProof: {
       label: 'Built different',
       title: 'This app built itself.',
-      body: "Anubix was built using Anubix. The product you're looking at was coded, tested, and deployed through the same tool you're about to use.",
+      body: "You're looking at the proof. Anubix was built, tested, and deployed using Anubix. Every feature on this page was coded by the same tool you're about to use.",
       quote: 'Turned a web app into a phone app in 2 prompts.',
       quoteAuthor: 'Fionn, Co-founder',
     },
@@ -300,7 +300,7 @@ export default {
       label: 'Coming soon',
       title: 'Patterns. Drop in. Ship faster.',
       subtitle:
-        'Stop rebuilding the same features from scratch. Patterns are production-ready code blocks you drag into any project — infinite scroll, vector search, auth flows, payments, and more. One tap to supercharge your app.',
+        'Stop rebuilding the same features from scratch. Patterns are production-ready code blocks you drop into any project. Auth, payments, search, real-time — one tap to add.',
       item1: {
         title: 'Infinite scroll + filtering',
         description:
@@ -336,34 +336,34 @@ export default {
     },
     pricing: {
       label: 'Pricing',
-      title: 'Bring your own keys. Start for free.',
+      title: 'Your keys. Our cloud. Start free.',
       description:
-        'Connect your API keys for Claude, GPT, or Gemini. Your keys, encrypted and secure. We provide the cloud workspace, the multi-model chat, and the coding environment.',
+        'Bring your own API keys for Claude, GPT, and Gemini. We provide the cloud workspace, the multi-model chat, and a real coding agent — accessible from any device.',
       callout:
-        'Stop switching between ChatGPT, Claude, and Gemini. One app. Your keys. Done.',
+        'One app instead of three. Your keys, encrypted and secure. The code is always yours.',
       cta: 'Get started for free',
     },
     founders: {
       label: 'Meet the founders',
       title: 'The people behind Anubix.',
       subtitle:
-        'Two builders who believe everyone should be able to create software — no matter their background.',
+        'Two builders who think software creation should be as natural as having a conversation.',
       alex: {
         name: 'Alex',
         role: 'Co-Founder & Engineering',
-        bio: 'The architect behind Anubix. Alex designed and built the platform from the ground up — from infrastructure to the AI pipeline. Happiest when deep in code and solving hard problems.',
+        bio: 'The architect behind Anubix. Alex designed and built the platform from the ground up — infrastructure, AI pipeline, and everything in between. Happiest when solving hard problems in code.',
       },
       fionn: {
         name: 'Fionn',
         role: 'Co-Founder & Growth',
-        bio: 'The voice of Anubix. Fionn drives product strategy, partnerships, and making sure the world knows what Anubix can do. Focused on turning a great product into a great business.',
+        bio: 'The voice of Anubix. Fionn drives product strategy, partnerships, and getting Anubix into the hands of builders everywhere. Focused on turning a great product into a great business.',
       },
     },
     cta: {
-      title: 'Stop tab-switching. Start building.',
+      title: 'Your next app is one conversation away.',
       subtitle:
-        'One app. The best models. Real code. Any device. Fully encrypted.',
-      button: 'Get started for free',
+        'Real coding agent. Best AI models. Any device. Fully encrypted. Zero lock-in.',
+      button: 'Start building for free',
       trustLine:
         'No credit card. No lock-in. Keys encrypted end-to-end. You own your code.',
     },
