@@ -19,7 +19,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--primary-muted),transparent_50%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,var(--primary-muted),transparent_40%)] opacity-50" />
 
-      <div className="relative container mx-auto flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4 py-20 text-center md:py-32">
+      <div className="relative container mx-auto flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4 py-12 text-center md:py-16">
         {/* Welcome back */}
         {user?.fullName && (
           <p className="text-muted-foreground mb-4 text-sm">

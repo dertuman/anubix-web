@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useScopedI18n } from '@/locales/client';
 import {
   EllipsisVertical,
@@ -236,6 +236,29 @@ export const CodeSidebar = memo(function CodeSidebar({
   const [repoSearch, setRepoSearch] = useState('');
   const [basePath, setBasePath] = useState<string | null>(null);
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const nameManuallyEdited = useRef(false);
+
+  /** Turn a folder name like "anubix-web" into "Anubix Web" */
+  const prettifyRepoName = useCallback(
+    (path: string) =>
+      (path.split(/[\\/]/).pop() || 'Session')
+        .split(/[-_]/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' '),
+    []
+  );
+
+  // Auto-fill session name whenever the selected repos change
+  useEffect(() => {
+    if (nameManuallyEdited.current) return;
+    if (selectedPaths.length === 0) {
+      setName('');
+    } else if (selectedPaths.length === 1) {
+      setName(prettifyRepoName(selectedPaths[0]));
+    } else {
+      setName(selectedPaths.map(prettifyRepoName).join(' + '));
+    }
+  }, [selectedPaths, prettifyRepoName]);
 
   const filteredRepos = useMemo(() => {
     if (!repoSearch.trim()) return availableRepos;
@@ -245,6 +268,7 @@ export const CodeSidebar = memo(function CodeSidebar({
 
   useEffect(() => {
     if (!newOpen) return;
+    nameManuallyEdited.current = false;
     setRecentPaths(getRecentRepoPaths());
     setRepoSearch('');
     if (!fetchRepos) return;
@@ -292,13 +316,14 @@ export const CodeSidebar = memo(function CodeSidebar({
     const autoName =
       name.trim() ||
       (selectedPaths.length === 1
-        ? selectedPaths[0].split(/[\\/]/).pop() || 'Session'
-        : selectedPaths.map((p) => p.split(/[\\/]/).pop()).join(' + '));
+        ? prettifyRepoName(selectedPaths[0])
+        : selectedPaths.map(prettifyRepoName).join(' + '));
     await onCreate(repoArg, autoName);
     setCreating(false);
     setSelectedPaths([]);
     setManualPath('');
     setName('');
+    nameManuallyEdited.current = false;
     setNewOpen(false);
   };
 
@@ -528,7 +553,10 @@ export const CodeSidebar = memo(function CodeSidebar({
                 <Input
                   id="session-name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    nameManuallyEdited.current = e.target.value.length > 0;
+                    setName(e.target.value);
+                  }}
                   placeholder={t('namePlaceholder')}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 />

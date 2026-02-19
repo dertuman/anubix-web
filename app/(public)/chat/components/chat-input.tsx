@@ -10,6 +10,7 @@ import {
 } from 'react';
 import {
   ArrowUp,
+  Key,
   Loader2,
   Mic,
   Paperclip,
@@ -22,6 +23,13 @@ import { getCategoryIcon } from '@/lib/ui-utils';
 import { cn } from '@/lib/utils';
 import { AudioWaveform } from '@/components/ui/audio-waveform';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 
@@ -40,20 +48,52 @@ interface ChatInputProps {
   files: FileAttachment[];
   onAddFiles: (_files: File[]) => void;
   onRemoveFile: (_id: string) => void;
+  hasProviders?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────
 
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
-  ({ onSend, onStop, isStreaming, disabled, files, onAddFiles, onRemoveFile }, ref) => {
+  ({ onSend, onStop, isStreaming, disabled, files, onAddFiles, onRemoveFile, hasProviders = true }, ref) => {
     const [value, setValue] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
+    const [showKeyDialog, setShowKeyDialog] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    /** If user has no provider keys, show the setup dialog instead of performing the action. */
+    const guardNoKeys = useCallback((): boolean => {
+      if (!hasProviders) {
+        setShowKeyDialog(true);
+        return true; // blocked
+      }
+      return false; // allowed
+    }, [hasProviders]);
+
+    const keyDialog = (
+      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="size-4" />
+              API Key Required
+            </DialogTitle>
+            <DialogDescription>
+              Add an API key to start chatting. Tap the <Key className="inline size-3.5 align-text-bottom" /> icon in the top-right to configure your OpenAI, Google AI, or Anthropic keys.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowKeyDialog(false)}>
+              Got it
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
 
     const imageFiles = files.filter((f) => f.category === 'image');
     const nonImageFiles = files.filter((f) => f.category !== 'image');
@@ -66,12 +106,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // ── Send ────────────────────────────────────────────────────
 
     const handleSend = useCallback(() => {
+      if (guardNoKeys()) return;
       const trimmed = value.trim();
       if ((!trimmed && files.length === 0) || disabled) return;
       onSend(trimmed, files.length > 0 ? files : undefined);
       setValue('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
-    }, [value, files, disabled, onSend]);
+    }, [value, files, disabled, onSend, guardNoKeys]);
 
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -104,6 +145,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // ── Voice recording ─────────────────────────────────────────
 
     const startRecording = async () => {
+      if (guardNoKeys()) return;
       try {
         audioChunksRef.current = [];
         if (!navigator.mediaDevices?.getUserMedia) {
@@ -259,6 +301,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               <ArrowUp className="size-4" />
             </Button>
           </div>
+          {keyDialog}
         </div>
       );
     }
@@ -272,6 +315,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Transcribing...</span>
           </div>
+          {keyDialog}
         </div>
       );
     }
@@ -303,7 +347,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           />
 
           <div className="absolute bottom-2 left-2">
-            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={disabled || isStreaming} className="size-8 rounded-lg text-muted-foreground hover:text-primary">
+            <Button variant="ghost" size="icon" onClick={() => { if (guardNoKeys()) return; fileInputRef.current?.click(); }} disabled={disabled || isStreaming} className="size-8 rounded-lg text-muted-foreground hover:text-primary">
               <Paperclip className="size-4" />
             </Button>
           </div>
@@ -324,6 +368,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             )}
           </div>
         </div>
+        {keyDialog}
       </div>
     );
   },

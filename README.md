@@ -215,6 +215,10 @@ We can create scripts to migrate users, under the scripts folder. This can be us
 npm run reset-users
 ```
 
+### To delete nul file
+
+del \\?\C:\Users\alex9\Documents\GitHub\anubix-web\nul
+
 ## Learn More
 
 To learn more, contact Alex T. Karslake

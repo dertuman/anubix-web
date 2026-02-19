@@ -183,6 +183,81 @@ export interface Database {
         };
         Relationships: [];
       };
+      cloud_machines: {
+        Row: {
+          id: string;
+          user_id: string;
+          fly_app_name: string;
+          fly_machine_id: string | null;
+          fly_volume_id: string | null;
+          fly_region: string;
+          bridge_url: string | null;
+          bridge_api_key_encrypted: string | null;
+          claude_mode: string;
+          claude_auth_json_encrypted: string | null;
+          anthropic_api_key_encrypted: string | null;
+          status: string;
+          error_message: string | null;
+          template_name: string | null;
+          git_repo_url: string | null;
+          vm_size: string;
+          memory_mb: number;
+          volume_size_gb: number;
+          last_health_check_at: string | null;
+          stopped_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          fly_app_name: string;
+          fly_machine_id?: string | null;
+          fly_volume_id?: string | null;
+          fly_region?: string;
+          bridge_url?: string | null;
+          bridge_api_key_encrypted?: string | null;
+          claude_mode?: string;
+          claude_auth_json_encrypted?: string | null;
+          anthropic_api_key_encrypted?: string | null;
+          status?: string;
+          error_message?: string | null;
+          template_name?: string | null;
+          git_repo_url?: string | null;
+          vm_size?: string;
+          memory_mb?: number;
+          volume_size_gb?: number;
+          last_health_check_at?: string | null;
+          stopped_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          fly_app_name?: string;
+          fly_machine_id?: string | null;
+          fly_volume_id?: string | null;
+          fly_region?: string;
+          bridge_url?: string | null;
+          bridge_api_key_encrypted?: string | null;
+          claude_mode?: string;
+          claude_auth_json_encrypted?: string | null;
+          anthropic_api_key_encrypted?: string | null;
+          status?: string;
+          error_message?: string | null;
+          template_name?: string | null;
+          git_repo_url?: string | null;
+          vm_size?: string;
+          memory_mb?: number;
+          volume_size_gb?: number;
+          last_health_check_at?: string | null;
+          stopped_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -191,7 +266,7 @@ export interface Database {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      machine_status: 'provisioning' | 'starting' | 'running' | 'stopping' | 'stopped' | 'destroying' | 'destroyed' | 'error';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -206,3 +281,8 @@ export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 export type BridgeConfig = Database['public']['Tables']['bridge_configs']['Row'];
 export type BridgeConfigInsert = Database['public']['Tables']['bridge_configs']['Insert'];
 export type BridgeConfigUpdate = Database['public']['Tables']['bridge_configs']['Update'];
+
+export type CloudMachine = Database['public']['Tables']['cloud_machines']['Row'];
+export type CloudMachineInsert = Database['public']['Tables']['cloud_machines']['Insert'];
+export type CloudMachineUpdate = Database['public']['Tables']['cloud_machines']['Update'];
+export type MachineStatus = Database['public']['Enums']['machine_status'];

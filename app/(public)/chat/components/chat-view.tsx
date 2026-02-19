@@ -18,7 +18,7 @@ import { useScopedI18n } from '@/locales/client';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 import type { ChatConversation, ChatMessage as ChatMessageType } from '@/types/chat';
-import { AI_MODELS, AI_MODELS_MAP, DEFAULT_MODEL, type ModelId } from '@/types/chat';
+import { AI_MODELS, AI_MODELS_MAP, DEFAULT_MODEL, PROVIDER_PRECEDENCE, type ModelId } from '@/types/chat';
 import type { FileAttachment } from '@/types/code';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
@@ -125,6 +125,17 @@ export function ChatView() {
     [providersData],
   );
 
+  // ── Best available model (based on provider precedence) ──────
+  const bestAvailableModel = useMemo<ModelId>(() => {
+    for (const provider of PROVIDER_PRECEDENCE) {
+      if ((providersData ?? []).includes(provider)) {
+        const model = AI_MODELS.find((m) => m.provider === provider);
+        if (model) return model.id as ModelId;
+      }
+    }
+    return DEFAULT_MODEL;
+  }, [providersData]);
+
   // ── Mutations ───────────────────────────────────────────────
 
   const createMutation = useMutation({
@@ -159,6 +170,13 @@ export function ChatView() {
     // Only depend on the conversation id and model, not the full object
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation?.id, selectedConversation?.model]);
+
+  // ── Auto-select best model when providers change and no conversation active ──
+  useEffect(() => {
+    if (!selectedConversation) {
+      setSelectedModel(bestAvailableModel);
+    }
+  }, [bestAvailableModel, selectedConversation]);
 
   // ── Focus input on conversation switch ──────────────────────
   useEffect(() => {
@@ -284,12 +302,6 @@ export function ChatView() {
     );
   }
 
-  // ── No API keys — show setup prompt ─────────────────────────
-  // Only shown when providers query SUCCEEDED but returned empty.
-  if (!hasProviders) {
-    return <ApiKeySetupPrompt onKeySaved={() => refetchProviders()} />;
-  }
-
   // ── Model selector dropdown ─────────────────────────────────
   const modelSelector = (
     <DropdownMenu>
@@ -349,12 +361,18 @@ export function ChatView() {
             {headerActions}
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
-            <Image src="/logo.webp" alt="Anubix logo" width={120} height={120} />
-            <p className="text-lg font-medium text-foreground">{t('sidebar.selectOrCreate')}</p>
-            <p className="text-sm text-muted-foreground">Select a conversation or start a new one</p>
-            <Button onClick={handleNewChat} className="mt-2 gap-2">
-              <MessageSquarePlus className="size-4" />{t('sidebar.newChat')}
-            </Button>
+            {!hasProviders ? (
+              <ApiKeySetupPrompt onKeySaved={() => refetchProviders()} />
+            ) : (
+              <>
+                <Image src="/logo.webp" alt="Anubix logo" width={120} height={120} />
+                <p className="text-lg font-medium text-foreground">{t('sidebar.selectOrCreate')}</p>
+                <p className="text-sm text-muted-foreground">Select a conversation or start a new one</p>
+                <Button onClick={handleNewChat} className="mt-2 gap-2">
+                  <MessageSquarePlus className="size-4" />{t('sidebar.newChat')}
+                </Button>
+              </>
+            )}
           </div>
           <div className="shrink-0 border-t border-border/20 px-4 pb-4 pt-3">
             <div className="relative mx-auto">
@@ -377,7 +395,7 @@ export function ChatView() {
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-4">
           <div className="flex items-center gap-2">
             <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
-            <span className="max-w-[200px] truncate text-sm font-medium">{selectedConversation?.title}</span>
+            <span className="max-w-[100px] truncate text-sm font-medium sm:max-w-[200px]">{selectedConversation?.title}</span>
             {modelSelector}
           </div>
           {headerActions}
@@ -399,6 +417,7 @@ export function ChatView() {
           files={attachedFiles}
           onAddFiles={addFiles}
           onRemoveFile={removeFile}
+          hasProviders={hasProviders}
         />
       </div>
     </div>

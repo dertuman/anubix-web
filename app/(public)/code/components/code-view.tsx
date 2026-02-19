@@ -1,9 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ClipboardCheck, ClipboardCopy, Download, FolderPlus, Power, RefreshCw, RotateCw, Trash2, Upload } from 'lucide-react';
+import { ClipboardCheck, ClipboardCopy, Download, ExternalLink, FolderPlus, Power, RefreshCw, RotateCw, Trash2, Upload } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
 import { useScopedI18n } from '@/locales/client';
 import { useClaudeCode } from '@/hooks/useClaudeCode';
+import { useCloudMachine } from '@/hooks/useCloudMachine';
 import type { FileAttachment } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
 import { cn } from '@/lib/utils';
@@ -12,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 import { BridgeSetup } from './bridge-setup';
+import { CloudProvision } from './cloud-provision';
 import { CodeInput, type CodeInputHandle, type QueuedMessage } from './code-input';
 import { CodeMessageList } from './code-message-list';
 import { CodeSidebar, MobileSidebarTrigger } from './code-sidebar';
@@ -24,6 +27,7 @@ const statusBadgeClass = (status: string) =>
 
 export function CodeView() {
   const t = useScopedI18n('code');
+  const { isSignedIn } = useAuth();
   const {
     status, connect, disconnect, connectionError, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
@@ -31,7 +35,9 @@ export function CodeView() {
     isBusy, slashCommands, clearConversation, connectionHealth, retry,
     sessionLiveStates, fetchRepos,
   } = useClaudeCode();
+  const cloudMachine = useCloudMachine();
 
+  const [showManualSetup, setShowManualSetup] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [pulling, setPulling] = useState(false);
@@ -157,14 +163,35 @@ export function CodeView() {
 
   // ── Not connected ──────────────────────────────────────────
   if (status === 'disconnected' || status === 'connecting') {
+    // Signed-in users get the cloud provisioning flow by default
+    if (isSignedIn && !showManualSetup) {
+      return (
+        <CloudProvision
+          onConnected={(url, key) => connect(url, key)}
+          onManualSetup={() => setShowManualSetup(true)}
+        />
+      );
+    }
+    // Fallback: manual bridge URL + API key entry
     return <BridgeSetup onConnect={connect} isConnecting={status === 'connecting'} error={connectionError} />;
   }
+
+  // Reset manual setup flag when connected
+  if (showManualSetup && status === 'connected') setShowManualSetup(false);
+
+  // ── Preview URL (for cloud machines) ────────────────────────
+  const previewUrl = cloudMachine.machine?.previewUrl;
 
   // ── Shared header actions ──────────────────────────────────
   const headerActions = (
     <div className="flex items-center gap-1">
       {connectionHealth === 'failed' && (
         <Button variant="ghost" size="icon" onClick={retry} title="Retry connection" className="size-8 text-warning hover:text-warning/80"><RotateCw className="size-3.5" /></Button>
+      )}
+      {previewUrl && (
+        <Button variant="ghost" size="icon" onClick={() => window.open(previewUrl, '_blank')} title="Open preview" className="size-8 text-muted-foreground">
+          <ExternalLink className="size-3.5" />
+        </Button>
       )}
       {activeSessionId && (
         <>
