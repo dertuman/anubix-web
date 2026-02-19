@@ -1,23 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
-import { encrypt } from '@/lib/crypto';
+import { encrypt, decrypt } from '@/lib/crypto';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/chat/api-keys — List providers the user has keys for.
+ *
+ * Query params:
+ *   ?include=keys — Also return decrypted plaintext keys (for native app sync).
+ *                    Keys are returned over HTTPS to an authenticated user.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
+  const includeKeys = req.nextUrl.searchParams.get('include') === 'keys';
+
   try {
+    // Always fetch all encrypted columns — the typed Supabase client doesn't
+    // support dynamic column strings, and we need them anyway when include=keys.
     const { data, error } = await sb
       .from('chat_api_keys')
-      .select('provider')
+      .select('provider, encrypted_key, iv, auth_tag')
       .eq('clerk_user_id', userId);
 
     if (error) {
@@ -26,6 +34,24 @@ export async function GET() {
     }
 
     const providers = (data ?? []).map((r) => r.provider);
+
+    // Decrypt keys if requested
+    let keys: Record<string, string> | undefined;
+    if (includeKeys && data) {
+      keys = {};
+      for (const row of data) {
+        try {
+          keys[row.provider] = decrypt({
+            encryptedKey: row.encrypted_key,
+            iv: row.iv,
+            authTag: row.auth_tag,
+          });
+        } catch (decryptErr) {
+          console.error(`[chat/api-keys GET] Failed to decrypt key for ${row.provider}:`, (decryptErr as Error).message);
+          // Skip keys that fail to decrypt rather than failing the whole request
+        }
+      }
+    }
 
     // Admin fallback
     const { data: profile } = await sb
@@ -40,7 +66,7 @@ export async function GET() {
       if (process.env.ANTHROPIC_API_KEY && !providers.includes('anthropic')) providers.push('anthropic');
     }
 
-    return NextResponse.json({ success: true, providers });
+    return NextResponse.json({ success: true, providers, ...(keys !== undefined && { keys }) });
   } catch (error) {
     console.error('[chat/api-keys GET] Error:', (error as Error).message);
     return NextResponse.json({ error: 'Failed to fetch API keys.' }, { status: 500 });
