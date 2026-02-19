@@ -118,7 +118,7 @@ export function BridgeSetup({
 
           <Button
             onClick={handleConnect}
-            disabled={!url.trim() || isConnecting}
+            disabled={!url.trim() || !key.trim() || isConnecting}
             className="w-full"
           >
             {isConnecting ? (

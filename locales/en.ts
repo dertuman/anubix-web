@@ -236,8 +236,7 @@ export default {
     screenshots: {
       label: 'See it in action',
       title: 'See It in Action',
-      subtitle:
-        'A quick look at what building with Anubix looks like.',
+      subtitle: 'A quick look at what building with Anubix looks like.',
     },
     differentiator: {
       label: 'Under the hood',
@@ -623,7 +622,7 @@ export default {
       urlLabel: 'Bridge URL',
       urlPlaceholder: 'wss://your-bridge-server.com/ws',
       keyLabel: 'API Key',
-      keyPlaceholder: 'Optional API key',
+      keyPlaceholder: 'Enter the password',
       connect: 'Connect',
       disconnect: 'Disconnect',
       connecting: 'Connecting...',
@@ -686,7 +685,8 @@ export default {
     sidebar: {
       newChat: 'New Chat',
       delete: 'Delete',
-      deleteConfirm: 'Are you sure you want to delete this conversation? This cannot be undone.',
+      deleteConfirm:
+        'Are you sure you want to delete this conversation? This cannot be undone.',
       noConversations: 'No conversations yet',
       selectOrCreate: 'Start a conversation',
     },
@@ -704,9 +704,11 @@ export default {
     },
     apiKeys: {
       title: 'API Keys',
-      description: 'Add your API keys to use AI models. Keys are encrypted and stored securely.',
+      description:
+        'Add your API keys to use AI models. Keys are encrypted and stored securely.',
       noKeysTitle: 'Add your API keys to get started',
-      noKeysDescription: 'Bring your own keys for OpenAI, Google AI, or Anthropic. Your keys are encrypted end-to-end and never stored in plain text.',
+      noKeysDescription:
+        'Bring your own keys for OpenAI, Google AI, or Anthropic. Your keys are encrypted end-to-end and never stored in plain text.',
     },
     models: {
       selectModel: 'Select model',
