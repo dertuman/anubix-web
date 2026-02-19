@@ -1,23 +1,23 @@
 'use client';
 
 import {
-  Smartphone,
   Repeat,
   Eye,
   Rocket,
   ShieldCheck,
   Shield,
   Layers,
+  Monitor,
 } from 'lucide-react';
 import { useScopedI18n } from '@/locales/client';
 
-const ICON_MAP = [Smartphone, Repeat, Eye, Rocket, ShieldCheck, Shield, Layers] as const;
+const ICON_MAP = [Repeat, Eye, Rocket, Monitor, ShieldCheck, Shield, Layers] as const;
 
 const FEATURE_KEYS = [
-  'mobile',
   'multiModel',
   'livePreview',
   'oneClickDeploy',
+  'mobile',
   'encrypted',
   'youOwnEverything',
   'patterns',

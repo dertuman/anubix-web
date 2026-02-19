@@ -14,12 +14,12 @@ export async function generateMetadata() {
     currentLocale: 'en',
     path: '/',
     translations: {
-      title: 'Anubix — Build apps by talking',
+      title: 'Anubix — Production at the speed of thought',
       description:
-        'Describe what you want. Anubix builds it, deploys it, and hands you the keys. No code required.',
+        'The power of CLI, but beautiful. A proper interface for Claude Code, GPT, and Gemini. Build real apps, chat with the best models, and deploy from any device.',
       ogLocale: 'en',
       ogSiteName: 'Anubix',
-      imageAlt: 'Anubix — Build apps by talking. No code required.',
+      imageAlt: 'Anubix — Production at the speed of thought. The power of CLI, but beautiful.',
       twitterSite: '@anubix',
     },
     keywords: [
