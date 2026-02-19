@@ -11,7 +11,9 @@ export function createClerkSupabaseClient(): SupabaseClient<Database> | null {
 
   return createClient<Database>(url, publishableKey, {
     accessToken: async () => {
-      return (await auth()).getToken();
+      const token = await (await auth()).getToken();
+      if (!token) throw new Error('Failed to obtain Clerk token for Supabase');
+      return token;
     },
   });
 }

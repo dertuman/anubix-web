@@ -58,34 +58,42 @@ export async function POST(req: NextRequest) {
   const sb = createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
-  const { provider, key } = await req.json();
+  try {
+    const { provider, key } = await req.json();
 
-  if (!provider || !key) {
-    return NextResponse.json({ error: 'Missing provider or key' }, { status: 400 });
+    if (!provider || !key) {
+      return NextResponse.json({ error: 'Missing provider or key' }, { status: 400 });
+    }
+
+    if (!['openai', 'google', 'anthropic'].includes(provider)) {
+      return NextResponse.json({ error: 'Invalid provider' }, { status: 400 });
+    }
+
+    const { encryptedKey, iv, authTag } = encrypt(key);
+
+    const { error } = await sb
+      .from('chat_api_keys')
+      .upsert(
+        {
+          clerk_user_id: userId,
+          provider,
+          encrypted_key: encryptedKey,
+          iv,
+          auth_tag: authTag,
+        },
+        { onConflict: 'clerk_user_id,provider' },
+      );
+
+    if (error) {
+      console.error('[chat/api-keys POST] Supabase error:', error.message);
+      return NextResponse.json({ error: 'Failed to save API key.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[chat/api-keys POST] Error:', (error as Error).message);
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
-
-  if (!['openai', 'google', 'anthropic'].includes(provider)) {
-    return NextResponse.json({ error: 'Invalid provider' }, { status: 400 });
-  }
-
-  const { encryptedKey, iv, authTag } = encrypt(key);
-
-  const { error } = await sb
-    .from('chat_api_keys')
-    .upsert(
-      {
-        clerk_user_id: userId,
-        provider,
-        encrypted_key: encryptedKey,
-        iv,
-        auth_tag: authTag,
-      },
-      { onConflict: 'clerk_user_id,provider' },
-    );
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ success: true });
 }
 
 /**
@@ -99,19 +107,27 @@ export async function DELETE(req: NextRequest) {
   const sb = createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
-  const { provider } = await req.json();
+  try {
+    const { provider } = await req.json();
 
-  if (!provider) {
-    return NextResponse.json({ error: 'Missing provider' }, { status: 400 });
+    if (!provider) {
+      return NextResponse.json({ error: 'Missing provider' }, { status: 400 });
+    }
+
+    const { error } = await sb
+      .from('chat_api_keys')
+      .delete()
+      .eq('clerk_user_id', userId)
+      .eq('provider', provider);
+
+    if (error) {
+      console.error('[chat/api-keys DELETE] Supabase error:', error.message);
+      return NextResponse.json({ error: 'Failed to remove API key.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[chat/api-keys DELETE] Error:', (error as Error).message);
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
-
-  const { error } = await sb
-    .from('chat_api_keys')
-    .delete()
-    .eq('clerk_user_id', userId)
-    .eq('provider', provider);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ success: true });
 }
