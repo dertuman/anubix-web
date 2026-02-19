@@ -27,7 +27,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = createClerkSupabaseClient();
+  const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { conversationId } = await params;
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = createClerkSupabaseClient();
+  const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { conversationId } = await params;

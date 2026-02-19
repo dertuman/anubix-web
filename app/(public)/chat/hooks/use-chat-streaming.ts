@@ -118,15 +118,39 @@ export function useChatStreaming() {
           toast({ title: 'Error', description: (err as Error).message || 'Failed to send message.', variant: 'destructive' });
         }
       } finally {
+        // ── Bridge pattern (from Telkartech) ────────────────────
+        // Keep streamed content visible as an optimistic assistant message
+        // so the user never sees messages disappear while we refetch.
+        if (streamedRef.current) {
+          setOptimisticMessages((prev) => [
+            ...prev,
+            {
+              id: `optimistic-assistant-${Date.now()}`,
+              conversation_id: convId,
+              role: 'assistant',
+              content: streamedRef.current,
+              images: null,
+              files: null,
+              model,
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
+
+        // Clear streaming state (optimistic message holds the content now)
         setIsStreaming(false);
         setWaitingForResponse(false);
         setStreamingContent('');
         streamedRef.current = '';
-        setOptimisticMessages([]);
         abortControllerRef.current = null;
 
-        // Refresh messages and conversations from server
-        queryClient.invalidateQueries({ queryKey: ['chat-messages', convId] });
+        // Wait for server messages to arrive, then clear optimistic in the
+        // same tick so React batches both into ONE render — no duplicate frame.
+        // (This is exactly how Telkartech does it.)
+        await queryClient.invalidateQueries({ queryKey: ['chat-messages', convId] });
+        setOptimisticMessages([]);
+
+        // Conversations list refresh is non-critical — fire and forget
         queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
       }
     },

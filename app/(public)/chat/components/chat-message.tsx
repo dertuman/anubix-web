@@ -1,7 +1,6 @@
 'use client';
 
 import React, { memo, useCallback, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   ChevronDown,
   Copy,
@@ -117,12 +116,12 @@ export const ChatMessage = memo(function ChatMessage({ message, isStreaming }: C
   }, [message, isUser, modelInfo, isStreaming]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
+    <div>
       <p className={cn('mb-0.5 text-[10px] text-muted-foreground/50', isUser ? 'text-right' : 'text-left')}>
         {formatTimestamp(message.created_at)}
       </p>
       {content}
-    </motion.div>
+    </div>
   );
 });
 
@@ -186,9 +185,9 @@ function AssistantMessage({ message, modelInfo, isStreaming }: { message: ChatMe
 
   return (
     <div className="flex justify-start">
-      <div className="flex max-w-[85%] flex-col gap-1.5 overflow-hidden rounded-xl rounded-bl-none bg-muted px-4 py-2.5">
+      <div className="overflow-hidden rounded-xl rounded-bl-none bg-muted px-4 py-2.5">
         {modelInfo && (
-          <Badge variant="secondary" className="w-fit text-[10px]">{modelInfo.name}</Badge>
+          <Badge variant="secondary" className="mb-1.5 w-fit text-[10px]">{modelInfo.name}</Badge>
         )}
         <div className="flex items-start gap-1.5">
           <div className="min-w-0 flex-1 wrap-break-word">

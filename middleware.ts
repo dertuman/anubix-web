@@ -1,7 +1,13 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import type { NextFetchEvent, NextRequest } from 'next/server';
 
 import { isAppConfigured } from '@/lib/setup/config';
+
+// Static — resolved once at module load, not on every request.
+// Safe because assertKey() only fires inside clerkMiddleware(), which we
+// only call when the app is configured (keys exist).
+const isProtectedRoute = createRouteMatcher(['/profile(.*)']);
 
 export default async function middleware(
   req: NextRequest,
@@ -24,14 +30,7 @@ export default async function middleware(
     return NextResponse.redirect(new URL('/setup', req.url));
   }
 
-  // App is configured — use Clerk middleware
-  // Dynamic import to avoid assertKey() crash when keys are missing
-  const { clerkMiddleware, createRouteMatcher } = await import(
-    '@clerk/nextjs/server'
-  );
-
-  const isProtectedRoute = createRouteMatcher(['/profile(.*)']);
-
+  // App is configured — run Clerk auth
   const handler = clerkMiddleware(async (auth, request) => {
     if (isProtectedRoute(request)) {
       await auth.protect();

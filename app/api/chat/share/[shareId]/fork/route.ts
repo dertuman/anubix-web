@@ -18,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const adminSb = createSupabaseAdmin();
   if (!adminSb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
-  const userSb = createClerkSupabaseClient();
+  const userSb = await createClerkSupabaseClient();
   if (!userSb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { shareId } = await params;

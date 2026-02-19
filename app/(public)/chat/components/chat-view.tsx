@@ -239,21 +239,17 @@ export function ChatView() {
     </div>
   );
 
-  // ── Build combined messages ─────────────────────────────────
-  const allMessages = [...messages, ...optimisticMessages];
+  // ── Build combined messages (with deduplication) ────────────
+  // Server messages take priority; only keep optimistic messages
+  // that don't have a server counterpart yet. This prevents
+  // duplicates during the bridge → server data handoff.
+  const allMessages = useMemo(() => {
+    if (optimisticMessages.length === 0) return messages;
+    const serverIds = new Set(messages.map((m) => m.id));
+    const uniqueOptimistic = optimisticMessages.filter((m) => !serverIds.has(m.id));
+    return [...messages, ...uniqueOptimistic];
+  }, [messages, optimisticMessages]);
   const totalMessages = allMessages.length;
-
-  // Build streaming message object for display
-  const streamingMessage: ChatMessageType | null = isStreaming && streamingContent ? {
-    id: 'streaming',
-    conversation_id: selectedId || '',
-    role: 'assistant',
-    content: streamingContent,
-    images: null,
-    files: null,
-    model: selectedModel,
-    created_at: new Date().toISOString(),
-  } : null;
 
   // ── Loading state ──────────────────────────────────────────
   // Show a clean loading spinner while we figure out if the user has keys.
@@ -389,8 +385,8 @@ export function ChatView() {
 
         <ChatMessageList
           messages={allMessages}
-          streamingMessage={streamingMessage}
           isStreaming={isStreaming}
+          streamingContent={streamingContent}
           showThinkingIndicator={waitingForResponse && !isStreaming}
         />
 

@@ -1,0 +1,324 @@
+{
+  "$schema": "anubix-pattern/1.0",
+
+  "pattern": {
+    "id": "searchable-list",
+    "name": "Searchable List with Infinite Scroll",
+    "version": "1.0.0",
+    "description": "A full-stack searchable, filterable, infinitely-scrollable list of items. Backend search API with pagination, database model with indexes, shared types, and a polished responsive frontend with category filter pills, debounced search, skeleton loaders, empty states, and stagger animations.",
+    "tags": ["search", "filter", "pagination", "infinite-scroll", "list", "grid", "responsive", "full-stack"],
+    "preview_url": "https://casarindeportes.com/noticias",
+    "icon": "Search",
+    "complexity": "intermediate",
+    "estimated_files": 7
+  },
+
+  "features": [
+    "Full-text search across multiple fields with debounced input (350ms delay, two state variables pattern)",
+    "Category filter pills — horizontally scrollable, toggle on/off, synced with URL query params",
+    "Active filter badge with animated enter/exit and dismiss button",
+    "Backend pagination with page/limit (skip-offset pattern) and total count",
+    "Infinite scroll on the frontend — 80% scroll threshold triggers next page load automatically",
+    "Category showcase view — groups items by top 3 categories, each showing 1 featured + 3 horizontal cards",
+    "Responsive grid — 1 column on mobile, 2 on tablet, 3 on desktop",
+    "Three card variants: vertical (grid), featured (showcase primary), horizontal (showcase secondary)",
+    "Skeleton loaders matching the exact shape of each card variant",
+    "Empty state with contextual message and a clear-filters reset button",
+    "Stagger animations on content load (Framer Motion or CSS-based)",
+    "Animated transitions between loading / empty / content states",
+    "View count tracking — fire-and-forget increment when a detail page is visited",
+    "Slug-based URL routing with auto-generation from title",
+    "SEO metadata on the listing page"
+  ],
+
+  "architecture": {
+    "overview": "Five-layer architecture. Each layer is independent and communicates through defined interfaces. The LLM should generate all layers, adapting to whatever database/ORM/framework the user's project already uses.",
+
+    "layers": [
+      {
+        "name": "Database Model",
+        "purpose": "Define the entity schema with fields, validation, indexes for query performance, and a pre-save hook for slug generation.",
+        "output_file": "models/{Entity}Model or equivalent for the project's ORM",
+        "adapts_to": "Mongoose (MongoDB), Prisma (PostgreSQL/MySQL), Drizzle, Supabase tables, or any ORM the project uses"
+      },
+      {
+        "name": "Shared Types",
+        "purpose": "TypeScript interfaces for the entity, category enum with display labels, status types, and helper functions (slug generation, reading time, etc).",
+        "output_file": "types/{entity}.ts"
+      },
+      {
+        "name": "Search API",
+        "purpose": "An endpoint that accepts search text, category, status, page, and limit as query parameters. Builds a database query, applies text search across multiple fields, paginates with skip/limit, and returns items + total count + page metadata.",
+        "output_file": "API route for search (e.g., app/api/{entities}/search/route.ts or pages/api/...)"
+      },
+      {
+        "name": "Get API",
+        "purpose": "An endpoint that fetches a single item by slug and increments the view counter as a fire-and-forget side effect.",
+        "output_file": "API route for get-by-slug"
+      },
+      {
+        "name": "Frontend Components",
+        "purpose": "The list component (search + filters + infinite scroll + data fetching), card components (3 variants + skeletons), and the page entry point.",
+        "output_file": "Page components in the app's routing structure"
+      }
+    ]
+  },
+
+  "data_model": {
+    "description": "The entity needs these structural fields regardless of domain. The LLM should add domain-specific fields on top of these.",
+
+    "base_fields": [
+      {
+        "name": "slug",
+        "type": "string",
+        "unique": true,
+        "required": true,
+        "purpose": "URL-friendly identifier. Auto-generated from the title by: lowercasing, stripping accents (NFD normalization), replacing non-alphanumeric characters with hyphens, trimming leading/trailing hyphens."
+      },
+      {
+        "name": "status",
+        "type": "enum",
+        "values": ["draft", "published"],
+        "default": "draft",
+        "purpose": "Controls visibility. Public search should filter to 'published' only."
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "searchable": true,
+        "purpose": "Primary display text. Searched via text query."
+      },
+      {
+        "name": "excerpt",
+        "type": "string",
+        "required": true,
+        "searchable": true,
+        "purpose": "Short description/summary. Searched via text query. Displayed on cards."
+      },
+      {
+        "name": "content",
+        "type": "string (rich text/HTML)",
+        "required": true,
+        "purpose": "Full body content for the detail page."
+      },
+      {
+        "name": "featuredImageUrl",
+        "type": "string",
+        "purpose": "URL to the primary image shown on cards and the detail page header."
+      },
+      {
+        "name": "category",
+        "type": "enum (string)",
+        "required": true,
+        "purpose": "Exactly one category per item. Maps to the filter pills on the frontend."
+      },
+      {
+        "name": "tags",
+        "type": "array of strings",
+        "searchable": true,
+        "purpose": "Flexible tagging. Searched via text query."
+      },
+      {
+        "name": "featured",
+        "type": "boolean",
+        "default": false,
+        "purpose": "Marks high-priority items for special placement in the showcase view."
+      },
+      {
+        "name": "publishedAt",
+        "type": "datetime",
+        "optional": true,
+        "purpose": "When the item was published. Primary sort field (descending)."
+      },
+      {
+        "name": "stats.views",
+        "type": "number",
+        "default": 0,
+        "purpose": "View counter. Incremented fire-and-forget on detail page load."
+      }
+    ],
+
+    "indexes": [
+      { "fields": ["slug"], "type": "unique" },
+      { "fields": ["status"] },
+      { "fields": ["category"] },
+      { "fields": ["tags"] },
+      { "fields": ["publishedAt"], "direction": "descending" },
+      { "fields": ["featured"] },
+      { "fields": ["createdAt"], "direction": "descending" }
+    ],
+
+    "slug_generation": {
+      "trigger": "Before saving, if slug is empty",
+      "algorithm": "title → lowercase → NFD normalize → strip diacritics → replace non-alphanumeric with hyphens → trim hyphens from edges"
+    }
+  },
+
+  "api_contract": {
+    "search": {
+      "method": "GET",
+      "path_pattern": "/api/{entities}/search",
+      "parameters": [
+        { "name": "search", "type": "string", "required": false, "behavior": "Case-insensitive partial match across title, excerpt, and tags simultaneously (OR logic). Use regex for MongoDB, ILIKE/tsvector for PostgreSQL, or equivalent." },
+        { "name": "status", "type": "string", "required": false, "behavior": "Exact match filter. Public pages should always pass 'published'." },
+        { "name": "category", "type": "string", "required": false, "behavior": "Exact match filter on the category field." },
+        { "name": "featured", "type": "boolean-string", "required": false, "behavior": "When 'true', return only featured items." },
+        { "name": "page", "type": "number", "default": 1, "behavior": "1-indexed page number." },
+        { "name": "limit", "type": "number", "default": 12, "behavior": "Items per page." }
+      ],
+      "response": {
+        "data": "Array of items for the current page",
+        "total": "Total matching items across all pages",
+        "totalPages": "Math.ceil(total / limit)",
+        "currentPage": "Echo of the page parameter"
+      },
+      "implementation_rules": [
+        "Sort by publishedAt descending, then createdAt descending as fallback",
+        "Pagination: skip = (page - 1) * limit, then limit",
+        "Run the count query in parallel with the data query for performance",
+        "Use lean/plain objects (not ORM model instances) for serialization performance",
+        "Never return draft items unless explicitly requested via status param"
+      ]
+    },
+
+    "get_by_slug": {
+      "method": "GET",
+      "path_pattern": "/api/{entities}/get",
+      "parameters": [
+        { "name": "slug", "type": "string", "required": true }
+      ],
+      "response": {
+        "data": "Single item object"
+      },
+      "implementation_rules": [
+        "Return 400 if slug is missing",
+        "Return 404 if not found",
+        "Increment stats.views by 1 as fire-and-forget (do NOT await the update)",
+        "Use lean/plain objects for performance"
+      ]
+    }
+  },
+
+  "frontend_behavior": {
+    "search_input": {
+      "layout": "Search icon (left side, vertically centered), text input, clear X button (right side, only visible when text is present)",
+      "debounce": {
+        "delay_ms": 350,
+        "pattern": "Two React state variables: 'search' (bound directly to input for instant UI feedback) and 'debouncedSearch' (updated via useEffect with setTimeout/clearTimeout, used in the data fetching query key so changes auto-trigger refetch)"
+      },
+      "clear_behavior": "Clicking X sets search to empty string, which debounces to clear debouncedSearch and refetch all items"
+    },
+
+    "category_filters": {
+      "layout": "Horizontally scrollable row of pill-shaped buttons with hidden scrollbar. An 'All' button on the left, then one button per category (with icon + label).",
+      "toggle_behavior": "Clicking a category selects it (highlights it). Clicking the same category again deselects it (returns to 'All'). Only one category active at a time.",
+      "url_sync": "When a category is selected, update the URL query parameter via router.replace (no scroll). When 'All' is selected, remove the param. On page load, read the URL param to initialize the category state.",
+      "active_badge": "When a category is active, show an animated badge below the pills displaying the category icon + name + X dismiss button. Use enter/exit animation.",
+      "styling": "Selected: solid accent background. Unselected: muted background, hover to slightly darker."
+    },
+
+    "data_fetching": {
+      "pattern": "React Query useInfiniteQuery (or equivalent infinite query hook)",
+      "query_key": "['entities-public', debouncedSearch, category] — changing any part auto-refetches",
+      "fetch_function": "Build URLSearchParams from query key parts, call the search API, return { data, totalPages, currentPage }",
+      "next_page_logic": "getNextPageParam: if currentPage < totalPages → return currentPage + 1, else → return undefined (no more pages)",
+      "data_flattening": "Flatten all pages into a single array: data.pages.flatMap(page => page.data)"
+    },
+
+    "infinite_scroll": {
+      "trigger": "When the user scrolls to 80% of the currently loaded content height",
+      "action": "Call fetchNextPage from the infinite query",
+      "loader": "Show 3 skeleton cards in a grid while the next page loads",
+      "has_more": "Derived from the query's hasNextPage boolean",
+      "important": "The scroll container should be the window/page itself, not a nested scrollable div. Set overflow: visible on the infinite scroll wrapper."
+    },
+
+    "display_modes": {
+      "showcase_view": {
+        "when": "Category is 'all' AND search is empty (default state)",
+        "behavior": "Take the first 12 loaded items. Group them by category. Find the top 3 categories by item count. For each category, render a column: category heading + 'see more' link at top, 1 featured card (large, with image), then up to 3 horizontal cards (small thumbnail + text). Three columns on desktop, stacks vertically on mobile.",
+        "remaining_items": "Items beyond the first 12 go into the standard grid below the showcase."
+      },
+      "grid_view": {
+        "when": "Always (either as the sole view when filtering/searching, or below the showcase)",
+        "behavior": "Responsive CSS grid: 1 column on mobile, 2 columns at md breakpoint, 3 columns at lg breakpoint. Standard gap spacing."
+      }
+    },
+
+    "card_variants": {
+      "vertical_card": {
+        "used_in": "Grid view",
+        "layout": "Image on top (aspect-video ratio), category badge overlaid on top-left of image, title below (2-line clamp), excerpt below that (2-line clamp), metadata footer (author + secondary info like reading time).",
+        "hover": "Image scales to 105%, border gets accent tint, shadow appears, title color changes to accent.",
+        "link": "Entire card is a link to the detail page (/{entity-slug})."
+      },
+      "featured_card": {
+        "used_in": "Showcase view — primary item per category",
+        "layout": "Large image (aspect-video), title below, secondary metadata. Simpler than the vertical card.",
+        "hover": "Image scales to 105%, title color changes."
+      },
+      "horizontal_card": {
+        "used_in": "Showcase view — secondary items per category",
+        "layout": "Small fixed thumbnail on the left (roughly 96x64px), title and metadata on the right. Compact.",
+        "hover": "Image scales to 105%, title color changes, subtle background tint."
+      }
+    },
+
+    "skeleton_loaders": {
+      "purpose": "Show pulse-animated placeholders that match the exact dimensions of each card variant while data loads.",
+      "card_skeleton": "Aspect-video rectangle + category bar + title line + excerpt line + metadata line",
+      "showcase_skeleton": "Title bar + aspect-video rectangle + 2 horizontal card rectangles",
+      "styling": "Use the framework's pulse/shimmer animation on neutral background-colored div elements."
+    },
+
+    "empty_state": {
+      "when": "No items returned and not loading",
+      "layout": "Centered container with dashed border",
+      "content": "Primary message ('No items found'), contextual secondary message (different text for search vs category filter vs no data at all), and a 'Clear filters' button that resets both search and category."
+    },
+
+    "animations": {
+      "container": "Fade in with opacity 0→1. Child items stagger with 50ms delay between each, 100ms initial delay.",
+      "items": "Fade in + slide up: opacity 0→1, y 12→0, duration 300ms, ease-out.",
+      "state_transitions": "Wrap the entire content area in an animated presence wrapper (mode='wait'). Generate a unique key from the current state (loading/empty/content + filter values) so transitions animate smoothly when the state changes."
+    }
+  },
+
+  "page_structure": {
+    "layout": "Full-width container with horizontal padding, vertical padding",
+    "header": "Page title (h1) + subtitle/description paragraph",
+    "body": "Mounts the list component which handles everything (search, filters, data, display)",
+    "seo": "Page should export metadata: title, description, open graph tags"
+  },
+
+  "customization_guide": {
+    "instruction": "When the LLM applies this pattern, it must adapt these aspects to the user's specific domain and tech stack. The behavioral patterns (debounce, infinite scroll, URL sync, skeleton shapes, animation timing) should be preserved exactly. The domain-specific aspects should be adapted.",
+
+    "what_to_adapt": [
+      "Entity name and domain fields — 'Article' becomes 'Product', 'Recipe', 'Job', etc. Add domain-specific fields (price, cookTime, salary, etc.)",
+      "Categories — Replace with domain-relevant categories and appropriate icons/emojis",
+      "Searchable fields — Which fields the text search queries against (title + description is universal, but add domain-specific ones like 'ingredients' for recipes)",
+      "Card content — What metadata shows on cards (price for products, cook time for recipes, salary for jobs, instead of reading time)",
+      "Sort order — publishedAt is the default, but could be price, rating, date, popularity depending on domain",
+      "Route paths — /api/articles/search becomes /api/products/search, /noticias becomes /shop, etc.",
+      "Items per page — 12 is the default but may need adjustment based on card density",
+      "Showcase vs grid only — The showcase (category grouping) needs 3+ categories with multiple items each. For simpler cases, grid-only is fine.",
+      "Database technology — The data model section describes WHAT to store. The LLM should implement it using whatever ORM/database the project already has (Mongoose, Prisma, Drizzle, raw Supabase, etc.)",
+      "Frontend libraries — If the project already uses a different query library or animation library, adapt accordingly while preserving the behavioral patterns"
+    ],
+
+    "what_to_always_preserve": [
+      "The two-variable debounce pattern (immediate 'search' + delayed 'debouncedSearch' via useEffect)",
+      "URL query parameter sync for category filters (router.replace with scroll:false)",
+      "useInfiniteQuery + getNextPageParam pattern for paginated data",
+      "Backend skip/limit pagination with parallel total count query",
+      "Skeleton loaders that visually match the shape of the actual cards",
+      "AnimatePresence (or equivalent) transitions between loading/empty/content states",
+      "Fire-and-forget view count increment on detail page load",
+      "Responsive grid breakpoints (1/2/3 columns at mobile/tablet/desktop)",
+      "Database indexes on all filtered and sorted fields",
+      "Card hover micro-interactions (image scale, color transitions, shadow)"
+    ]
+  }
+}
