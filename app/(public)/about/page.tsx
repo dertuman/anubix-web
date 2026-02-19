@@ -1,16 +1,34 @@
 import React from 'react';
 
+import { generateDefaultMetadata } from '@/lib/metadata-utils';
 import { AboutHero } from './about-components/about-hero';
 import { MissionSection } from './about-components/mission-section';
 import { ValuesSection } from './about-components/values-section';
 import { StackSection } from './about-components/stack-section';
 import { AboutCta } from './about-components/about-cta';
 
-export const metadata = {
-  title: 'About — Anubix',
-  description:
-    'Anubix turns conversations into deployed web apps. Learn about our mission, principles, and the technology stack behind the platform.',
-};
+export async function generateMetadata() {
+  return generateDefaultMetadata({
+    currentLocale: 'en',
+    path: '/about',
+    translations: {
+      title: 'About — Anubix',
+      description:
+        'Anubix turns conversations into deployed web apps. Learn about our mission, principles, and the technology stack behind the platform.',
+      ogSiteName: 'Anubix',
+      imageAlt: 'About Anubix — Our mission and technology stack',
+      twitterSite: '@anubix',
+    },
+    keywords: [
+      'Anubix',
+      'about',
+      'mission',
+      'technology stack',
+      'AI development platform',
+      'no-code platform',
+    ],
+  });
+}
 
 export default function AboutPage() {
   return (
