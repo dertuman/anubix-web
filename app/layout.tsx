@@ -7,6 +7,7 @@ import { isAppConfigured } from '@/lib/setup/config';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import { JsonLd } from '@/components/json-ld';
 
 export async function generateMetadata() {
   return generateDefaultMetadata({
@@ -14,12 +15,24 @@ export async function generateMetadata() {
     path: '/',
     translations: {
       title: 'Anubix — Build apps by talking',
-      description: 'Describe what you want. Anubix builds it, deploys it, and hands you the keys. No code required.',
+      description:
+        'Describe what you want. Anubix builds it, deploys it, and hands you the keys. No code required.',
       ogLocale: 'en',
       ogSiteName: 'Anubix',
-      imageAlt: 'Anubix — Build apps by talking',
+      imageAlt: 'Anubix — Build apps by talking. No code required.',
       twitterSite: '@anubix',
     },
+    keywords: [
+      'Anubix',
+      'no-code',
+      'app builder',
+      'AI app builder',
+      'build apps by talking',
+      'deploy apps',
+      'web app generator',
+      'conversational development',
+      'no code platform',
+    ],
   });
 }
 
@@ -95,21 +108,27 @@ export default async function RootLayout({
   return (
     <html lang={locale} className="dark" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.png" />
+        {/* Favicons — multiple sizes for browser tabs, bookmarks, and OS icons */}
+        <link rel="icon" href="/favicon.png" sizes="64x64" type="image/png" />
+        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
         {configured && (
           <>
-            <link rel="shortcut icon" href="/favicon-16x16.png" />
-            <link rel="apple-touch-icon" href="/favicon-16x16.png" />
+            <link rel="shortcut icon" href="/favicon.png" />
+            <link rel="apple-touch-icon" href="/logo.webp" />
             <link rel="manifest" href="/manifest.json" />
           </>
         )}
-        <meta name="theme-color" content="#09090b" />
+
+        {/* Theme colour — used by browsers, Discord embed accent, and mobile UI */}
+        <meta name="theme-color" content="#34d399" />
+        <meta name="msapplication-TileColor" content="#09090b" />
+
         {configured && (
           <>
             <meta name="apple-mobile-web-app-capable" content="yes" />
             <meta
               name="apple-mobile-web-app-status-bar-style"
-              content="default"
+              content="black-translucent"
             />
             <meta name="apple-mobile-web-app-title" content="Anubix" />
             <meta name="mobile-web-app-capable" content="yes" />
@@ -119,6 +138,7 @@ export default async function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
+        <JsonLd />
       </head>
       <body
         className={cn(

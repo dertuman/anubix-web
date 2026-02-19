@@ -1,24 +1,28 @@
-'use client';
+import { generateDefaultMetadata } from '@/lib/metadata-utils';
+import ChatLayoutShell from './chat-layout-shell';
 
-import { useAuth } from '@clerk/nextjs';
-import { Loader } from '@/components/ui/loader';
-
-interface ChatLayoutProps {
-  children: React.ReactNode;
+export async function generateMetadata() {
+  return generateDefaultMetadata({
+    currentLocale: 'en',
+    path: '/chat',
+    translations: {
+      title: 'Chat — Anubix',
+      description:
+        'Talk to Anubix to build, iterate, and deploy your web apps in real time. No coding needed.',
+      ogSiteName: 'Anubix',
+      imageAlt: 'Anubix Chat — Build apps by talking',
+      twitterSite: '@anubix',
+    },
+    keywords: [
+      'Anubix chat',
+      'AI chat',
+      'build apps',
+      'conversational development',
+      'no-code chat',
+    ],
+  });
 }
 
-export default function ChatLayout({ children }: ChatLayoutProps) {
-  const { isLoaded } = useAuth();
-
-  if (!isLoaded) {
-    return (
-      <div className="flex h-[calc(100dvh-4.1rem)] items-center justify-center">
-        <Loader variant="glowing" size="large" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-[calc(100dvh-4.1rem)] w-full overflow-hidden">{children}</div>
-  );
+export default function ChatLayout({ children }: { children: React.ReactNode }) {
+  return <ChatLayoutShell>{children}</ChatLayoutShell>;
 }
