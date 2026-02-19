@@ -54,22 +54,22 @@ export function generateDefaultMetadata({
   const normalizedPath = path === '/' ? '' : path.replace(/\/$/, '');
   const canonical = `${baseUrl}${normalizedPath}`;
 
-  // Use the dynamically generated OG image from /opengraph-image when no custom image is provided.
-  // This ensures an absolute URL is always available (critical for Discord & WhatsApp).
+  // Static OG image stored at public/og-image.png (1200×630).
+  // Must be an absolute URL — Discord, WhatsApp, and Twitter all require it.
+  const defaultOgUrl = `${baseUrl}/og-image.png`;
+
   const ogImage = image
     ? {
         url: image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`,
         width: image.width || 1200,
         height: image.height || 630,
         alt: image.alt || translations.imageAlt || translations.title,
-        type: 'image/png',
       }
     : {
-        url: `${baseUrl}/opengraph-image`,
+        url: defaultOgUrl,
         width: 1200,
         height: 630,
         alt: translations.imageAlt || translations.title,
-        type: 'image/png',
       };
 
   return {
