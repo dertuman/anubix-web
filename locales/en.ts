@@ -194,71 +194,159 @@ export default {
       title: 'Build from your pocket.',
       titleHighlight: 'Without the lock-in.',
       subtitle:
-        "Describe what you want. Anubix builds it, deploys it to your Vercel, your Supabase, your GitHub — you're in control.",
+        'Bring your own API keys for Claude, GPT, and Gemini. Chat with the best AI models and run Claude Code in the cloud — from any device. Your keys are encrypted. The code is yours.',
       cta: 'Start building',
       ctaSecondary: 'See how it works',
+      trustLine:
+        'No credit card required. Keys encrypted end-to-end. You own everything you build.',
     },
     logos: {
-      title: 'Powered by the tools you trust',
+      title: 'Powered by the tools you already use',
+    },
+    problem: {
+      label: 'The problem',
+      title: "You're juggling too much.",
+      body: 'Three apps. Three API keys. Three conversation histories. Context lost every time you switch. And none of them let you code from your phone.',
+      body2:
+        'Bolt and Lovable make API calls — they send prompts and get text back. That works until your project gets complex. Then you need a real coding agent, not a chatbot with a deploy button.',
+      body3:
+        "And if you want to use Claude for reasoning, Gemini for research, and GPT for a quick answer? That's three apps, three histories, zero continuity.",
+      callout:
+        "You shouldn't need a laptop open to build, or three apps open to think.",
+    },
+    howItWorks: {
+      label: 'How it works',
+      title: 'Three things. One app.',
+      step1: {
+        title: 'Chat with the best AI models',
+        description:
+          'Bring your own keys for Claude, GPT, and Gemini. Switch mid-conversation. Your context stays. One interface, one history.',
+      },
+      step2: {
+        title: 'Build real apps',
+        description:
+          'Describe what you want. Anubix spins up Claude Code in a cloud workspace and builds it — full-stack, deployed, yours. Not API calls pretending to code. An actual coding agent with terminal access.',
+      },
+      step3: {
+        title: 'Work from anywhere',
+        description:
+          'Phone, tablet, laptop. Start a build on the bus, review changes at your desk, deploy from the couch. Your workspace lives in the cloud, not on your machine.',
+      },
+    },
+    screenshots: {
+      label: 'See it in action',
+      title: 'See It in Action',
+      subtitle:
+        'A quick look at what building with Anubix looks like.',
+    },
+    differentiator: {
+      label: 'Under the hood',
+      title: 'Your keys. Your models. Our cloud.',
+      body: "You already have API keys for the best AI models. But right now you're switching between apps to use them.",
+      body2:
+        'Anubix brings them together. Chat with Claude, GPT, and Gemini in one conversation. Run Claude Code in a full cloud environment — same agent, same capabilities, but accessible from your phone, your tablet, anywhere.',
+      body3:
+        'Real file system access. Multi-file awareness. Actual debugging. Not API calls pretending to code.',
+      securityCallout:
+        'Your keys are encrypted and never visible — not to us, not to anyone. Stored encrypted, used only to call models on your behalf, never logged or exposed. Delete them anytime.',
     },
     features: {
       label: 'Features',
-      title: "Everything you need, nothing you don't",
-      subtitle:
-        'From idea to deployed app in minutes. Anubix handles the complexity so you can focus on what matters.',
-      conversational: {
-        title: 'Conversational building',
+      title: "Everything you need, nothing you don't.",
+      subtitle: '',
+      multiModel: {
+        title: 'Multi-model chat',
         description:
-          'Just describe what you want in plain English. No code, no jargon. Anubix understands and builds it.',
+          'Claude, GPT, and Gemini in one interface. Bring your own keys, switch between models, keep your full conversation history.',
+      },
+      encrypted: {
+        title: 'Encrypted by default',
+        description:
+          "Your API keys are encrypted end-to-end. We never see them, never log them, never store them in plain text. You're always in control.",
       },
       livePreview: {
         title: 'Live preview',
         description:
-          'See every change in real-time. Your app updates instantly as the AI writes the code.',
+          'See your app update in real time as Claude Code writes the code. No waiting, no refreshing.',
       },
       oneClickDeploy: {
         title: 'One-click deploy',
         description:
-          'Go live instantly. GitHub repo, Vercel hosting, and a public URL — all set up automatically.',
+          'Vercel, GitHub, Supabase — connected and deployed automatically. Your accounts, your infrastructure.',
       },
       youOwnEverything: {
         title: 'You own everything',
         description:
-          'Your code, your accounts, your data. Clerk, Supabase, GitHub, Vercel — all under your control.',
-      },
-      fullStack: {
-        title: 'Full-stack by default',
-        description:
-          'Authentication, database, storage, API routes — every app comes batteries-included.',
+          'Your code. Your repos. Your database. Nothing locked inside Anubix. Leave anytime with everything you built.',
       },
       patterns: {
         title: 'Patterns library',
         description:
-          'Add features like infinite scroll, favorites, or payments with a single click. No prompting required.',
+          'Pre-built, production-ready code patterns. Drag in infinite scroll, vector search, auth flows, payments — entire features drop into your app in seconds.',
+      },
+      mobile: {
+        title: 'Works on mobile',
+        description:
+          'Not a shrunken desktop app. Built for your phone from day one.',
       },
     },
-    howItWorks: {
-      label: 'How it works',
-      title: 'From zero to live in three steps',
-      step1: {
-        title: 'Create',
+    socialProof: {
+      label: 'Built different',
+      title: 'This app built itself.',
+      body: "Anubix was built using Anubix. The product you're looking at was coded, tested, and deployed through the same tool you're about to use.",
+      quote: 'Turned a web app into a phone app in 2 prompts.',
+      quoteAuthor: 'Fionn, Co-founder',
+    },
+    patterns: {
+      label: 'Coming soon',
+      title: 'Patterns. Drop in. Ship faster.',
+      subtitle:
+        'Stop rebuilding the same features from scratch. Patterns are production-ready code blocks you drag into any project — infinite scroll, vector search, auth flows, payments, and more. One tap to supercharge your app.',
+      item1: {
+        title: 'Infinite scroll + filtering',
         description:
-          'Click "Create App" and your personal workspace spins up instantly on the cloud.',
+          'Paginated lists with search, sort, and real-time filtering baked in.',
       },
-      step2: {
-        title: 'Build',
+      item2: {
+        title: 'Vector search',
         description:
-          'Chat with the AI to add features, pages, and integrations. See changes live in the preview.',
+          'Semantic search powered by embeddings. Add AI-powered search to any dataset.',
       },
-      step3: {
-        title: 'Deploy',
+      item3: {
+        title: 'Auth + roles',
         description:
-          'Hit deploy and your app goes live. Share the URL with the world.',
+          'Full authentication with role-based access control. Clerk + Supabase RLS, ready to go.',
       },
+      item4: {
+        title: 'Payments',
+        description:
+          'Stripe integration with subscriptions, one-time payments, and customer portal.',
+      },
+      item5: {
+        title: 'File uploads',
+        description:
+          'Drag-and-drop uploads with preview, compression, and cloud storage.',
+      },
+      item6: {
+        title: 'Real-time updates',
+        description:
+          'Live data sync across all connected clients. No polling, no refresh.',
+      },
+      cta: 'Explore patterns',
+      badge: 'New',
+    },
+    pricing: {
+      label: 'Pricing',
+      title: 'Bring your own keys. Start for free.',
+      description:
+        'Connect your API keys for Claude, GPT, or Gemini. Your keys, encrypted and secure. We provide the cloud workspace, the multi-model chat, and the coding environment.',
+      callout:
+        'Stop switching between ChatGPT, Claude, and Gemini. One app. Your keys. Done.',
+      cta: 'Get started for free',
     },
     founders: {
       label: 'Meet the founders',
-      title: 'The people behind Anubix',
+      title: 'The people behind Anubix.',
       subtitle:
         'Two builders who believe everyone should be able to create software — no matter their background.',
       alex: {
@@ -273,10 +361,12 @@ export default {
       },
     },
     cta: {
-      title: 'Ready to build something?',
+      title: 'Stop tab-switching. Start building.',
       subtitle:
-        'Stop watching tutorials. Stop reading docs. Just describe your app and let Anubix build it.',
+        'One app. The best models. Real code. Any device. Fully encrypted.',
       button: 'Get started for free',
+      trustLine:
+        'No credit card. No lock-in. Keys encrypted end-to-end. You own your code.',
     },
   },
   about: {
@@ -590,6 +680,36 @@ export default {
       idle: 'Idle',
       busy: 'Busy',
       error: 'Error',
+    },
+  },
+  chat: {
+    sidebar: {
+      newChat: 'New Chat',
+      delete: 'Delete',
+      deleteConfirm: 'Are you sure you want to delete this conversation? This cannot be undone.',
+      noConversations: 'No conversations yet',
+      selectOrCreate: 'Start a conversation',
+    },
+    messages: {
+      inputPlaceholder: 'Message Anubix...',
+      noMessages: 'Send a message to get started',
+      scrollToBottom: 'Scroll to bottom',
+      streaming: 'Streaming...',
+    },
+    share: {
+      title: 'Share Conversation',
+      toggle: 'Share publicly',
+      copyLink: 'Share link',
+      linkCopied: 'Link copied!',
+    },
+    apiKeys: {
+      title: 'API Keys',
+      description: 'Add your API keys to use AI models. Keys are encrypted and stored securely.',
+      noKeysTitle: 'Add your API keys to get started',
+      noKeysDescription: 'Bring your own keys for OpenAI, Google AI, or Anthropic. Your keys are encrypted end-to-end and never stored in plain text.',
+    },
+    models: {
+      selectModel: 'Select model',
     },
   },
 } as const;

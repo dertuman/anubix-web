@@ -4,7 +4,7 @@ import React from 'react';
 import { default as LottieReact } from 'lottie-react';
 
 interface LottieProps {
-  animationData: any;
+  animationData: Record<string, unknown>;
   loop?: boolean;
   className?: string;
 }

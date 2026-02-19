@@ -12,3 +12,6 @@ export const TESTING_EMAIL = process.env.TESTING_EMAIL || '';
 export const TESTING_PASSWORD = process.env.TESTING_PASSWORD || '';
 export const TESTING_EMAIL_2 = process.env.TESTING_EMAIL_2 || '';
 export const TESTING_PASSWORD_2 = process.env.TESTING_PASSWORD_2 || '';
+
+export const ANUBIX_WEB_ASSETS_BLOB_READ_WRITE_TOKEN =
+  process.env.ANUBIX_WEB_ASSETS_BLOB_READ_WRITE_TOKEN || '';

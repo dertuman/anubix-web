@@ -1,3 +1,4 @@
+import type React from 'react';
 import { URLSearchParams } from 'url';
 import imageCompression from 'browser-image-compression';
 import { clsx, type ClassValue } from 'clsx';
@@ -75,8 +76,8 @@ export function compressImages(
  * @param e - The event object.
  * @returns { imagePreview, compressedImage } The compressed image and its preview.
  */
-export async function compressImage(fileInputEvent: any, callback: any) {
-  const file = fileInputEvent.target.files[0];
+export async function compressImage(fileInputEvent: React.ChangeEvent<HTMLInputElement>, callback: (_result: { imagePreview: string; compressedImage: File }) => void) {
+  const file = fileInputEvent.target.files?.[0];
   if (!file) {
     console.error('No file selected for compression');
     return;

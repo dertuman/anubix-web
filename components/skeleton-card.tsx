@@ -2,7 +2,11 @@
 
 export function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-lg bg-card">
+    <div className="relative overflow-hidden rounded-lg bg-card">
+      {/* Subtle glowing overlay */}
+      <div className="animate-pulse-glow pointer-events-none absolute inset-0 z-10">
+        <div className="h-full w-full bg-gradient-to-r from-primary/5 via-custom-green/10 to-primary/5 blur-xl" />
+      </div>
       <div className="relative aspect-4/3 w-full animate-pulse bg-muted duration-700" />
       <div className="space-y-3 p-4">
         <div className="h-6 w-3/4 animate-pulse rounded bg-muted duration-700" />

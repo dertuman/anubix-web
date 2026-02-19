@@ -1,29 +1,30 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 :root {
-  /* ─── Core (zinc light) ─── */
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(240 10% 3.9%);
+  /* ─── Core (light) ─── */
+  --background: hsl(0 0% 97%);
+  --foreground: hsl(0 0% 10%);
 
   /* ─── Card / Popover ─── */
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(240 10% 3.9%);
+  --card-foreground: hsl(0 0% 10%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(240 10% 3.9%);
+  --popover-foreground: hsl(0 0% 10%);
 
   /* ─── Brand (emerald) ─── */
+  /* --primary: hsl(12, 100%, 60%); */
   --primary: hsl(160 84% 39%);
   --primary-foreground: hsl(0 0% 100%);
   --primary-muted: hsl(160 84% 39% / 0.12);
 
-  /* ─── Secondary / Muted / Accent (zinc) ─── */
-  --secondary: hsl(240 4.8% 95.9%);
-  --secondary-foreground: hsl(240 5.9% 10%);
-  --muted: hsl(240 4.8% 95.9%);
-  --muted-foreground: hsl(240 3.8% 46.1%);
-  --accent: hsl(240 4.8% 95.9%);
-  --accent-foreground: hsl(240 5.9% 10%);
+  /* ─── Secondary / Muted / Accent ─── */
+  --secondary: hsl(0 0% 93%);
+  --secondary-foreground: hsl(0 0% 10%);
+  --muted: hsl(0 0% 93%);
+  --muted-foreground: hsl(0 0% 40%);
+  --accent: hsl(0 0% 91%);
+  --accent-foreground: hsl(0 0% 10%);
 
   /* ─── Semantic States ─── */
   --destructive: hsl(0 84.2% 60.2%);
@@ -38,24 +39,29 @@
   --caution-foreground: hsl(0 0% 100%);
 
   /* ─── Form / Input ─── */
-  --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
+  --border: hsl(0 0% 82%);
+  --input: hsl(0 0% 82%);
   --ring: hsl(160 84% 39%);
   --radius: 0.625rem;
 
   /* ─── Code / Mono ─── */
-  --code: hsl(240 4.8% 95.9%);
-  --code-foreground: hsl(240 5.9% 10%);
+  --code: hsl(0 0% 93%);
+  --code-foreground: hsl(0 0% 10%);
 
   /* ─── Highlight (inline emphasis in instructions) ─── */
-  --highlight: hsl(240 10% 3.9%);
+  --highlight: hsl(0 0% 10%);
 
   /* ─── Tabs ─── */
-  --tabs: hsl(240 4.8% 95.9%);
-  --tabs-foreground: hsl(240 3.8% 46.1%);
+  --tabs: hsl(0 0% 93%);
+  --tabs-foreground: hsl(0 0% 40%);
+
+  /* ─── User Chat Bubble ─── */
+  --user-bubble: hsl(0 0% 10%);
+  --user-bubble-foreground: hsl(0 0% 97%);
+  --user-bubble-ring: hsl(0 0% 10% / 0.15);
 
   /* ─── Extended Palette ─── */
-  --custom-green: hsl(142 71% 45%);
+  --custom-green: hsl(152 56% 34%);
   --green-share: hsl(160 86% 45%);
   --purple: hsl(273 62% 47%);
   --orange-custom: hsl(25 95% 53%);
@@ -74,6 +80,7 @@
   --popover-foreground: hsl(0 0% 98%);
 
   /* ─── Brand (emerald) ─── */
+  /* --primary: hsl(12, 100%, 60%); */
   --primary: hsl(160 84% 39%);
   --primary-foreground: hsl(0 0% 98%);
   --primary-muted: hsl(160 84% 39% / 0.15);
@@ -114,6 +121,11 @@
   /* ─── Tabs ─── */
   --tabs: hsl(240 3.7% 15.9%);
   --tabs-foreground: hsl(240 5% 64.9%);
+
+  /* ─── User Chat Bubble (original green) ─── */
+  --user-bubble: hsl(160 84% 39% / 0.15);
+  --user-bubble-foreground: hsl(0 0% 98%);
+  --user-bubble-ring: hsl(160 84% 39% / 0.20);
 
   /* ─── Extended Palette ─── */
   --orange-custom: hsl(352 73% 61%);
@@ -161,6 +173,9 @@
   --color-green-share: var(--green-share);
   --color-custom-green: var(--custom-green);
   --color-purple: var(--purple);
+  --color-user-bubble: var(--user-bubble);
+  --color-user-bubble-foreground: var(--user-bubble-foreground);
+  --color-user-bubble-ring: var(--user-bubble-ring);
 
   /* ─── Border radius ─── */
   --radius-sm: calc(var(--radius) - 4px);
@@ -250,3 +265,147 @@
 .animate-scale {
   animation: scaleAndFade 0.6s ease-in-out;
 }
+
+/* ─── Glowing Loader Animations (from talkartech) ─── */
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.2;
+    filter: blur(15px);
+    transform: scale(1) translate(0);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(20px);
+    transform: scale(1.05) translate(-2px, 2px);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes float-1 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(100%, -150%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float-2 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-200%, 300%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float-3 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-140%, -110%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float-4 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(180%, 170%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float-5 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(180%, 170%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+}
+
+.float-particle-1 {
+  animation: float-1 2s ease-in-out infinite;
+}
+
+.float-particle-2 {
+  animation: float-2 3s ease-in-out infinite;
+}
+
+.float-particle-3 {
+  animation: float-3 2s ease-in-out infinite;
+}
+
+.float-particle-4 {
+  animation: float-4 2.5s ease-in-out infinite;
+}
+
+.float-particle-5 {
+  animation: float-5 3.5s ease-in-out infinite;
+}
+
+/* End Glowing Loader Animations */
+
+/* ─── Typing Dots Animation (for inline chat indicators) ─── */
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-33%);
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.4s ease-in-out infinite;
+}
+
+.typing-dot-delay-1 {
+  animation-delay: 0.15s;
+}
+
+.typing-dot-delay-2 {
+  animation-delay: 0.3s;
+}
+
+/* End Typing Dots Animation */

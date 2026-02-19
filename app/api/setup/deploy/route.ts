@@ -149,10 +149,11 @@ export async function POST(req: NextRequest) {
       message:
         'Environment variables set and redeploy triggered. Your site will be ready in ~60 seconds.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deploying:', error);
+    const message = error instanceof Error ? error.message : 'Failed to deploy';
     return NextResponse.json(
-      { error: error.message || 'Failed to deploy' },
+      { error: message },
       { status: 500 }
     );
   }

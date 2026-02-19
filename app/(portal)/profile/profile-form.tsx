@@ -150,8 +150,8 @@ export function ProfileForm() {
     },
   });
 
-  const handleImageChange = (e: any) => {
-    compressImage(e, ({ imagePreview, compressedImage }: any) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    compressImage(e, ({ imagePreview, compressedImage }: { imagePreview: string; compressedImage: File }) => {
       setImagePreview(imagePreview);
       setUploadedPicture(compressedImage);
     });

@@ -5,7 +5,6 @@ import { useScopedI18n } from '@/locales/client';
 import {
   EllipsisVertical,
   FolderPlus,
-  Loader2,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -40,6 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
+import { Loader } from '@/components/ui/loader';
 
 // ── Edit session modal ──────────────────────────────────────
 
@@ -98,7 +98,7 @@ function EditSessionModal({
       >
         <button
           onClick={onClose}
-          className="text-muted-foreground hover:text-foreground absolute top-3 right-3 rounded-md p-1"
+          className="text-muted-foreground absolute top-3 right-3 rounded-md p-1 transition-colors hover:bg-muted/50 hover:text-foreground"
         >
           <X className="size-4" />
         </button>
@@ -132,7 +132,7 @@ function EditSessionModal({
                       onClick={() =>
                         setEditPaths((prev) => prev.filter((x) => x !== p))
                       }
-                      className="hover:text-destructive ml-0.5"
+                      className="ml-0.5 rounded-sm transition-colors hover:bg-destructive/10 hover:text-destructive"
                     >
                       <X className="size-3" />
                     </button>
@@ -173,7 +173,7 @@ function EditSessionModal({
             onClick={handleSave}
             disabled={editPaths.length === 0 || saving}
           >
-            {saving ? <Loader2 className="size-4 animate-spin" /> : t('save')}
+            {saving ? <Loader variant="glowing" size={16} /> : t('save')}
           </Button>
         </div>
       </div>
@@ -364,7 +364,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                         {p.split(/[\\/]/).pop()}
                         <button
                           onClick={() => removeSelectedPath(p)}
-                          className="hover:text-destructive ml-0.5"
+                          className="ml-0.5 rounded-sm transition-colors hover:bg-destructive/10 hover:text-destructive"
                         >
                           <X className="size-3" />
                         </button>
@@ -384,8 +384,8 @@ export const CodeSidebar = memo(function CodeSidebar({
                   {t('availableRepos')}
                 </p>
                 {loadingRepos && (
-                  <div className="border-border/20 flex items-center gap-2 rounded-md border px-3 py-4">
-                    <Loader2 className="text-muted-foreground size-4 animate-spin" />
+                  <div className="border-border/20 flex items-center gap-3 rounded-md border px-3 py-4">
+                    <Loader variant="glowing" size={20} />
                     <span className="text-muted-foreground text-xs">
                       {t('loadingRepos')}
                     </span>
@@ -539,7 +539,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                 className="w-full"
               >
                 {creating ? (
-                  <Loader2 className="size-4 animate-spin" />
+                  <Loader variant="glowing" size={20} />
                 ) : selectedPaths.length >= 2 ? (
                   `Create Workspace (${selectedPaths.length} folders)`
                 ) : (

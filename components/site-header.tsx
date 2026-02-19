@@ -28,6 +28,12 @@ export function SiteHeader() {
         comingSoon: false,
       },
       {
+        title: 'Chat',
+        href: '/chat',
+        isPublic: true,
+        comingSoon: false,
+      },
+      {
         title: 'Code',
         href: '/code',
         isPublic: true,
@@ -51,7 +57,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
-      <div className="container flex h-16 items-center pe-2 ps-4 sm:justify-between sm:space-x-0 md:pe-4">
+      <div className="mx-auto flex h-16 w-full max-w-none items-center px-4 sm:justify-between sm:space-x-0 sm:px-6 lg:px-8">
         <MainNav items={siteConfig.mainNav} />
         <div className="flex flex-1 items-center justify-end space-x-3">
           <nav className="flex items-center space-x-2">

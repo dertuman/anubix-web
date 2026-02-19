@@ -171,8 +171,8 @@ export async function POST(req: NextRequest) {
             }),
           });
           repoUrl = repo.html_url;
-        } catch (error: any) {
-          if (error.message?.includes('name already exists')) {
+        } catch (error: unknown) {
+          if (error instanceof Error && error.message?.includes('name already exists')) {
             try {
               const existing = await githubApi(
                 `/repos/${owner}/${repoName}`,
@@ -309,10 +309,11 @@ export async function POST(req: NextRequest) {
           owner,
           repoName,
         });
-      } catch (error: any) {
-        const msg = error.message?.includes('Bad credentials')
+      } catch (error: unknown) {
+        const errMessage = error instanceof Error ? error.message : '';
+        const msg = errMessage.includes('Bad credentials')
           ? 'Invalid GitHub token. Make sure you followed the token creation steps above.'
-          : error.message || 'Failed to push to GitHub';
+          : errMessage || 'Failed to push to GitHub';
 
         send({ step: 'error', error: msg });
       } finally {

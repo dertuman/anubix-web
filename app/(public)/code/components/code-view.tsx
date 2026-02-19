@@ -6,7 +6,6 @@ import { useScopedI18n } from '@/locales/client';
 import { useClaudeCode } from '@/hooks/useClaudeCode';
 import type { FileAttachment } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
-import { getSessionDraft, setSessionDraft } from '@/lib/stores/bridge-store';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -19,9 +18,9 @@ import { CodeSidebar, MobileSidebarTrigger } from './code-sidebar';
 
 const statusBadgeClass = (status: string) =>
   cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
-    status === 'idle' && 'bg-primary/15 text-primary',
-    status === 'busy' && 'bg-warning/15 text-warning',
-    status === 'error' && 'bg-destructive/15 text-destructive');
+    status === 'idle' && 'bg-primary/20 text-primary ring-1 ring-primary/25',
+    status === 'busy' && 'bg-warning/20 text-warning ring-1 ring-warning/25',
+    status === 'error' && 'bg-destructive/20 text-destructive ring-1 ring-destructive/25');
 
 export function CodeView() {
   const t = useScopedI18n('code');
@@ -38,11 +37,8 @@ export function CodeView() {
   const [pulling, setPulling] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [inputValue, setInputValueRaw] = useState('');
   const dragCounterRef = useRef(0);
   const codeInputRef = useRef<CodeInputHandle>(null);
-  const prevSessionRef = useRef<string | null>(null);
-  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [questionSelectionsMap, setQuestionSelectionsMap] = useState<Map<string, Record<number, string>>>(new Map());
   const handleQuestionSelect = useCallback((messageId: string, selections: Record<number, string>) => {
@@ -80,26 +76,7 @@ export function CodeView() {
     }
   }, [isBusy, queuedMessages, sendMessage]);
 
-  // ── Input draft persistence ────────────────────────────────
-  const setInputValue = useCallback((val: string) => {
-    setInputValueRaw(val);
-    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-    draftTimerRef.current = setTimeout(() => { if (activeSessionId) setSessionDraft(activeSessionId, val); }, 400);
-  }, [activeSessionId]);
-
   const activeSession = sessions.find((s) => s.id === activeSessionId);
-
-  useEffect(() => {
-    const prev = prevSessionRef.current;
-    if (prev && prev !== activeSessionId) {
-      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-      setSessionDraft(prev, inputValue);
-    }
-    if (activeSessionId && activeSessionId !== prev) setInputValueRaw(getSessionDraft(activeSessionId));
-    else if (!activeSessionId) setInputValueRaw('');
-    prevSessionRef.current = activeSessionId;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSessionId]);
 
   // ── Copy markdown ──────────────────────────────────────────
   const [mdCopied, setMdCopied] = useState(false);
@@ -164,9 +141,6 @@ export function CodeView() {
   const handleSend = useCallback(async (text: string, files?: FileAttachment[]) => {
     if (!activeSessionId) return;
     setAttachedFiles([]);
-    setInputValueRaw('');
-    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-    setSessionDraft(activeSessionId, '');
     await sendMessage(text, files);
   }, [activeSessionId, sendMessage]);
 
@@ -274,7 +248,7 @@ export function CodeView() {
 
         <CodeInput ref={codeInputRef} onSend={handleSend} onStop={abort} isBusy={isBusy} disabled={!activeSessionId}
           files={attachedFiles} onAddFiles={handleFilesAdded} onRemoveFile={handleRemoveFile} slashCommands={slashCommands}
-          value={inputValue} onValueChange={setInputValue} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} />
+          activeSessionId={activeSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} />
       </div>
     </div>
   );

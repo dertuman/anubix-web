@@ -49,10 +49,11 @@ export async function POST(req: NextRequest) {
 
     // No error means the table exists and is queryable
     return NextResponse.json({ exists: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error verifying database:', error);
+    const message = error instanceof Error ? error.message : 'Failed to verify database';
     return NextResponse.json(
-      { error: error.message || 'Failed to verify database' },
+      { error: message },
       { status: 500 }
     );
   }

@@ -4,17 +4,13 @@ import {
   forwardRef,
   KeyboardEvent,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
 } from 'react';
 import {
   ArrowUp,
-  FileAudio,
-  FileCode,
-  FileIcon,
-  FileText,
-  FileVideo,
   Loader2,
   Mic,
   Paperclip,
@@ -25,6 +21,8 @@ import {
 import type { FileAttachment } from '@/types/code';
 import type { SlashCommand } from '@/types/code';
 import { formatFileSize } from '@/lib/file-utils';
+import { getCategoryIcon } from '@/lib/ui-utils';
+import { getSessionDraft, setSessionDraft } from '@/lib/stores/bridge-store';
 import { cn } from '@/lib/utils';
 import { AudioWaveform } from '@/components/ui/audio-waveform';
 import { Button } from '@/components/ui/button';
@@ -42,6 +40,8 @@ export interface QueuedMessage {
 
 export interface CodeInputHandle {
   focus: () => void;
+  clear: () => void;
+  setValue: (_val: string) => void;
 }
 
 interface CodeInputProps {
@@ -53,22 +53,11 @@ interface CodeInputProps {
   onAddFiles: (_files: File[]) => void;
   onRemoveFile: (_id: string) => void;
   slashCommands: SlashCommand[];
-  value: string;
-  onValueChange: (_value: string) => void;
+  activeSessionId: string | null;
   queuedMessages: QueuedMessage[];
   onQueue: (_text: string, _files?: FileAttachment[]) => void;
   onDequeue: (_id: string) => void;
   onBypass: (_id: string) => void;
-}
-
-function getCategoryIcon(category: string) {
-  switch (category) {
-    case 'audio': return FileAudio;
-    case 'video': return FileVideo;
-    case 'text': return FileCode;
-    case 'pdf': return FileText;
-    default: return FileIcon;
-  }
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -77,11 +66,12 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
   (
     {
       onSend, onStop, isBusy, disabled, files, onAddFiles, onRemoveFile,
-      slashCommands, value, onValueChange: setValue,
+      slashCommands, activeSessionId,
       queuedMessages, onQueue, onDequeue, onBypass,
     },
     ref,
   ) => {
+    const [value, setValueRaw] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,13 +80,50 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
     const audioChunksRef = useRef<Blob[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const prevSessionRef = useRef<string | null>(null);
+    const valueRef = useRef(value);
 
     const imageFiles = files.filter((f) => f.category === 'image');
     const nonImageFiles = files.filter((f) => f.category !== 'image');
 
+    // Keep valueRef in sync without triggering effects
+    useEffect(() => { valueRef.current = value; }, [value]);
+
+    // ── Input value with draft persistence ──────────────────────
+
+    const setValue = useCallback((val: string) => {
+      setValueRaw(val);
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = setTimeout(() => { if (activeSessionId) setSessionDraft(activeSessionId, val); }, 400);
+    }, [activeSessionId]);
+
+    const clearInput = useCallback(() => {
+      setValueRaw('');
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+      if (activeSessionId) setSessionDraft(activeSessionId, '');
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    }, [activeSessionId]);
+
+    // ── Draft restoration on session switch ─────────────────────
+
+    useEffect(() => {
+      const prev = prevSessionRef.current;
+      if (prev && prev !== activeSessionId) {
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+        setSessionDraft(prev, valueRef.current);
+      }
+      if (activeSessionId && activeSessionId !== prev) setValueRaw(getSessionDraft(activeSessionId));
+      else if (!activeSessionId) setValueRaw('');
+      prevSessionRef.current = activeSessionId;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeSessionId]);
+
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
-    }));
+      clear: () => clearInput(),
+      setValue: (val: string) => setValueRaw(val),
+    }), [clearInput]);
 
     // ── Send / queue ────────────────────────────────────────────
 
@@ -108,9 +135,8 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
       } else {
         onSend(trimmed, files.length > 0 ? files : undefined);
       }
-      setValue('');
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
-    }, [value, files, disabled, isBusy, onSend, onQueue, setValue]);
+      clearInput();
+    }, [value, files, disabled, isBusy, onSend, onQueue, clearInput]);
 
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (slashMenuRef.current?.handleKeyDown(e.key)) { e.preventDefault(); return; }
@@ -218,8 +244,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
           if (autoSend) {
             if (isBusy) onQueue(combined, files.length > 0 ? [...files] : undefined);
             else onSend(combined, files.length > 0 ? files : undefined);
-            setValue('');
-            if (textareaRef.current) textareaRef.current.style.height = 'auto';
+            clearInput();
           } else {
             setValue(combined);
             setTimeout(() => {
@@ -250,7 +275,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             <button
               type="button"
               onClick={() => onRemoveFile(f.id)}
-              className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 transition-all hover:scale-110 hover:brightness-110 group-hover:opacity-100"
             >
               <X className="size-3" />
             </button>
@@ -268,7 +293,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
               <button
                 type="button"
                 onClick={() => onRemoveFile(f.id)}
-                className="ml-1 flex size-4 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                className="ml-1 flex size-4 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
               >
                 <X className="size-3" />
               </button>
@@ -315,7 +340,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             <button
               onClick={() => onDequeue(qm.id)}
               title="Remove from queue"
-              className="shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+              className="shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
             >
               <X className="size-3" />
             </button>
@@ -363,7 +388,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
     // ── Right padding calc ──────────────────────────────────────
 
     const rightButtonCount = (isBusy ? 1 : 0) + 1 + (canSend ? 1 : 0);
-    const rightPadding = rightButtonCount === 3 ? 'pr-36' : rightButtonCount === 2 ? 'pr-28' : 'pr-16';
+    const rightPadding = rightButtonCount === 3 ? 'pr-40' : rightButtonCount === 2 ? 'pr-32' : 'pr-20';
 
     // ── Default UI ──────────────────────────────────────────────
 
@@ -384,7 +409,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             onInput={handleInput}
             onPaste={handlePaste}
             placeholder={isBusy ? 'Type to queue a message...' : 'Message Claude Code...'}
-            className={cn('max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 text-sm focus-visible:ring-1', rightPadding)}
+            className={cn('max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 text-sm [scrollbar-gutter:stable] focus-visible:ring-1', rightPadding)}
             rows={1}
             disabled={disabled}
           />
@@ -395,18 +420,18 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             </Button>
           </div>
 
-          <div className="absolute bottom-2 right-2 flex items-center gap-1">
-            {isBusy && (
-              <Button variant="destructive" size="icon" onClick={onStop} className="size-8 rounded-lg" title="Stop (Esc)">
-                <Square className="size-3.5" />
-              </Button>
-            )}
+          <div className="absolute bottom-2 right-5 flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-8 rounded-lg text-muted-foreground hover:text-primary" title="Record voice">
               <Mic className={cn('size-4', canSend && 'size-3.5')} />
             </Button>
             {canSend && (
               <Button size="icon" onClick={handleSend} disabled={disabled} className="size-8 rounded-lg" title={isBusy ? 'Queue message' : 'Send message'}>
                 <ArrowUp className="size-4" />
+              </Button>
+            )}
+            {isBusy && (
+              <Button variant="destructive" size="icon" onClick={onStop} className="size-8 rounded-lg" title="Stop (Esc)">
+                <Square className="size-3.5" />
               </Button>
             )}
           </div>

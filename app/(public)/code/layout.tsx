@@ -13,7 +13,7 @@ export default function CodeLayout({ children }: CodeLayoutProps) {
   if (!isLoaded) {
     return (
       <div className="flex h-[calc(100dvh-4.1rem)] items-center justify-center">
-        <Loader />
+        <Loader variant="glowing" size="large" />
       </div>
     );
   }

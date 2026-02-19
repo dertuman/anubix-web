@@ -34,6 +34,10 @@ export function CtaSection() {
                 </Button>
               </Link>
             </div>
+            {/* Trust line */}
+            <p className="text-muted-foreground/70 mt-4 text-xs sm:text-sm">
+              {t('trustLine')}
+            </p>
           </div>
         </div>
       </div>

@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle, Check, CheckCircle, ChevronDown, ChevronRight,
-  Copy, FileAudio, FileCode, FileIcon, FileText, FileVideo,
-  Loader2, MessageSquareText, Mic, ShieldAlert, Terminal, X, XCircle, Zap,
+  Copy, MessageSquareText, Mic, ShieldAlert, Terminal, X, XCircle, Zap,
 } from 'lucide-react';
 import { useScopedI18n } from '@/locales/client';
 import type {
@@ -15,7 +14,9 @@ import type {
   FileAttachment,
 } from '@/types/code';
 import { cn } from '@/lib/utils';
+import { Loader } from '@/components/ui/loader';
 import { formatFileSize } from '@/lib/file-utils';
+import { getCategoryIcon } from '@/lib/ui-utils';
 import { AudioWaveform } from '@/components/ui/audio-waveform';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,19 +73,14 @@ function renderMarkdown(text: string): React.ReactNode[] {
   return parts;
 }
 
-function getCategoryIcon(category: string) {
-  switch (category) {
-    case 'audio': return FileAudio;
-    case 'video': return FileVideo;
-    case 'text': return FileCode;
-    case 'pdf': return FileText;
-    default: return FileIcon;
-  }
-}
+function ElapsedTimer({ startTs, stopped, durationMs }: { startTs: number; stopped?: boolean; durationMs?: number }) {
+  // If a persisted duration exists (from a completed tool), use it directly
+  const persistedSecs = durationMs != null ? Math.floor(durationMs / 1000) : null;
 
-function ElapsedTimer({ startTs, stopped }: { startTs: number; stopped?: boolean }) {
-  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - startTs) / 1000));
-  const frozenRef = React.useRef<number | null>(null);
+  const [elapsed, setElapsed] = useState(() =>
+    persistedSecs ?? Math.floor((Date.now() - startTs) / 1000),
+  );
+  const frozenRef = React.useRef<number | null>(persistedSecs);
 
   useEffect(() => {
     if (stopped && frozenRef.current === null) {
@@ -94,10 +90,10 @@ function ElapsedTimer({ startTs, stopped }: { startTs: number; stopped?: boolean
   }, [stopped, startTs]);
 
   useEffect(() => {
-    if (stopped) return;
+    if (stopped || persistedSecs != null) return;
     const interval = setInterval(() => setElapsed(Math.floor((Date.now() - startTs) / 1000)), 1000);
     return () => clearInterval(interval);
-  }, [startTs, stopped]);
+  }, [startTs, stopped, persistedSecs]);
 
   const displayElapsed = frozenRef.current ?? elapsed;
   if (displayElapsed > 3600) return null;
@@ -118,7 +114,7 @@ function CollapsibleText({ text, maxLines = 20 }: { text: string; maxLines?: num
     <div>
       <div className="whitespace-pre-wrap text-sm leading-relaxed">{renderMarkdown(displayText)}</div>
       {needsCollapse && (
-        <button onClick={() => setExpanded(!expanded)} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline">
+        <button onClick={() => setExpanded(!expanded)} className="mt-1 flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-primary/80 transition-colors hover:bg-primary/15 hover:text-primary">
           <ChevronDown className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
           {expanded ? 'Show less' : `Show all ${lines.length} lines`}
         </button>
@@ -149,14 +145,14 @@ interface CodeMessageProps {
   onQuestionSelect?: (_messageId: string, _selections: Record<number, string>) => void;
 }
 
-export function CodeMessage({ message, isFree, onApprove, onDeny, onAnswer, questionSelections, onQuestionSelect }: CodeMessageProps) {
+export const CodeMessage = memo(function CodeMessage({ message, isFree, onApprove, onDeny, onAnswer, questionSelections, onQuestionSelect }: CodeMessageProps) {
   const t = useScopedI18n('code.messages');
 
   const content = useMemo(() => {
     switch (message.type) {
       case 'user': return <UserMessage text={message.text} images={message.images} files={message.files} />;
       case 'assistant_text': return <AssistantTextMessage text={message.text} isComplete={message.isComplete} />;
-      case 'tool_use': return <ToolUseMessage toolName={message.toolName} isComplete={message.isComplete} ts={message.ts} t={t} />;
+      case 'tool_use': return <ToolUseMessage toolName={message.toolName} isComplete={message.isComplete} ts={message.ts} durationMs={message.durationMs} t={t} />;
       case 'approval_request': return <ApprovalRequestMessage toolName={message.toolName} toolInput={message.toolInput} onApprove={() => onApprove?.()} onDeny={() => onDeny?.()} t={t} />;
       case 'question': return <QuestionMessage questions={message.questions} onAnswer={(a) => onAnswer?.(a)} initialSelections={questionSelections} onPartialSelect={(s) => onQuestionSelect?.(message.id, s)} />;
       case 'result': return <ResultMessage message={message} isFree={isFree} t={t} />;
@@ -178,7 +174,7 @@ export function CodeMessage({ message, isFree, onApprove, onDeny, onAnswer, ques
       {content}
     </motion.div>
   );
-}
+});
 
 // ── Sub-components ──────────────────────────────────────────
 
@@ -187,7 +183,7 @@ function UserMessage({ text, images, files }: { text: string; images?: string[];
 
   return (
     <div className="flex justify-end">
-      <div className="flex max-w-[85%] flex-col gap-2">
+      <div className="flex flex-col gap-2">
         {nonImageFiles.length > 0 && (
           <div className="flex flex-wrap justify-end gap-2">
             {nonImageFiles.map((f) => {
@@ -205,7 +201,7 @@ function UserMessage({ text, images, files }: { text: string; images?: string[];
           </div>
         )}
         {text && (
-          <div className="flex items-start gap-1.5 self-end overflow-hidden rounded-xl bg-accent px-4 py-2.5 text-accent-foreground">
+          <div className="flex items-start gap-1.5 self-end overflow-hidden rounded-xl rounded-br-none bg-user-bubble text-user-bubble-foreground ring-1 ring-user-bubble-ring px-4 py-2.5">
             <p className="min-w-0 flex-1 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
             <MessageActions text={text} />
           </div>
@@ -224,7 +220,7 @@ function UserMessage({ text, images, files }: { text: string; images?: string[];
 function AssistantTextMessage({ text, isComplete }: { text: string; isComplete: boolean }) {
   return (
     <div className="flex justify-start">
-      <div className="flex max-w-[85%] items-start gap-1.5 overflow-hidden rounded-xl bg-muted px-4 py-2.5">
+      <div className="flex items-start gap-1.5 overflow-hidden rounded-xl rounded-bl-none bg-muted px-4 py-2.5">
         <div className="min-w-0 flex-1 wrap-break-word">
           <CollapsibleText text={text} />
           {!isComplete && <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-foreground/60" />}
@@ -235,7 +231,7 @@ function AssistantTextMessage({ text, isComplete }: { text: string; isComplete: 
   );
 }
 
-function ToolUseMessage({ toolName, isComplete, ts, t }: { toolName: string; isComplete: boolean; ts: number; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
+function ToolUseMessage({ toolName, isComplete, ts, durationMs, t }: { toolName: string; isComplete: boolean; ts: number; durationMs?: number; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
   return (
     <div className="flex justify-start">
       <div className="flex items-center gap-2.5 rounded-lg bg-muted/60 px-3 py-2">
@@ -243,18 +239,14 @@ function ToolUseMessage({ toolName, isComplete, ts, t }: { toolName: string; isC
         <span className="text-xs font-medium text-foreground/80">{toolName}</span>
         {isComplete ? (
           <>
-            <Badge variant="outline" className="h-5 gap-0.5 border-custom-green/40 bg-custom-green/10 px-1.5 text-[10px] text-custom-green">
+            <Badge variant="outline" className="h-5 gap-0.5 border-custom-green/50 bg-custom-green/15 px-1.5 text-[10px] text-custom-green">
               <Check className="size-2.5" />{t('toolComplete')}
             </Badge>
-            <ElapsedTimer startTs={ts} stopped />
+            <ElapsedTimer startTs={ts} stopped durationMs={durationMs} />
           </>
         ) : (
           <>
-            <div className="flex items-center gap-1">
-              <span className="size-1.5 animate-[pulse_1.4s_ease-in-out_infinite] rounded-full bg-primary/60" />
-              <span className="size-1.5 animate-[pulse_1.4s_ease-in-out_0.2s_infinite] rounded-full bg-primary/60" />
-              <span className="size-1.5 animate-[pulse_1.4s_ease-in-out_0.4s_infinite] rounded-full bg-primary/60" />
-            </div>
+            <Loader variant="dots" size={18} />
             <ElapsedTimer startTs={ts} />
           </>
         )}
@@ -271,12 +263,13 @@ export interface ToolUseGroupData {
   messages: CodeToolUseMessage[];
   allComplete: boolean;
   firstTs: number;
+  totalDurationMs?: number;
   activeMessage: CodeToolUseMessage | null;
 }
 
-export function ToolUseGroup({ group, t }: { group: ToolUseGroupData; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
+export const ToolUseGroup = memo(function ToolUseGroup({ group, t }: { group: ToolUseGroupData; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
   const [expanded, setExpanded] = useState(false);
-  const { toolName, messages, allComplete, firstTs, activeMessage } = group;
+  const { toolName, messages, allComplete, firstTs, totalDurationMs, activeMessage } = group;
 
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
@@ -287,9 +280,9 @@ export function ToolUseGroup({ group, t }: { group: ToolUseGroupData; t: ReturnT
           <span className="text-xs font-medium text-foreground/80">{toolName}</span>
           <span className="text-xs text-muted-foreground">{t('toolGroupCount', { count: messages.length })}</span>
           {allComplete ? (
-            <><Badge variant="outline" className="h-5 gap-0.5 border-custom-green/40 bg-custom-green/10 px-1.5 text-[10px] text-custom-green"><Check className="size-2.5" />{t('toolComplete')}</Badge><ElapsedTimer startTs={firstTs} stopped /></>
+            <><Badge variant="outline" className="h-5 gap-0.5 border-custom-green/50 bg-custom-green/15 px-1.5 text-[10px] text-custom-green"><Check className="size-2.5" />{t('toolComplete')}</Badge><ElapsedTimer startTs={firstTs} stopped durationMs={totalDurationMs} /></>
           ) : (
-            <><div className="flex items-center gap-1"><span className="size-1.5 animate-[pulse_1.4s_ease-in-out_infinite] rounded-full bg-primary/60" /><span className="size-1.5 animate-[pulse_1.4s_ease-in-out_0.2s_infinite] rounded-full bg-primary/60" /><span className="size-1.5 animate-[pulse_1.4s_ease-in-out_0.4s_infinite] rounded-full bg-primary/60" /></div><ElapsedTimer startTs={firstTs} /></>
+            <><Loader variant="dots" size={18} /><ElapsedTimer startTs={firstTs} /></>
           )}
         </button>
       </div>
@@ -298,7 +291,7 @@ export function ToolUseGroup({ group, t }: { group: ToolUseGroupData; t: ReturnT
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="ml-4 mt-1 space-y-1 overflow-hidden border-l-2 border-border/20 pl-3">
             {messages.map((msg) => (
               <motion.div key={msg.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.1 }}>
-                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} t={t} />
+                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} durationMs={msg.durationMs} t={t} />
               </motion.div>
             ))}
           </motion.div>
@@ -306,25 +299,26 @@ export function ToolUseGroup({ group, t }: { group: ToolUseGroupData; t: ReturnT
       </AnimatePresence>
       {!expanded && activeMessage && (
         <div className="ml-4 mt-1 border-l-2 border-primary/30 pl-3">
-          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} t={t} />
+          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} durationMs={activeMessage.durationMs} t={t} />
         </div>
       )}
     </motion.div>
   );
-}
+});
 
 export interface ToolUseSuperGroupData {
   id: string;
   messages: CodeToolUseMessage[];
   allComplete: boolean;
   firstTs: number;
+  totalDurationMs?: number;
   activeMessage: CodeToolUseMessage | null;
   toolBreakdown: Record<string, number>;
 }
 
-export function ToolUseSuperGroup({ group, t }: { group: ToolUseSuperGroupData; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
+export const ToolUseSuperGroup = memo(function ToolUseSuperGroup({ group, t }: { group: ToolUseSuperGroupData; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
   const [expanded, setExpanded] = useState(false);
-  const { messages, allComplete, firstTs, activeMessage, toolBreakdown } = group;
+  const { messages, allComplete, firstTs, totalDurationMs, activeMessage, toolBreakdown } = group;
 
   const breakdownStr = Object.entries(toolBreakdown).sort(([, a], [, b]) => b - a).map(([name, n]) => `${name} x${n}`).join(' · ');
 
@@ -337,9 +331,9 @@ export function ToolUseSuperGroup({ group, t }: { group: ToolUseSuperGroupData; 
           <span className="text-xs font-medium text-foreground/80">{t('toolSuperGroupLabel')}</span>
           <span className="text-xs text-muted-foreground">{t('toolSuperGroupCount', { count: messages.length })}</span>
           {allComplete ? (
-            <><Badge variant="outline" className="h-5 gap-0.5 border-custom-green/40 bg-custom-green/10 px-1.5 text-[10px] text-custom-green"><Check className="size-2.5" />{t('toolComplete')}</Badge><ElapsedTimer startTs={firstTs} stopped /></>
+            <><Badge variant="outline" className="h-5 gap-0.5 border-custom-green/50 bg-custom-green/15 px-1.5 text-[10px] text-custom-green"><Check className="size-2.5" />{t('toolComplete')}</Badge><ElapsedTimer startTs={firstTs} stopped durationMs={totalDurationMs} /></>
           ) : (
-            <><div className="flex items-center gap-1"><span className="size-1.5 animate-[pulse_1.4s_ease-in-out_infinite] rounded-full bg-primary/60" /><span className="size-1.5 animate-[pulse_1.4s_ease-in-out_0.2s_infinite] rounded-full bg-primary/60" /><span className="size-1.5 animate-[pulse_1.4s_ease-in-out_0.4s_infinite] rounded-full bg-primary/60" /></div><ElapsedTimer startTs={firstTs} /></>
+            <><Loader variant="dots" size={18} /><ElapsedTimer startTs={firstTs} /></>
           )}
         </button>
       </div>
@@ -349,7 +343,7 @@ export function ToolUseSuperGroup({ group, t }: { group: ToolUseSuperGroupData; 
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="ml-4 mt-1 space-y-1 overflow-hidden border-l-2 border-border/20 pl-3">
             {messages.map((msg) => (
               <motion.div key={msg.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.1 }}>
-                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} t={t} />
+                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} durationMs={msg.durationMs} t={t} />
               </motion.div>
             ))}
           </motion.div>
@@ -357,12 +351,12 @@ export function ToolUseSuperGroup({ group, t }: { group: ToolUseSuperGroupData; 
       </AnimatePresence>
       {!expanded && activeMessage && (
         <div className="ml-4 mt-1 border-l-2 border-primary/30 pl-3">
-          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} t={t} />
+          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} durationMs={activeMessage.durationMs} t={t} />
         </div>
       )}
     </motion.div>
   );
-}
+});
 
 // ── Approval / Question / Result / Error / System ────────────
 
@@ -477,7 +471,7 @@ function QuestionMessage({ questions, onAnswer, initialSelections, onPartialSele
 
   return (
     <div className="flex justify-start">
-      <div className="w-full space-y-3 rounded-xl border border-info/20 bg-info/5 px-4 py-3">
+      <div className="w-full space-y-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
         {questions.map((q, qi) => {
           const isOtherSelected = selectedOptions[qi] === OTHER_KEY;
           const isRecordingThis = recordingForQuestion === qi;
@@ -492,16 +486,16 @@ function QuestionMessage({ questions, onAnswer, initialSelections, onPartialSele
                     <button key={opt.label} onClick={() => handleOptionClick(qi, opt.label)} disabled={answered}
                       className={cn('group/opt flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all',
                         answered && !isSelected && 'opacity-40',
-                        isSelected ? 'bg-info/15 ring-1 ring-info/40' : !answered && 'hover:bg-info/10 active:scale-[0.98]')}>
+                        isSelected ? 'bg-primary/15 ring-1 ring-primary/40' : !answered && 'hover:bg-primary/10 active:scale-[0.98]')}>
                       <div className={cn('flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                        isSelected ? 'border-info bg-info' : 'border-muted-foreground/40 group-hover/opt:border-info/60')}>
+                        isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/40 group-hover/opt:border-primary/60')}>
                         {isSelected && <div className="size-1.5 rounded-full bg-white" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <span className="text-sm font-medium">{opt.label}</span>
                         {opt.description && <p className="mt-0.5 text-xs text-muted-foreground">{opt.description}</p>}
                       </div>
-                      {isSelected && answered && <Check className="size-4 shrink-0 text-info" />}
+                      {isSelected && answered && <Check className="size-4 shrink-0 text-primary" />}
                     </button>
                   );
                 })}
@@ -510,9 +504,9 @@ function QuestionMessage({ questions, onAnswer, initialSelections, onPartialSele
                 <button onClick={() => handleOptionClick(qi, OTHER_KEY)} disabled={answered}
                   className={cn('group/opt flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all',
                     answered && !isOtherSelected && 'opacity-40',
-                    isOtherSelected ? 'bg-info/15 ring-1 ring-info/40' : !answered && 'hover:bg-info/10 active:scale-[0.98]')}>
+                    isOtherSelected ? 'bg-primary/15 ring-1 ring-primary/40' : !answered && 'hover:bg-primary/10 active:scale-[0.98]')}>
                   <div className={cn('flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                    isOtherSelected ? 'border-info bg-info' : 'border-muted-foreground/40 group-hover/opt:border-info/60')}>
+                    isOtherSelected ? 'border-primary bg-primary' : 'border-muted-foreground/40 group-hover/opt:border-primary/60')}>
                     {isOtherSelected && <div className="size-1.5 rounded-full bg-white" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -524,14 +518,14 @@ function QuestionMessage({ questions, onAnswer, initialSelections, onPartialSele
                 {isOtherSelected && !answered && (
                   <div className="ml-7 mt-1 space-y-2">
                     {isRecordingThis ? (
-                      <div className="flex items-center gap-2 rounded-lg border border-info/30 bg-background/60 px-3 py-2">
-                        <button type="button" onClick={cancelRecording} className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-destructive"><X className="size-4" /></button>
+                      <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-background/60 px-3 py-2">
+                        <button type="button" onClick={cancelRecording} className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"><X className="size-4" /></button>
                         <AudioWaveform stream={micStreamRef.current} className="h-6 flex-1" />
                         <Button size="sm" onClick={() => stopAndTranscribe(qi)} className="h-7 gap-1 rounded-lg px-2.5 text-xs"><Check className="size-3" />Done</Button>
                       </div>
                     ) : isTranscribingThis ? (
-                      <div className="flex items-center justify-center gap-2 rounded-lg border border-info/30 bg-background/60 px-3 py-2.5">
-                        <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                      <div className="flex items-center justify-center gap-3 rounded-lg border border-primary/30 bg-background/60 px-3 py-2.5">
+                        <Loader variant="dots" size={18} />
                         <span className="text-xs text-muted-foreground">Transcribing...</span>
                       </div>
                     ) : (
@@ -543,7 +537,7 @@ function QuestionMessage({ questions, onAnswer, initialSelections, onPartialSele
                             onChange={(e) => setOtherTexts((prev) => ({ ...prev, [qi]: e.target.value }))}
                             onKeyDown={(e) => { if (e.key === 'Enter' && (otherTexts[qi] ?? '').trim()) { e.preventDefault(); tryAutoSubmit(selectedOptions, otherTexts); } }}
                             placeholder="Type your answer..."
-                            className="h-9 w-full rounded-lg border border-info/30 bg-background/60 pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-1 focus:ring-info/40"
+                            className="h-9 w-full rounded-lg border border-primary/30 bg-background/60 pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-1 focus:ring-primary/40"
                           />
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => startRecording(qi)} className="size-9 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-primary" title="Record voice"><Mic className="size-4" /></Button>
@@ -554,7 +548,7 @@ function QuestionMessage({ questions, onAnswer, initialSelections, onPartialSele
                 )}
 
                 {isOtherSelected && answered && (otherTexts[qi] ?? '').trim() && (
-                  <div className="ml-7 mt-1 rounded-lg bg-info/10 px-3 py-2 text-sm text-foreground/80">{otherTexts[qi]}</div>
+                  <div className="ml-7 mt-1 rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground/80">{otherTexts[qi]}</div>
                 )}
               </div>
             </div>

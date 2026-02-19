@@ -62,10 +62,11 @@ export async function POST(req: NextRequest) {
       { error: `Clerk API returned status ${response.status}` },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error testing Clerk connection:', error);
+    const message = error instanceof Error ? error.message : 'Failed to test connection';
     return NextResponse.json(
-      { error: error.message || 'Failed to test connection' },
+      { error: message },
       { status: 500 }
     );
   }

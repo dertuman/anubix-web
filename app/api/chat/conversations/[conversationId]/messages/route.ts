@@ -1,0 +1,330 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import type Anthropic from '@anthropic-ai/sdk';
+import type OpenAI from 'openai';
+
+import type { StoredFileAttachment } from '@/types/chat';
+import { AI_MODELS_MAP } from '@/types/chat';
+import {
+  buildAnthropicParts,
+  buildGoogleParts,
+  buildOpenAIParts,
+  generateTitle,
+  getAnthropicClient,
+  getGoogleClient,
+  getOpenAIClient,
+} from '@/lib/ai-client';
+import { fetchMessages, getConversation, incrementMessageCount, saveMessage } from '@/lib/chat-db';
+import { resolveApiKey } from '@/lib/resolve-api-key';
+import { createClerkSupabaseClient } from '@/lib/supabase/server';
+
+interface Params { params: Promise<{ conversationId: string }> }
+
+/**
+ * GET /api/chat/conversations/[conversationId]/messages — Fetch messages.
+ */
+export async function GET(_req: NextRequest, { params }: Params) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const sb = createClerkSupabaseClient();
+  if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+
+  const { conversationId } = await params;
+
+  try {
+    const conversation = await getConversation(sb, conversationId);
+    if (!conversation || conversation.clerk_user_id !== userId) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const messages = await fetchMessages(sb, conversationId);
+    return NextResponse.json({ success: true, data: messages });
+  } catch (error) {
+    console.error('[chat/messages GET] Error:', (error as Error).message);
+    return NextResponse.json({ error: 'Failed to fetch messages.' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/chat/conversations/[conversationId]/messages — Send message + stream response.
+ * Body: { content: string, images?: [], files?: StoredFileAttachment[], model?: string }
+ *
+ * Returns Server-Sent Events: data: {"content":"..."}\n\n
+ */
+export async function POST(req: NextRequest, { params }: Params) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const sb = createClerkSupabaseClient();
+  if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+
+  const { conversationId } = await params;
+
+  try {
+    const conversation = await getConversation(sb, conversationId);
+    if (!conversation || conversation.clerk_user_id !== userId) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const { content, images: rawImages, files: rawFiles, model: requestModel } = await req.json();
+
+    // ── Save user message ──────────────────────────────────────
+    const storedFiles: StoredFileAttachment[] | null = rawFiles
+      ? rawFiles.map((f: StoredFileAttachment) => ({
+          name: f.name,
+          mimeType: f.mimeType,
+          size: f.size,
+          category: f.category,
+          ...(f.category === 'image' && f.data ? { data: f.data } : {}),
+        }))
+      : null;
+
+    await saveMessage(sb, conversationId, 'user', content || '', rawImages || null, storedFiles, null);
+
+    // ── Auto-generate title on first message ───────────────────
+    if (conversation.message_count === 0 && content?.trim()) {
+      try {
+        // Use OpenAI for title gen if available, otherwise use first 40 chars
+        let titleApiKey: string | undefined;
+        try { titleApiKey = await resolveApiKey(sb, userId, 'openai'); } catch { /* ignore */ }
+
+        if (titleApiKey) {
+          const title = await generateTitle(content, titleApiKey);
+          await sb.from('conversations').update({ title }).eq('id', conversationId);
+        } else {
+          await sb.from('conversations').update({ title: content.slice(0, 40).trim() }).eq('id', conversationId);
+        }
+      } catch { /* title gen failure is non-critical */ }
+    }
+
+    // ── Build context from recent messages ─────────────────────
+    const recentMessages = await fetchMessages(sb, conversationId, 50);
+    const modelKey = requestModel || conversation.model;
+    const modelConfig = AI_MODELS_MAP[modelKey];
+    const provider = modelConfig?.provider ?? 'openai';
+
+    // ── Resolve API key ────────────────────────────────────────
+    let apiKey: string;
+    try {
+      apiKey = await resolveApiKey(sb, userId, provider);
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 403 });
+    }
+
+    const encoder = new TextEncoder();
+
+    // ── Google streaming ───────────────────────────────────────
+    if (provider === 'google') {
+      const client = getGoogleClient(apiKey);
+
+      // Build Google format messages
+      const systemParts: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const googleContents: { role: string; parts: any[] }[] = [];
+
+      for (const msg of recentMessages) {
+        if (msg.role === 'system') {
+          systemParts.push(msg.content);
+          continue;
+        }
+        const parts = buildGoogleParts(msg.content, msg.images, msg.files as StoredFileAttachment[] | null);
+        googleContents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts,
+        });
+      }
+
+      const stream = await client.models.generateContentStream({
+        model: modelKey,
+        contents: googleContents,
+        config: {
+          ...(systemParts.length > 0 && { systemInstruction: systemParts.join('\n') }),
+          tools: [{ googleSearch: {} }],
+        },
+      });
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          let fullContent = '';
+          let groundingChunks: { title?: string; uri?: string }[] = [];
+
+          try {
+            for await (const chunk of stream) {
+              const delta = chunk.text ?? '';
+              if (delta) {
+                fullContent += delta;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta })}\n\n`));
+              }
+
+              const metadata = chunk.candidates?.[0]?.groundingMetadata;
+              if (metadata?.groundingChunks?.length) {
+                groundingChunks = metadata.groundingChunks
+                  .filter((gc: { web?: { uri?: string } }) => gc.web?.uri)
+                  .map((gc: { web?: { title?: string; uri?: string } }) => ({
+                    title: gc.web?.title,
+                    uri: gc.web?.uri,
+                  }));
+              }
+            }
+
+            // Append sources
+            if (groundingChunks.length > 0) {
+              const sourcesBlock = '\n\n---\n**Sources:**\n' +
+                groundingChunks.map((gc) => `- [${gc.title || gc.uri}](${gc.uri})`).join('\n');
+              fullContent += sourcesBlock;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: sourcesBlock })}\n\n`));
+            }
+
+            await saveMessage(sb, conversationId, 'assistant', fullContent, null, null, modelKey);
+            await incrementMessageCount(sb, conversationId, 2);
+          } catch (err) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: (err as Error).message })}\n\n`));
+          }
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+          controller.close();
+        },
+      });
+
+      return new Response(readable, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
+      });
+    }
+
+    // ── Anthropic streaming ────────────────────────────────────
+    if (provider === 'anthropic') {
+      const client = getAnthropicClient(apiKey);
+
+      const systemMessages: string[] = [];
+      const anthropicMessages: { role: 'user' | 'assistant'; content: Anthropic.Messages.ContentBlockParam[] | string }[] = [];
+
+      for (const msg of recentMessages) {
+        if (msg.role === 'system') {
+          systemMessages.push(msg.content);
+          continue;
+        }
+        const hasMedia = (msg.images && msg.images.length > 0) || (msg.files && (msg.files as StoredFileAttachment[]).length > 0);
+        if (hasMedia) {
+          anthropicMessages.push({
+            role: msg.role as 'user' | 'assistant',
+            content: buildAnthropicParts(msg.content, msg.images, msg.files as StoredFileAttachment[] | null),
+          });
+        } else {
+          anthropicMessages.push({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          });
+        }
+      }
+
+      const stream = await client.messages.stream({
+        model: modelKey,
+        max_tokens: 8192,
+        ...(systemMessages.length > 0 && { system: systemMessages.join('\n') }),
+        messages: anthropicMessages,
+      });
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          let fullContent = '';
+
+          try {
+            for await (const event of stream) {
+              if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+                const delta = event.delta.text;
+                fullContent += delta;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta })}\n\n`));
+              }
+            }
+
+            await saveMessage(sb, conversationId, 'assistant', fullContent, null, null, modelKey);
+            await incrementMessageCount(sb, conversationId, 2);
+          } catch (err) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: (err as Error).message })}\n\n`));
+          }
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+          controller.close();
+        },
+      });
+
+      return new Response(readable, {
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
+      });
+    }
+
+    // ── OpenAI streaming (default) ─────────────────────────────
+    const client = getOpenAIClient(apiKey);
+
+    const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+    for (const msg of recentMessages) {
+      const hasMedia = (msg.images && msg.images.length > 0) || (msg.files && (msg.files as StoredFileAttachment[]).length > 0);
+      if (msg.role === 'user' && hasMedia) {
+        openaiMessages.push({
+          role: 'user',
+          content: buildOpenAIParts(msg.content, msg.images, msg.files as StoredFileAttachment[] | null),
+        });
+      } else if (msg.role === 'system') {
+        openaiMessages.push({ role: 'system', content: msg.content });
+      } else if (msg.role === 'assistant') {
+        openaiMessages.push({ role: 'assistant', content: msg.content });
+      } else {
+        openaiMessages.push({ role: 'user', content: msg.content });
+      }
+    }
+
+    const stream = await client.chat.completions.create({
+      model: modelKey,
+      messages: openaiMessages,
+      stream: true,
+    });
+
+    const readable = new ReadableStream({
+      async start(controller) {
+        let fullContent = '';
+
+        try {
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content;
+            if (delta) {
+              fullContent += delta;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: delta })}\n\n`));
+            }
+          }
+
+          await saveMessage(sb, conversationId, 'assistant', fullContent, null, null, modelKey);
+          await incrementMessageCount(sb, conversationId, 2);
+        } catch (err) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: (err as Error).message })}\n\n`));
+        }
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+        controller.close();
+      },
+    });
+
+    return new Response(readable, {
+      headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
+    });
+  } catch (error) {
+    const err = error as Error & { status?: number; code?: string };
+    const message = err.message || 'An unexpected error occurred';
+
+    // Differentiate known client errors from server errors
+    if (err.status === 401 || err.code === 'invalid_api_key' || message.includes('API key')) {
+      return NextResponse.json({ error: 'Invalid API key. Please check your key in settings.' }, { status: 403 });
+    }
+    if (err.status === 429 || message.includes('rate limit') || message.includes('quota')) {
+      return NextResponse.json({ error: 'Rate limit exceeded. Please try again in a moment.' }, { status: 429 });
+    }
+    if (message.includes('encryption') || message.includes('configured')) {
+      return NextResponse.json({ error: message }, { status: 503 });
+    }
+
+    // Don't leak internal error details to the client
+    console.error('[chat/messages] Unhandled error:', message);
+    return NextResponse.json({ error: 'Failed to process message. Please try again.' }, { status: 500 });
+  }
+}

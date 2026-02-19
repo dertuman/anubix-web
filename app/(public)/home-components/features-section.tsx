@@ -1,24 +1,26 @@
 'use client';
 
 import {
-  MessageSquare,
+  Repeat,
+  ShieldCheck,
   Eye,
   Rocket,
   Shield,
   Layers,
-  Puzzle,
+  Smartphone,
 } from 'lucide-react';
 import { useScopedI18n } from '@/locales/client';
 
-const ICON_MAP = [MessageSquare, Eye, Rocket, Shield, Layers, Puzzle] as const;
+const ICON_MAP = [Repeat, ShieldCheck, Eye, Rocket, Shield, Layers, Smartphone] as const;
 
 const FEATURE_KEYS = [
-  'conversational',
+  'multiModel',
+  'encrypted',
   'livePreview',
   'oneClickDeploy',
   'youOwnEverything',
-  'fullStack',
   'patterns',
+  'mobile',
 ] as const;
 
 export function FeaturesSection() {
@@ -35,9 +37,6 @@ export function FeaturesSection() {
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {t('title')}
           </h2>
-          <p className="mt-4 text-base text-muted-foreground">
-            {t('subtitle')}
-          </p>
         </div>
 
         {/* Grid */}
@@ -53,10 +52,10 @@ export function FeaturesSection() {
                   <Icon className="size-5" />
                 </div>
                 <h3 className="text-base font-semibold text-foreground">
-                  {t(`${key}.title` as 'conversational.title')}
+                  {t(`${key}.title` as 'multiModel.title')}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {t(`${key}.description` as 'conversational.description')}
+                  {t(`${key}.description` as 'multiModel.description')}
                 </p>
               </div>
             );

@@ -3,11 +3,12 @@
 import { useScopedI18n } from '@/locales/client';
 
 const LOGOS = [
+  { name: 'Claude Code', icon: ClaudeIcon },
   { name: 'Next.js', icon: NextjsIcon },
-  { name: 'Clerk', icon: ClerkIcon },
-  { name: 'Supabase', icon: SupabaseIcon },
   { name: 'Vercel', icon: VercelIcon },
+  { name: 'Supabase', icon: SupabaseIcon },
   { name: 'GitHub', icon: GitHubIcon },
+  { name: 'Clerk', icon: ClerkIcon },
 ];
 
 export function LogosSection() {
@@ -23,7 +24,7 @@ export function LogosSection() {
           {LOGOS.map(({ name, icon: Icon }) => (
             <div
               key={name}
-              className="flex items-center gap-2 text-muted-foreground"
+              className="flex items-center gap-2 text-muted-foreground transition-opacity hover:opacity-100"
             >
               <Icon className="size-5" />
               <span className="text-sm font-medium">{name}</span>
@@ -36,6 +37,14 @@ export function LogosSection() {
 }
 
 /* ─── Inline SVG icons (keep bundle small, no external deps) ─── */
+
+function ClaudeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M4.709 15.955l4.486-2.236a.3.3 0 0 0 .145-.399l-.002-.004a.3.3 0 0 0-.404-.149L4.378 15.32a4.14 4.14 0 0 0-.244.122l-.084.048a3.86 3.86 0 0 0-1.81 2.436 3.86 3.86 0 0 0 .226 2.632c.612 1.352 1.996 2.226 3.52 2.226.47 0 .94-.087 1.395-.265a3.75 3.75 0 0 0 1.593-1.18 3.86 3.86 0 0 0 .636-1.382l1.694-6.094a.3.3 0 0 0-.202-.372.3.3 0 0 0-.379.19l-1.74 6.064a3.24 3.24 0 0 1-.535 1.161 3.15 3.15 0 0 1-1.34.993c-1.476.612-3.188-.048-3.818-1.47a3.24 3.24 0 0 1-.192-2.211 3.24 3.24 0 0 1 1.53-2.047l.081-.047.001-.001zM16.67 6.12a.3.3 0 0 0 .037-.424l-.003-.003a.3.3 0 0 0-.426-.044l-3.762 2.87a3.86 3.86 0 0 0-1.338 1.705l-2.308 5.837a.3.3 0 0 0 .165.393.3.3 0 0 0 .4-.157l2.339-5.797a3.24 3.24 0 0 1 1.123-1.434L16.67 6.12zm2.674-.373a3.82 3.82 0 0 0-2.504-.94 3.87 3.87 0 0 0-2.265.717l-4.123 2.938a.3.3 0 0 0-.072.42.3.3 0 0 0 .418.083l4.17-2.972a3.24 3.24 0 0 1 1.904-.602c.892 0 1.726.35 2.35.988a3.24 3.24 0 0 1 .855 2.429 3.24 3.24 0 0 1-1.038 2.335l-4.326 3.875a3.86 3.86 0 0 0-1.204 1.8l-1.294 4.382a.3.3 0 0 0 .197.376h.003a.3.3 0 0 0 .381-.198l1.305-4.413a3.24 3.24 0 0 1 1.012-1.512l4.28-3.834a3.86 3.86 0 0 0 1.236-2.782 3.86 3.86 0 0 0-1.019-2.894l-.243-.196z" />
+    </svg>
+  );
+}
 
 function NextjsIcon({ className }: { className?: string }) {
   return (

@@ -56,11 +56,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error testing Supabase connection:', error);
+    const message = error instanceof Error ? error.message : '';
 
     // Handle common errors
-    if (error.message?.includes('Invalid URL')) {
+    if (message.includes('Invalid URL')) {
       return NextResponse.json(
         { error: 'Invalid Supabase URL format' },
         { status: 400 }
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error.message || 'Failed to test connection' },
+      { error: message || 'Failed to test connection' },
       { status: 500 }
     );
   }

@@ -71,6 +71,7 @@ function Badge({
   ...props
 }: BadgeProps) {
   // Get badges translations - hook must be called unconditionally
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = useScopedI18n('badges' as any);
 
   // Handle status prop
@@ -90,6 +91,7 @@ function Badge({
           className={cn(badgeVariants({ variant: config.variant }), className)}
           {...props}
         >
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {t(statusKey as any, {})}
         </div>
       );

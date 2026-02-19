@@ -40,6 +40,16 @@ function makeId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+/** Mark every in-progress assistant_text / tool_use message as complete. */
+function completeAllPending(messages: CodeMessage[]): CodeMessage[] {
+  return messages.map((m) => {
+    if ((m.type === 'assistant_text' || m.type === 'tool_use') && !m.isComplete) {
+      return { ...m, isComplete: true };
+    }
+    return m;
+  });
+}
+
 function rebuildMessagesFromPayloads(
   payloads: Array<{ seq: number; payload: { type: string; [key: string]: unknown } }>,
 ): { messages: CodeMessage[]; lastSeq: number } {
@@ -96,10 +106,11 @@ function rebuildMessagesFromPayloads(
 
       case 'tool_end': {
         const toolName = p.toolName as string;
+        const endTime = (p.timestamp as number) || Date.now();
         for (let i = messages.length - 1; i >= 0; i--) {
           const m = messages[i];
           if (m.type === 'tool_use' && m.toolName === toolName && !m.isComplete) {
-            messages[i] = { ...m, isComplete: true };
+            messages[i] = { ...m, isComplete: true, durationMs: endTime - m.ts };
             break;
           }
         }
@@ -462,7 +473,7 @@ export class SessionConnection {
         } else {
           const id = makeId();
           this.currentTextId = id;
-          this.messages = [...this.messages, {
+          this.messages = [...completeAllPending(this.messages), {
             id, ts: Date.now(), type: 'assistant_text' as const, text, isComplete: false,
           }];
         }
@@ -473,9 +484,7 @@ export class SessionConnection {
       case 'tool_start': {
         this.currentTextId = null;
         this.messages = [
-          ...this.messages.map((m) =>
-            m.type === 'assistant_text' && !m.isComplete ? { ...m, isComplete: true } : m
-          ),
+          ...completeAllPending(this.messages),
           {
             id: makeId(), ts: Date.now(), type: 'tool_use' as const,
             toolName: frame.toolName as string,
@@ -489,9 +498,10 @@ export class SessionConnection {
 
       case 'tool_end': {
         const toolName = frame.toolName as string;
+        const now = Date.now();
         this.messages = this.messages.map((m) =>
           m.type === 'tool_use' && m.toolName === toolName && !m.isComplete
-            ? { ...m, isComplete: true } : m
+            ? { ...m, isComplete: true, durationMs: now - m.ts } : m
         );
         this.onChange();
         break;
@@ -502,11 +512,7 @@ export class SessionConnection {
         if (last?.type === 'approval_request' && last.toolName === (frame.toolName as string)) break;
         this.currentTextId = null;
         this.messages = [
-          ...this.messages.map((m) => {
-            if (m.type === 'assistant_text' && !m.isComplete) return { ...m, isComplete: true };
-            if (m.type === 'tool_use' && !m.isComplete) return { ...m, isComplete: true };
-            return m;
-          }),
+          ...completeAllPending(this.messages),
           {
             id: makeId(), ts: Date.now(), type: 'approval_request' as const,
             toolName: frame.toolName as string,
@@ -522,11 +528,7 @@ export class SessionConnection {
         if (last?.type === 'question') break;
         this.currentTextId = null;
         this.messages = [
-          ...this.messages.map((m) => {
-            if (m.type === 'assistant_text' && !m.isComplete) return { ...m, isComplete: true };
-            if (m.type === 'tool_use' && !m.isComplete) return { ...m, isComplete: true };
-            return m;
-          }),
+          ...completeAllPending(this.messages),
           { id: makeId(), ts: Date.now(), type: 'question' as const, questions: frame.questions as AskQuestionItem[] },
         ];
         this.onChange();
@@ -537,9 +539,7 @@ export class SessionConnection {
         this.currentTextId = null;
         this.isBusy = false;
         this.messages = [
-          ...this.messages.map((m) =>
-            m.type === 'assistant_text' && !m.isComplete ? { ...m, isComplete: true } : m
-          ),
+          ...completeAllPending(this.messages),
           {
             id: makeId(), ts: Date.now(), type: 'result' as const,
             resultText: (frame.result as string) ?? '',
@@ -558,7 +558,9 @@ export class SessionConnection {
       case 'error': {
         this.currentTextId = null;
         this.isBusy = false;
-        this.messages = [...this.messages, {
+        this.messages = [
+          ...completeAllPending(this.messages),
+          {
           id: makeId(), ts: Date.now(), type: 'error' as const,
           error: (frame.message as string) ?? 'Unknown error',
           subtype: frame.subtype as string | undefined,

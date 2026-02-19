@@ -81,6 +81,108 @@ export interface Database {
         };
         Relationships: [];
       };
+      conversations: {
+        Row: {
+          id: string;
+          clerk_user_id: string;
+          title: string;
+          model: string;
+          message_count: number;
+          is_shared: boolean;
+          share_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          clerk_user_id: string;
+          title?: string;
+          model: string;
+          message_count?: number;
+          is_shared?: boolean;
+          share_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          clerk_user_id?: string;
+          title?: string;
+          model?: string;
+          message_count?: number;
+          is_shared?: boolean;
+          share_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          role: string;
+          content: string;
+          images: Json | null;
+          files: Json | null;
+          model: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          role: string;
+          content?: string;
+          images?: Json | null;
+          files?: Json | null;
+          model?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          role?: string;
+          content?: string;
+          images?: Json | null;
+          files?: Json | null;
+          model?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      chat_api_keys: {
+        Row: {
+          id: string;
+          clerk_user_id: string;
+          provider: string;
+          encrypted_key: string;
+          iv: string;
+          auth_tag: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          clerk_user_id: string;
+          provider: string;
+          encrypted_key: string;
+          iv: string;
+          auth_tag: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          clerk_user_id?: string;
+          provider?: string;
+          encrypted_key?: string;
+          iv?: string;
+          auth_tag?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

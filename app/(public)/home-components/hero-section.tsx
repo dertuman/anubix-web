@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
 import { useUser } from '@clerk/nextjs';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -15,8 +15,9 @@ export function HeroSection() {
 
   return (
     <section className="relative w-full overflow-hidden">
-      {/* Subtle gradient background */}
+      {/* Animated gradient background */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--primary-muted),transparent_50%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,var(--primary-muted),transparent_40%)] opacity-50" />
 
       <div className="relative container mx-auto flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4 py-20 text-center md:py-32">
         {/* Welcome back */}
@@ -42,12 +43,12 @@ export function HeroSection() {
 
         {/* Badge */}
         <div className="border-border bg-muted/50 text-muted-foreground mb-6 inline-flex items-center rounded-full border px-4 py-1.5 text-xs font-medium backdrop-blur-sm">
-          <span className="bg-primary mr-2 inline-block size-1.5 rounded-full" />
+          <span className="bg-primary mr-2 inline-block size-1.5 animate-pulse rounded-full" />
           {t('badge')}
         </div>
 
         {/* Headline */}
-        <h1 className="text-foreground max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+        <h1 className="text-foreground max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
           {t('title')}{' '}
           <span className="from-primary to-primary/70 bg-linear-to-r bg-clip-text text-transparent">
             {t('titleHighlight')}
@@ -55,7 +56,7 @@ export function HeroSection() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-muted-foreground mt-6 max-w-xl text-base sm:text-lg">
+        <p className="text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed sm:text-lg">
           {t('subtitle')}
         </p>
 
@@ -71,12 +72,18 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="px-8 text-base font-semibold"
+              className="gap-2 px-8 text-base font-semibold"
             >
               {t('ctaSecondary')}
+              <ChevronDown className="size-4" />
             </Button>
           </a>
         </div>
+
+        {/* Trust line */}
+        <p className="text-muted-foreground/70 mt-6 text-xs sm:text-sm">
+          {t('trustLine')}
+        </p>
       </div>
     </section>
   );

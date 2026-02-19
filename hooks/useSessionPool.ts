@@ -5,7 +5,7 @@
  * Uses LRU eviction when the limit is exceeded.
  */
 
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { SessionConnection, type ConnectionHealth } from './useSessionConnection';
 
 const MAX_CONNECTIONS = 5;
@@ -94,5 +94,8 @@ export function useSessionPool() {
     };
   }, []);
 
-  return { setCredentials, connect, disconnect, disconnectAll, getConnection, getSessionStates };
+  return useMemo(
+    () => ({ setCredentials, connect, disconnect, disconnectAll, getConnection, getSessionStates }),
+    [setCredentials, connect, disconnect, disconnectAll, getConnection, getSessionStates],
+  );
 }

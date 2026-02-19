@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { useScopedI18n } from '@/locales/client';
+import { AlertCircle, EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
+
 import {
   getApiKey,
   getBridgeUrl,
@@ -19,7 +21,11 @@ interface BridgeSetupProps {
   error: string | null;
 }
 
-export function BridgeSetup({ onConnect, isConnecting, error }: BridgeSetupProps) {
+export function BridgeSetup({
+  onConnect,
+  isConnecting,
+  error,
+}: BridgeSetupProps) {
   const t = useScopedI18n('code.bridgeSetup');
   const [url, setUrl] = useState('');
   const [key, setKey] = useState('');
@@ -40,22 +46,29 @@ export function BridgeSetup({ onConnect, isConnecting, error }: BridgeSetupProps
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
+      <div className="border-border/6 bg-card/30 w-full max-w-md space-y-6 rounded-2xl border p-6 backdrop-blur-sm">
         <div className="space-y-1 text-center">
-          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/10">
-            <Loader2 className="size-6 text-primary" />
+          <div className="mx-auto mb-3 flex items-center justify-center">
+            <Image
+              src="/logo.webp"
+              alt="Anubix logo"
+              width={120}
+              height={120}
+            />
           </div>
           <h2 className="text-xl font-bold">{t('title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('description')}</p>
+          <p className="text-muted-foreground text-sm">{t('description')}</p>
         </div>
 
         <div className="space-y-4">
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3">
-              <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-              <div className="text-sm text-destructive">
+            <div className="border-destructive/50 bg-destructive/10 flex items-start gap-2 rounded-lg border p-3">
+              <AlertCircle className="text-destructive mt-0.5 size-4 shrink-0" />
+              <div className="text-destructive text-sm">
                 {error.split('\n').map((line, i) => (
-                  <p key={i} className={i > 0 ? 'mt-1' : ''}>{line}</p>
+                  <p key={i} className={i > 0 ? 'mt-1' : ''}>
+                    {line}
+                  </p>
                 ))}
               </div>
             </div>
@@ -88,7 +101,7 @@ export function BridgeSetup({ onConnect, isConnecting, error }: BridgeSetupProps
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowApiKey((prev) => !prev)}
               >
                 {showApiKey ? (

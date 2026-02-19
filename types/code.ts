@@ -66,6 +66,7 @@ export interface CodeToolUseMessage extends BaseMessage {
   toolName: string;
   toolInput?: Record<string, unknown>;
   isComplete: boolean;
+  durationMs?: number;
 }
 
 export interface CodeApprovalRequestMessage extends BaseMessage {
