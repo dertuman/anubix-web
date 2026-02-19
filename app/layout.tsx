@@ -16,10 +16,10 @@ export async function generateMetadata() {
     translations: {
       title: 'Anubix — Production at the speed of thought',
       description:
-        'The power of CLI, but beautiful. A proper interface for Claude Code, GPT, and Gemini. Build real apps, chat with the best models, and deploy from any device.',
+        "Terminal power. Beautiful interface. Claude Code, GPT, and Gemini in one app. Build real software from your browser or your phone. You're in control.",
       ogLocale: 'en',
       ogSiteName: 'Anubix',
-      imageAlt: 'Anubix — Production at the speed of thought. The power of CLI, but beautiful.',
+      imageAlt: 'Anubix — Production at the speed of thought. Terminal power. Beautiful interface.',
       twitterSite: '@anubix',
     },
     keywords: [

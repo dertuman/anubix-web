@@ -134,7 +134,7 @@ export default {
     errorUpdatingLanguage: 'Error updating language',
   },
   footer: {
-    companyDescription: 'Claude Code, but beautiful. Plus every AI model in one app.',
+    companyDescription: 'Production at the speed of thought. Terminal power. Beautiful interface.',
     product: 'Product',
     features: 'Features',
     howItWorks: 'How it works',
@@ -192,9 +192,9 @@ export default {
     hero: {
       badge: 'Now in early access',
       title: 'Production at the speed of thought.',
-      titleHighlight: 'The power of CLI, but beautiful.',
+      titleHighlight: 'Terminal power. Beautiful interface.',
       subtitle:
-        'A proper interface for Claude Code, GPT, and Gemini. Build real apps, chat with the best models, and deploy. From your browser or your phone.',
+        "Claude Code, GPT, and Gemini in one app. Build real software from your browser or your phone. Your keys, your code, your hosting. You're in control.",
       cta: 'Start building',
       ctaSecondary: 'See how it works',
       trustLine:

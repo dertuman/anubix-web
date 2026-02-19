@@ -19,7 +19,7 @@ export function JsonLd() {
     url: baseUrl,
     logo: `${baseUrl}/logo.webp`,
     description:
-      'Anubix turns conversations into deployed web apps. Build apps by talking — no code required.',
+      'Production at the speed of thought. Terminal power, beautiful interface. Claude Code, GPT, and Gemini in one app.',
     sameAs: ['https://twitter.com/anubix'],
     foundingDate: '2024',
     contactPoint: {
@@ -35,7 +35,7 @@ export function JsonLd() {
     name: 'Anubix',
     url: baseUrl,
     description:
-      'Describe what you want. Anubix builds it, deploys it, and hands you the keys. No code required.',
+      "Claude Code, GPT, and Gemini in one app. Build real software from your browser or your phone. You're in control.",
     publisher: {
       '@type': 'Organization',
       name: 'Anubix',
@@ -49,7 +49,7 @@ export function JsonLd() {
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Web',
     description:
-      'Build and deploy web apps by talking. Anubix is an AI-powered no-code platform that turns conversations into deployed applications.',
+      "Terminal power, beautiful interface. A real coding agent with Claude Code, GPT, and Gemini. Build real software from any device. You're in control.",
     url: baseUrl,
     offers: {
       '@type': 'Offer',
