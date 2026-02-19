@@ -6,7 +6,7 @@ A platform that lets non-technical people build and manage full-stack web apps t
 
 ## Repositories
 
-Three repos:
+Three repos
 
 1. **`anubix-bridge`** (this repo, formerly `claude-code-bridge`) — Runs on Fly.io machines. Express + WebSocket server. The connection between clients and Claude Code. Each user gets their own machine with a full workspace.
 2. **`anubix-web`** — Browser client. Users connect to the bridge from here to build and manage their apps.
@@ -57,6 +57,7 @@ Four steps, all done from the browser — no CLI, no terminal:
 4. **Deploy** — Paste GitHub fine-grained token + Vercel token → one click → creates GitHub repo, pushes all files via REST API with real-time SSE progress bar, imports on Vercel, sets env vars, triggers deployment
 
 ### Key Technical Choices
+
 - Supabase new keys only: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` and `SUPABASE_SECRET_DEFAULT_KEY` (not the deprecated anon/service_role names)
 - Clerk ↔ Supabase: Native third-party auth, not JWT templates. Uses `accessToken` callback in Supabase client
 - Supabase Storage for all file uploads (replaced Digital Ocean Spaces)
@@ -70,6 +71,7 @@ The gap: After the initial deploy, users keep making changes via Anubix chat →
 Proposed solution: During initial deploy, also `git init` the workspace and configure the remote with the user's GitHub token. Then when the user says "deploy my changes" in Anubix chat, Claude Code runs `git add . && git commit -m "..." && git push origin main`. Vercel auto-deploys from the push. No extra tokens, no extra UI.
 
 What needs building:
+
 - After GitHub push succeeds in step 4, initialize git locally on the Fly.io workspace (remote, credentials, initial commit)
 - Optionally: a "Deploy" button in the Anubix app UI as a shortcut (in addition to saying "deploy" in chat)
 
@@ -78,6 +80,7 @@ What needs building:
 Pre-built feature templates that users can add to their app with a single button press. Each pattern is a Claude-friendly piece of markdown/code that gets sent to Claude Code and instantly implemented.
 
 Examples:
+
 - **Infinite scroll** — Backend pagination + filtering + search
 - **Favorites system** — Save/unsave anything
 - **Cart + marketplace** — Full e-commerce flow
