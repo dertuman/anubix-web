@@ -247,6 +247,8 @@ export async function getMachineStatus(appName: string, machineId: string): Prom
 /**
  * Block until the machine reaches the desired state.
  * Uses Fly.io's long-poll wait endpoint (server holds the connection).
+ * The Fly API enforces a max timeout of 60s per request, so for longer
+ * timeouts we loop with 60s chunks.
  */
 export async function waitForMachineState(
   appName: string,
@@ -254,12 +256,21 @@ export async function waitForMachineState(
   targetState: string,
   timeoutSeconds: number = 30,
 ): Promise<void> {
-  const res = await flyFetch(
-    `/apps/${appName}/machines/${machineId}/wait?state=${targetState}&timeout=${timeoutSeconds}`,
-  );
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Machine did not reach state "${targetState}" within ${timeoutSeconds}s: ${body}`);
+  const maxPerRequest = 60; // Fly API max is 60s
+  let remaining = timeoutSeconds;
+
+  while (remaining > 0) {
+    const chunk = Math.min(remaining, maxPerRequest);
+    const res = await flyFetch(
+      `/apps/${appName}/machines/${machineId}/wait?state=${targetState}&timeout=${chunk}`,
+    );
+    if (res.ok) return;
+
+    remaining -= chunk;
+    if (remaining <= 0) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Machine did not reach state "${targetState}" within ${timeoutSeconds}s: ${body}`);
+    }
   }
 }
 

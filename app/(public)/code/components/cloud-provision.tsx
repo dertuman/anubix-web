@@ -36,7 +36,7 @@ interface CloudProvisionProps {
 type AuthTab = 'cli' | 'sdk';
 
 const TEMPLATES = [
-  { value: 'talkartech', label: 'Talkartech Fullstack (Recommended)', gitUrl: 'https://github.com/dertuman/talkartech-fullstack-template.git' },
+  { value: 'talkartech', label: 'Talkartech Fullstack (Recommended)', gitUrl: 'https://github.com/dertuman/talkartech-fullstack-template-supabase.git' },
   { value: '', label: 'Empty workspace', gitUrl: '' },
   { value: 'nextjs', label: 'Next.js', gitUrl: '' },
   { value: 'vite-react', label: 'Vite + React', gitUrl: '' },
