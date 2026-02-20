@@ -195,7 +195,6 @@ export async function createFlyMachine(
     BRIDGE_API_KEY: bridgeApiKey,
     CLAUDE_MODE: claudeMode,
     HOST: '0.0.0.0',
-    PORT: '8080',
     REPOS_BASE_PATH: '/workspace',
     NODE_ENV: 'production',
     PREVIEW_FALLBACK_PORT: '3000',
