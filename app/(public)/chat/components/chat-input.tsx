@@ -20,7 +20,6 @@ import {
 import type { FileAttachment } from '@/types/code';
 import { formatFileSize } from '@/lib/file-utils';
 import { getCategoryIcon } from '@/lib/ui-utils';
-import { cn } from '@/lib/utils';
 import { AudioWaveform } from '@/components/ui/audio-waveform';
 import { Button } from '@/components/ui/button';
 import {
@@ -299,7 +298,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               <AudioWaveform stream={streamRef.current} className="h-6 flex-1" />
               <button type="button" onClick={() => stopAndTranscribe(false)} className="shrink-0 cursor-pointer text-xs font-medium text-primary hover:underline">See text</button>
             </div>
-            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="animate-recording-pulse size-10 shrink-0 rounded-xl ring-2 ring-primary/30 ring-offset-1 ring-offset-background sm:size-11">
+            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="animate-recording-pulse size-11 shrink-0 rounded-xl ring-2 ring-primary/30 ring-offset-1 ring-offset-background sm:size-12">
               <ArrowUp className="size-5" />
             </Button>
           </div>
@@ -351,20 +350,20 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               </div>
             </div>
 
-            {/* Action buttons — outside the textarea for proper sizing */}
-            <div className="flex shrink-0 items-center gap-1.5 pb-0.5">
+            {/* Action buttons — outside the textarea, all same height */}
+            <div className="flex shrink-0 items-center gap-1.5">
               {isStreaming && onStop && (
-                <Button variant="destructive" size="icon" onClick={onStop} className="size-9 rounded-xl sm:size-10" title="Stop">
+                <Button variant="destructive" size="icon" onClick={onStop} className="size-11 rounded-xl sm:size-12" title="Stop">
                   <Square className="size-4" />
                 </Button>
               )}
               {!isStreaming && (
-                <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className={cn('rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary', canSend ? 'size-9 sm:size-10' : 'size-10 sm:size-11')} title="Record voice">
-                  <Mic className={cn(canSend ? 'size-4 sm:size-[18px]' : 'size-5 sm:size-[22px]')} />
+                <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-11 rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary sm:size-12" title="Record voice">
+                  <Mic className="size-5" />
                 </Button>
               )}
               {canSend && (
-                <Button size="icon" onClick={handleSend} disabled={disabled || isStreaming} className="size-10 rounded-xl ring-1 ring-primary/20 sm:size-11" title="Send message">
+                <Button size="icon" onClick={handleSend} disabled={disabled || isStreaming} className="size-11 rounded-xl ring-1 ring-primary/20 sm:size-12" title="Send message">
                   <ArrowUp className="size-5" />
                 </Button>
               )}
