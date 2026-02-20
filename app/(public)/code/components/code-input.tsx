@@ -365,7 +365,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
               <AudioWaveform stream={streamRef.current} className="h-6 flex-1" />
               <button type="button" onClick={() => stopAndTranscribe(false)} className="shrink-0 cursor-pointer text-xs font-medium text-primary hover:underline">See text</button>
             </div>
-            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="animate-recording-pulse size-10 shrink-0 rounded-xl sm:size-11">
+            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="animate-recording-pulse size-10 shrink-0 rounded-xl ring-2 ring-primary/30 ring-offset-1 ring-offset-background sm:size-11">
               <ArrowUp className="size-5" />
             </Button>
           </div>

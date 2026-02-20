@@ -431,21 +431,22 @@
 
 /* End Word Fade-in Animation */
 
-/* Recording send button pulse */
+/* Recording send button pulse — GPU-only (transform + opacity) */
 @keyframes recording-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5);
     transform: scale(1);
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 12px 4px hsl(var(--primary) / 0.3);
-    transform: scale(1.06);
+    transform: scale(1.08);
+    opacity: 0.85;
   }
 }
 
 .animate-recording-pulse {
-  animation: recording-pulse 1.8s ease-in-out infinite;
+  animation: recording-pulse 1.6s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 /* Indeterminate progress bar */

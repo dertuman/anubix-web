@@ -41,9 +41,9 @@ export function AudioWaveform({
         sum += v * v;
       }
       const rms = Math.sqrt(sum / buf.length);
-      // Aggressive amplification so voice actually registers visually
-      // RMS for normal speech is ~0.01-0.15, we want to map that to 0.1-1.0
-      const amplified = Math.min(1, rms * 12);
+      // Moderate amplification — enough to see speech without clipping
+      // RMS for normal speech is ~0.01-0.15, we want subtle-to-medium bars
+      const amplified = Math.min(1, rms * 6);
       historyRef.current.push(amplified);
 
       // Keep history bounded
