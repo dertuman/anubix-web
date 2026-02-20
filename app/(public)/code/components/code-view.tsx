@@ -180,7 +180,8 @@ export function CodeView() {
   if (showManualSetup && status === 'connected') setShowManualSetup(false);
 
   // ── Preview URL (for cloud machines) ────────────────────────
-  const previewUrl = cloudMachine.machine?.previewUrl;
+  const rawPreviewUrl = cloudMachine.machine?.previewUrl;
+  const previewUrl = rawPreviewUrl && /^https?:\/\//.test(rawPreviewUrl) ? rawPreviewUrl : null;
 
   // ── Shared header actions ──────────────────────────────────
   const headerActions = (
