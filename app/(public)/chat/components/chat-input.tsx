@@ -359,7 +359,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 </Button>
               )}
               {!isStreaming && (
-                <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className={cn('rounded-xl text-muted-foreground hover:text-primary', canSend ? 'size-9 sm:size-10' : 'size-10 sm:size-11')} title="Record voice">
+                <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className={cn('rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary', canSend ? 'size-9 sm:size-10' : 'size-10 sm:size-11')} title="Record voice">
                   <Mic className={cn(canSend ? 'size-4 sm:size-[18px]' : 'size-5 sm:size-[22px]')} />
                 </Button>
               )}
