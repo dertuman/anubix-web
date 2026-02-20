@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
       region,
       templateName: templateName || undefined,
       gitRepoUrl: gitRepoUrl || undefined,
-      memoryMb: 2048, // 2GB RAM: Claude SDK + dev server + build tools
+      memoryMb: 8192, // 8GB RAM: Claude SDK + dev server + build tools (beefy test config)
     });
     machineId = machine.id;
 

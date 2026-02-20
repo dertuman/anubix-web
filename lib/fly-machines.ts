@@ -241,8 +241,8 @@ export async function createFlyMachine(
         },
       ],
       guest: {
-        cpu_kind: 'shared',
-        cpus: 2,
+        cpu_kind: 'performance',
+        cpus: 4,
         memory_mb: memoryMb,
       },
     },
