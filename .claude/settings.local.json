@@ -6,7 +6,9 @@
       "Bash(npm run lint:*)",
       "WebFetch(domain:github.com)",
       "Bash(npx tsc:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(pushd:*)",
+      "Bash(popd:*)"
     ]
   }
 }

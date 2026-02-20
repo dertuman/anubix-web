@@ -183,6 +183,66 @@ export interface Database {
         };
         Relationships: [];
       };
+      project_env_vars: {
+        Row: {
+          id: string;
+          user_id: string;
+          key: string;
+          value_encrypted: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          key: string;
+          value_encrypted: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          key?: string;
+          value_encrypted?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      github_connections: {
+        Row: {
+          id: string;
+          user_id: string;
+          github_user_id: number;
+          github_username: string;
+          access_token_encrypted: string;
+          scopes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          github_user_id: number;
+          github_username: string;
+          access_token_encrypted: string;
+          scopes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          github_user_id?: number;
+          github_username?: string;
+          access_token_encrypted?: string;
+          scopes?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       cloud_machines: {
         Row: {
           id: string;
@@ -286,3 +346,11 @@ export type CloudMachine = Database['public']['Tables']['cloud_machines']['Row']
 export type CloudMachineInsert = Database['public']['Tables']['cloud_machines']['Insert'];
 export type CloudMachineUpdate = Database['public']['Tables']['cloud_machines']['Update'];
 export type MachineStatus = Database['public']['Enums']['machine_status'];
+
+export type ProjectEnvVar = Database['public']['Tables']['project_env_vars']['Row'];
+export type ProjectEnvVarInsert = Database['public']['Tables']['project_env_vars']['Insert'];
+export type ProjectEnvVarUpdate = Database['public']['Tables']['project_env_vars']['Update'];
+
+export type GitHubConnection = Database['public']['Tables']['github_connections']['Row'];
+export type GitHubConnectionInsert = Database['public']['Tables']['github_connections']['Insert'];
+export type GitHubConnectionUpdate = Database['public']['Tables']['github_connections']['Update'];

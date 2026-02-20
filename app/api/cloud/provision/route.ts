@@ -127,6 +127,35 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Fetch user's env vars ──────────────────────────────────
+  let projectEnvVarsJson: string | undefined;
+  {
+    const { data: envRows } = await supabase
+      .from('project_env_vars')
+      .select()
+      .eq('user_id', userId);
+    if (envRows && envRows.length > 0) {
+      const envMap: Record<string, string> = {};
+      for (const row of envRows) {
+        envMap[row.key] = decrypt(row.value_encrypted);
+      }
+      projectEnvVarsJson = JSON.stringify(envMap);
+    }
+  }
+
+  // ── Fetch GitHub token for private repos ──────────────────
+  let githubToken: string | undefined;
+  if (gitRepoUrl && gitRepoUrl.includes('github.com')) {
+    const { data: ghConn } = await supabase
+      .from('github_connections')
+      .select()
+      .eq('user_id', userId)
+      .single();
+    if (ghConn) {
+      githubToken = decrypt(ghConn.access_token_encrypted);
+    }
+  }
+
   // ── Generate identifiers ───────────────────────────────────
   const shortId = userId.slice(-6).toLowerCase().replace(/[^a-z0-9]/g, 'x');
   const rand = randomBytes(2).toString('hex');
@@ -180,6 +209,8 @@ export async function POST(req: NextRequest) {
       templateName: templateName || undefined,
       gitRepoUrl: gitRepoUrl || undefined,
       memoryMb: 8192, // 8GB RAM: Claude SDK + dev server + build tools (beefy test config)
+      projectEnvVarsJson,
+      githubToken,
     });
     machineId = machine.id;
 

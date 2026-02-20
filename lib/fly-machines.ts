@@ -173,6 +173,8 @@ export interface CreateMachineOptions {
   gitRepoUrl?: string;
   region?: string;
   memoryMb?: number;
+  projectEnvVarsJson?: string;  // JSON string of env vars to inject into .env.local
+  githubToken?: string;         // GitHub PAT for private repo cloning
 }
 
 export async function createFlyMachine(
@@ -189,6 +191,8 @@ export async function createFlyMachine(
     gitRepoUrl,
     region,
     memoryMb = 2048,
+    projectEnvVarsJson,
+    githubToken,
   } = options;
 
   const env: Record<string, string> = {
@@ -210,6 +214,12 @@ export async function createFlyMachine(
   // Optional template / git clone
   if (templateName) env.TEMPLATE_NAME = templateName;
   if (gitRepoUrl) env.GIT_REPO_URL = gitRepoUrl;
+
+  // User env vars (injected into .env.local by init-workspace.sh)
+  if (projectEnvVarsJson) env.PROJECT_ENV_VARS_JSON = projectEnvVarsJson;
+
+  // GitHub token for private repo cloning
+  if (githubToken) env.GITHUB_TOKEN = githubToken;
 
   const body = {
     region: region || undefined,

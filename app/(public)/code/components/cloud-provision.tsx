@@ -8,9 +8,13 @@ import {
   Cloud,
   EyeIcon,
   EyeOffIcon,
+  Github,
   Key,
   Loader2,
+  Minus,
   Play,
+  Plus,
+  Search,
   Terminal,
   Trash2,
 } from 'lucide-react';
@@ -25,6 +29,8 @@ import {
   type CloudMachine,
   type ProvisionOptions,
 } from '@/hooks/useCloudMachine';
+import { useGitHubConnection } from '@/hooks/useGitHubConnection';
+import { useGitHubRepos, type GitHubRepo } from '@/hooks/useGitHubRepos';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -33,7 +39,12 @@ interface CloudProvisionProps {
   onManualSetup: () => void;
 }
 
-type AuthTab = 'cli' | 'sdk';
+type AuthTab = 'cli' | 'sdk' | 'managed';
+
+interface EnvVarEntry {
+  key: string;
+  value: string;
+}
 
 const TEMPLATES = [
   { value: 'talkartech', label: 'Talkartech Fullstack (Recommended)', gitUrl: 'https://github.com/dertuman/talkartech-fullstack-template-supabase.git' },
@@ -139,22 +150,68 @@ function SetupForm({
   const [showApiKey, setShowApiKey] = useState(false);
   const [templateValue, setTemplateValue] = useState('talkartech');
   const [gitRepoUrl, setGitRepoUrl] = useState('');
+  const [envVars, setEnvVars] = useState<EnvVarEntry[]>([]);
+  const [manualGitUrl, setManualGitUrl] = useState(false);
+  const [savingEnvVars, setSavingEnvVars] = useState(false);
+
+  const github = useGitHubConnection();
+  const isGitTemplate = templateValue === 'git';
+  const githubRepos = useGitHubRepos(isGitTemplate && github.isConnected);
 
   const selectedTemplate = TEMPLATES.find(t => t.value === templateValue);
-  const isGitTemplate = templateValue === 'git';
   const isPresetGit = !!(selectedTemplate?.gitUrl);  // e.g. talkartech
   const templateName = (isGitTemplate || isPresetGit) ? '' : templateValue;
   const resolvedGitUrl = isPresetGit ? selectedTemplate!.gitUrl : (isGitTemplate ? gitRepoUrl.trim() : '');
 
   const canSubmit =
     !isWorking &&
+    !savingEnvVars &&
+    authTab !== 'managed' &&
     ((authTab === 'cli' && claudeAuthJson.trim().length > 0) ||
       (authTab === 'sdk' && anthropicApiKey.trim().length > 0)) &&
     (!isGitTemplate || gitRepoUrl.trim().length > 0);
 
-  const handleLaunch = () => {
+  const handleAddEnvVar = () => {
+    setEnvVars((prev) => [...prev, { key: '', value: '' }]);
+  };
+
+  const handleRemoveEnvVar = (index: number) => {
+    setEnvVars((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEnvVarChange = (index: number, field: 'key' | 'value', val: string) => {
+    setEnvVars((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: val } : v)));
+  };
+
+  const handleSelectRepo = (repo: GitHubRepo) => {
+    setGitRepoUrl(repo.clone_url);
+    githubRepos.setSearch('');
+  };
+
+  const handleLaunch = async () => {
+    // Save env vars to DB if any are set
+    const validEnvVars = envVars.filter((v) => v.key.trim());
+    if (validEnvVars.length > 0) {
+      setSavingEnvVars(true);
+      try {
+        const res = await fetch('/api/cloud/env-vars', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vars: validEnvVars }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to save env vars');
+        }
+      } catch {
+        // Continue with provisioning even if env var save fails
+      } finally {
+        setSavingEnvVars(false);
+      }
+    }
+
     onProvision({
-      claudeMode: authTab,
+      claudeMode: authTab as 'cli' | 'sdk',
       claudeAuthJson: authTab === 'cli' ? claudeAuthJson.trim() : undefined,
       anthropicApiKey: authTab === 'sdk' ? anthropicApiKey.trim() : undefined,
       templateName: templateName || undefined,
@@ -190,19 +247,19 @@ function SetupForm({
             <button
               onClick={() => setAuthTab('cli')}
               className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                 authTab === 'cli'
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <Terminal className="size-3" />
-              Claude Subscription
+              Pro/Max
             </button>
             <button
               onClick={() => setAuthTab('sdk')}
               className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                 authTab === 'sdk'
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground',
@@ -210,6 +267,13 @@ function SetupForm({
             >
               <Key className="size-3" />
               API Key
+            </button>
+            <button
+              disabled
+              className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground/50"
+            >
+              <Cloud className="size-3" />
+              Managed (Soon)
             </button>
           </div>
 
@@ -231,7 +295,7 @@ function SetupForm({
                 className="font-mono text-xs"
               />
               <p className="text-[10px] text-muted-foreground/70">
-                Uses your Claude Pro/Max subscription. No API charges.
+                Uses your Claude Pro/Max subscription. No API charges. (Recommended)
               </p>
             </div>
           )}
@@ -265,13 +329,26 @@ function SetupForm({
             </div>
           )}
 
+          {/* Managed mode placeholder */}
+          {authTab === 'managed' && (
+            <div className="rounded-lg border border-border/30 bg-muted/30 p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                No key needed &mdash; coming soon. We&apos;ll handle the API costs as part of your subscription.
+              </p>
+            </div>
+          )}
+
           {/* Template selector */}
           <div className="space-y-2">
             <Label htmlFor="template">Project Template</Label>
             <select
               id="template"
               value={templateValue}
-              onChange={(e) => setTemplateValue(e.target.value)}
+              onChange={(e) => {
+                setTemplateValue(e.target.value);
+                setGitRepoUrl('');
+                setManualGitUrl(false);
+              }}
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {TEMPLATES.map((t) => (
@@ -282,25 +359,173 @@ function SetupForm({
             </select>
           </div>
 
-          {/* Git URL (shown when git template selected) */}
+          {/* Git URL / Repo picker (shown when git template selected) */}
           {isGitTemplate && (
             <div className="space-y-2">
-              <Label htmlFor="git-url">Git Repository URL</Label>
-              <Input
-                id="git-url"
-                value={gitRepoUrl}
-                onChange={(e) => setGitRepoUrl(e.target.value)}
-                placeholder="https://github.com/user/repo.git"
-              />
+              <Label htmlFor="git-url">Git Repository</Label>
+
+              {github.isConnected && !manualGitUrl ? (
+                <>
+                  {/* GitHub connected — repo picker */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Github className="size-3" />
+                    <span>Connected as <strong>{github.username}</strong></span>
+                  </div>
+
+                  {/* Selected repo display */}
+                  {gitRepoUrl && (
+                    <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+                      <span className="flex-1 truncate">{gitRepoUrl}</span>
+                      <button
+                        onClick={() => setGitRepoUrl('')}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Minus className="size-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Repo search */}
+                  {!gitRepoUrl && (
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={githubRepos.search}
+                          onChange={(e) => githubRepos.setSearch(e.target.value)}
+                          placeholder="Search your repos..."
+                          className="pl-8 text-sm"
+                        />
+                      </div>
+                      {githubRepos.isLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : (
+                        <div className="max-h-40 overflow-y-auto rounded-md border border-border/30">
+                          {githubRepos.filteredRepos.length === 0 ? (
+                            <p className="p-3 text-center text-xs text-muted-foreground">
+                              No repos found
+                            </p>
+                          ) : (
+                            githubRepos.filteredRepos.slice(0, 20).map((repo) => (
+                              <button
+                                key={repo.full_name}
+                                onClick={() => handleSelectRepo(repo)}
+                                className="flex w-full items-center gap-2 border-b border-border/10 px-3 py-2 text-left text-sm hover:bg-muted/50 last:border-0"
+                              >
+                                <span className="flex-1 truncate">{repo.full_name}</span>
+                                {repo.private && (
+                                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                    private
+                                  </span>
+                                )}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setManualGitUrl(true)}
+                    className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    Enter URL manually instead
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Manual URL input */}
+                  <Input
+                    id="git-url"
+                    value={gitRepoUrl}
+                    onChange={(e) => setGitRepoUrl(e.target.value)}
+                    placeholder="https://github.com/user/repo.git"
+                  />
+                  {!github.isLoading && !github.isConnected && (
+                    <button
+                      onClick={() => github.connect('/code')}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                      <Github className="size-3" />
+                      Connect GitHub for private repos
+                    </button>
+                  )}
+                  {manualGitUrl && github.isConnected && (
+                    <button
+                      onClick={() => {
+                        setManualGitUrl(false);
+                        setGitRepoUrl('');
+                      }}
+                      className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                      Back to repo picker
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
 
+          {/* Environment Variables */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Environment Variables</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleAddEnvVar}
+                className="h-6 gap-1 px-2 text-xs"
+              >
+                <Plus className="size-3" />
+                Add
+              </Button>
+            </div>
+            {envVars.length > 0 && (
+              <div className="space-y-2">
+                {envVars.map((envVar, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      value={envVar.key}
+                      onChange={(e) => handleEnvVarChange(i, 'key', e.target.value)}
+                      placeholder="KEY"
+                      className="flex-1 font-mono text-xs"
+                    />
+                    <Input
+                      value={envVar.value}
+                      onChange={(e) => handleEnvVarChange(i, 'value', e.target.value)}
+                      placeholder="value"
+                      className="flex-1 text-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveEnvVar(i)}
+                      className="h-8 w-8 shrink-0 p-0"
+                    >
+                      <Minus className="size-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {envVars.length === 0 && (
+              <p className="text-[10px] text-muted-foreground/70">
+                Optional. These will be written to .env.local in your project.
+              </p>
+            )}
+          </div>
+
           {/* Launch button */}
           <Button onClick={handleLaunch} disabled={!canSubmit} className="w-full gap-2">
-            {isWorking ? (
+            {isWorking || savingEnvVars ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Launching...
+                {savingEnvVars ? 'Saving env vars...' : 'Launching...'}
               </>
             ) : (
               <>

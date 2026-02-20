@@ -49,7 +49,7 @@ export interface UseCloudMachineReturn {
   /** Error message from the last operation */
   error: string | null;
   /** Create a new cloud machine */
-  provision: (opts: ProvisionOptions) => Promise<void>;
+  provision: (_opts: ProvisionOptions) => Promise<void>;
   /** Resume a stopped machine */
   start: () => Promise<void>;
   /** Pause the machine (preserves volume) */
@@ -104,7 +104,13 @@ export function useCloudMachine(): UseCloudMachineReturn {
       pollRef.current = setInterval(async () => {
         const m = await fetchStatus();
         // Stop polling once we reach a terminal state
-        if (m && m.status !== 'provisioning' && m.status !== 'starting' && m.status !== 'stopping' && m.status !== 'destroying') {
+        if (
+          m &&
+          m.status !== 'provisioning' &&
+          m.status !== 'starting' &&
+          m.status !== 'stopping' &&
+          m.status !== 'destroying'
+        ) {
           if (pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;
@@ -128,60 +134,64 @@ export function useCloudMachine(): UseCloudMachineReturn {
   }, [machine?.status, fetchStatus]);
 
   // ── Provision ────────────────────────────────────────────
-  const provision = useCallback(async (opts: ProvisionOptions) => {
-    setIsWorking(true);
-    setError(null);
+  const provision = useCallback(
+    async (opts: ProvisionOptions) => {
+      setIsWorking(true);
+      setError(null);
 
-    try {
-      // Temporary password gate — see app/(public)/code/page.tsx
-      const accessPassword = typeof window !== 'undefined'
-        ? sessionStorage.getItem('anubix-access-password') ?? ''
-        : '';
+      try {
+        // Temporary password gate — see app/(public)/code/page.tsx
+        const accessPassword =
+          typeof window !== 'undefined'
+            ? (sessionStorage.getItem('anubix-access-password') ?? '')
+            : '';
 
-      const res = await fetch('/api/cloud/provision', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Access-Password': accessPassword,
-        },
-        body: JSON.stringify(opts),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Provisioning failed');
-      }
-
-      // If the server returned running immediately (existing machine)
-      if (data.status === 'running') {
-        setMachine({
-          status: 'running',
-          bridgeUrl: data.bridgeUrl,
-          bridgeApiKey: data.bridgeApiKey,
-          previewUrl: data.previewUrl,
-          region: opts.region || 'lhr',
-          claudeMode: opts.claudeMode,
-          templateName: opts.templateName || null,
-          gitRepoUrl: opts.gitRepoUrl || null,
-          errorMessage: null,
-          createdAt: new Date().toISOString(),
-          stoppedAt: null,
-          lastHealthCheckAt: new Date().toISOString(),
+        const res = await fetch('/api/cloud/provision', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Access-Password': accessPassword,
+          },
+          body: JSON.stringify(opts),
         });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Provisioning failed');
+        }
+
+        // If the server returned running immediately (existing machine)
+        if (data.status === 'running') {
+          setMachine({
+            status: 'running',
+            bridgeUrl: data.bridgeUrl,
+            bridgeApiKey: data.bridgeApiKey,
+            previewUrl: data.previewUrl,
+            region: opts.region || 'lhr',
+            claudeMode: opts.claudeMode,
+            templateName: opts.templateName || null,
+            gitRepoUrl: opts.gitRepoUrl || null,
+            errorMessage: null,
+            createdAt: new Date().toISOString(),
+            stoppedAt: null,
+            lastHealthCheckAt: new Date().toISOString(),
+          });
+          setIsWorking(false);
+        } else {
+          // Fetch latest status — polling will take over
+          await fetchStatus();
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Provisioning failed';
+        setError(msg);
         setIsWorking(false);
-      } else {
-        // Fetch latest status — polling will take over
+        // Refresh to get the actual DB state
         await fetchStatus();
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Provisioning failed';
-      setError(msg);
-      setIsWorking(false);
-      // Refresh to get the actual DB state
-      await fetchStatus();
-    }
-  }, [fetchStatus]);
+    },
+    [fetchStatus]
+  );
 
   // ── Start ────────────────────────────────────────────────
   const start = useCallback(async () => {
@@ -195,15 +205,19 @@ export function useCloudMachine(): UseCloudMachineReturn {
       if (!res.ok) throw new Error(data.error || 'Failed to start');
 
       if (data.status === 'running') {
-        setMachine((prev) => prev ? {
-          ...prev,
-          status: 'running',
-          bridgeUrl: data.bridgeUrl,
-          bridgeApiKey: data.bridgeApiKey,
-          previewUrl: data.previewUrl,
-          stoppedAt: null,
-          errorMessage: null,
-        } : null);
+        setMachine((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'running',
+                bridgeUrl: data.bridgeUrl,
+                bridgeApiKey: data.bridgeApiKey,
+                previewUrl: data.previewUrl,
+                stoppedAt: null,
+                errorMessage: null,
+              }
+            : null
+        );
         setIsWorking(false);
       } else {
         await fetchStatus();
@@ -226,11 +240,15 @@ export function useCloudMachine(): UseCloudMachineReturn {
 
       if (!res.ok) throw new Error(data.error || 'Failed to stop');
 
-      setMachine((prev) => prev ? {
-        ...prev,
-        status: 'stopped',
-        stoppedAt: new Date().toISOString(),
-      } : null);
+      setMachine((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'stopped',
+              stoppedAt: new Date().toISOString(),
+            }
+          : null
+      );
       setIsWorking(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to stop');

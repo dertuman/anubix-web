@@ -40,6 +40,10 @@ export default async function SettingsLayout({
       title: t('display.title'),
       href: '/profile/display',
     },
+    {
+      title: 'Integrations',
+      href: '/profile/integrations',
+    },
   ];
 
   return (
