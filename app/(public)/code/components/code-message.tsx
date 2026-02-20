@@ -103,7 +103,7 @@ function ElapsedTimer({ startTs, stopped, durationMs }: { startTs: number; stopp
   return <span className="tabular-nums text-xs text-muted-foreground">{mins > 0 ? `${mins}m ` : ''}{secs}s</span>;
 }
 
-function CollapsibleText({ text, maxLines = 20 }: { text: string; maxLines?: number }) {
+function CollapsibleText({ text, maxLines = 30 }: { text: string; maxLines?: number }) {
   const [expanded, setExpanded] = useState(false);
   const trimmed = text.trim();
   const lines = trimmed.split('\n');
@@ -114,10 +114,12 @@ function CollapsibleText({ text, maxLines = 20 }: { text: string; maxLines?: num
     <div>
       <div className="whitespace-pre-wrap text-sm leading-relaxed">{renderMarkdown(displayText)}</div>
       {needsCollapse && (
-        <button onClick={() => setExpanded(!expanded)} className="mt-1 flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-primary/80 transition-colors hover:bg-primary/15 hover:text-primary">
-          <ChevronDown className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
-          {expanded ? 'Show less' : `Show all ${lines.length} lines`}
-        </button>
+        <div className="mt-2 flex justify-center">
+          <button onClick={() => setExpanded(!expanded)} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
+            <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
+            {expanded ? 'Show less' : `Show all ${lines.length} lines`}
+          </button>
+        </div>
       )}
     </div>
   );
