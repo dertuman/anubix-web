@@ -72,8 +72,10 @@ const PROVISION_STEPS = [
 function parseEnvString(text: string): EnvVarEntry[] {
   const results: EnvVarEntry[] = [];
   for (const raw of text.split('\n')) {
-    const line = raw.trim();
+    let line = raw.trim();
     if (!line || line.startsWith('#')) continue;
+    // Handle `export KEY=value`
+    if (line.startsWith('export ')) line = line.slice(7).trim();
     const eqIdx = line.indexOf('=');
     if (eqIdx === -1) continue;
     const key = line.slice(0, eqIdx).trim();
@@ -213,30 +215,46 @@ function SetupForm({
     setEnvVars((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: val } : v)));
   };
 
+  const [pasteInput, setPasteInput] = useState('');
+
+  const mergeEnvVars = (parsed: EnvVarEntry[]) => {
+    setEnvVars((prev) => {
+      const existing = new Set(prev.map((v) => v.key));
+      const merged = [...prev];
+      for (const entry of parsed) {
+        if (existing.has(entry.key)) {
+          const idx = merged.findIndex((v) => v.key === entry.key);
+          if (idx !== -1) merged[idx] = entry;
+        } else {
+          merged.push(entry);
+          existing.add(entry.key);
+        }
+      }
+      return merged;
+    });
+  };
+
+  // Desktop: intercept paste event directly from clipboard
   const handleEnvVarPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const text = e.clipboardData.getData('text');
     const parsed = parseEnvString(text);
     if (parsed.length > 0) {
       e.preventDefault();
-      setEnvVars((prev) => {
-        const existing = new Set(prev.map((v) => v.key));
-        const merged = [...prev];
-        for (const entry of parsed) {
-          if (existing.has(entry.key)) {
-            const idx = merged.findIndex((v) => v.key === entry.key);
-            if (idx !== -1) merged[idx] = entry;
-          } else {
-            merged.push(entry);
-            existing.add(entry.key);
-          }
-        }
-        return merged;
-      });
+      mergeEnvVars(parsed);
       setPasteInput('');
     }
   };
 
-  const [pasteInput, setPasteInput] = useState('');
+  // Mobile fallback: auto-parse on onChange (mobile paste fires onChange, not onPaste)
+  const handleEnvInput = (text: string) => {
+    const parsed = parseEnvString(text);
+    if (parsed.length > 0) {
+      mergeEnvVars(parsed);
+      setPasteInput('');
+    } else {
+      setPasteInput(text);
+    }
+  };
 
   const handleSelectRepo = (repo: GitHubRepo) => {
     setGitRepoUrl(repo.clone_url);
@@ -543,17 +561,15 @@ function SetupForm({
               </Button>
             </div>
 
-            {/* Paste area — Vercel-style */}
-            {envVars.length === 0 && (
-              <Textarea
-                value={pasteInput}
-                onChange={(e) => setPasteInput(e.target.value)}
-                onPaste={handleEnvVarPaste}
-                placeholder={'Paste your .env contents here\ne.g.\nDATABASE_URL=postgres://...\nAPI_KEY=sk-...'}
-                rows={3}
-                className="font-mono text-xs"
-              />
-            )}
+            {/* Paste area — always visible, auto-parses on paste/change */}
+            <Textarea
+              value={pasteInput}
+              onChange={(e) => handleEnvInput(e.target.value)}
+              onPaste={handleEnvVarPaste}
+              placeholder={'Paste .env contents here'}
+              rows={2}
+              className="font-mono text-xs"
+            />
 
             {/* Parsed key-value rows */}
             {envVars.length > 0 && (
@@ -588,7 +604,7 @@ function SetupForm({
 
             <p className="text-[10px] text-muted-foreground/70">
               {envVars.length === 0
-                ? 'Paste your .env file or add variables one by one. Written to .env.local.'
+                ? 'Paste your .env file above or add variables one by one.'
                 : `${envVars.length} variable${envVars.length === 1 ? '' : 's'} — written to .env.local`}
             </p>
           </div>
