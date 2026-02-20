@@ -292,7 +292,7 @@ function SetupForm({
               <p className="text-xs text-muted-foreground">
                 Run <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">claude /login</code> in
                 your terminal, then paste the contents of{' '}
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.config/claude-code/auth.json</code>
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.claude/.credentials.json</code>
               </p>
               <Textarea
                 id="claude-auth"
