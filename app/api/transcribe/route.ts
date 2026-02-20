@@ -51,6 +51,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ transcription, success: true });
   } catch (error: unknown) {
     console.error('Transcription error:', error);
+
+    if (error instanceof OpenAI.AuthenticationError) {
+      return NextResponse.json(
+        { error: 'Transcription service is not configured correctly. Please contact the administrator.' },
+        { status: 503 }
+      );
+    }
+
+    if (error instanceof OpenAI.RateLimitError) {
+      const message = error.message?.toLowerCase() ?? '';
+      if (message.includes('quota') || message.includes('billing') || message.includes('exceeded')) {
+        return NextResponse.json(
+          { error: 'Transcription quota exceeded. The API credits may have run out.' },
+          { status: 429 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'Too many transcription requests. Please wait a moment and try again.' },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Transcription failed. Please try again.' },
       { status: 500 }

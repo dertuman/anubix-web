@@ -1,18 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useUserData } from '@/context/UserDataContext';
 import { useScopedI18n } from '@/locales/client';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import {
+  Info,
+  LogIn,
+  MessageSquare,
+  ShieldCheck,
+  Terminal,
+} from 'lucide-react';
 
 import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
 import { MainNav } from '@/components/main-nav';
 
 import { ThemeToggle } from './theme-toggle';
-import { buttonVariants } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
+
+const NAV_ICONS: Record<string, React.ReactNode> = {
+  '/about': <Info className="size-4" />,
+  '/chat': <MessageSquare className="size-4" />,
+  '/code': <Terminal className="size-4" />,
+  '/admin/users': <ShieldCheck className="size-4" />,
+};
 
 export function SiteHeader() {
   const t = useScopedI18n('siteHeader');
@@ -104,31 +120,45 @@ export function SiteHeader() {
                 </DialogDescription>
                 {siteConfig.mainNav?.length ? (
                   <nav className="mt-6 flex flex-col gap-1 px-2">
-                    <p className="mb-3 px-3 text-lg font-bold tracking-tight">
-                      Anubix
-                    </p>
+                    <div className="mb-4 flex items-center gap-2 px-3">
+                      <Image
+                        src="/logo.webp"
+                        alt="Anubix logo"
+                        width={24}
+                        height={24}
+                      />
+                      <span className="text-lg font-bold tracking-tight">
+                        Anubix
+                      </span>
+                    </div>
                     {siteConfig.mainNav?.map(
                       (item, index) =>
                         item.href && (
-                          <Link
-                            prefetch
+                          <Button
                             key={index}
-                            href={item.comingSoon ? '#' : item.href}
-                            onClick={closeSheet}
-                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            variant="ghost"
+                            asChild
+                            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
                           >
-                            {item.title}
-                          </Link>
+                            <Link
+                              prefetch
+                              href={item.comingSoon ? '#' : item.href}
+                              onClick={closeSheet}
+                            >
+                              {NAV_ICONS[item.href]}
+                              {item.title}
+                            </Link>
+                          </Button>
                         )
                     )}
                     <SignedOut>
-                      <Link
-                        href="/sign-in"
-                        onClick={closeSheet}
-                        className="mt-3 rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground"
-                      >
-                        {t('login')}
-                      </Link>
+                      <Separator className="my-3" />
+                      <Button asChild className="w-full gap-2">
+                        <Link href="/sign-in" onClick={closeSheet}>
+                          <LogIn className="size-4" />
+                          {t('login')}
+                        </Link>
+                      </Button>
                     </SignedOut>
                   </nav>
                 ) : null}

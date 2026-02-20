@@ -62,17 +62,20 @@ export function HeroSection() {
 
         {/* CTAs */}
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
-          <Link href="/sign-up">
-            <Button size="lg" className="gap-2 px-8 text-base font-semibold">
+          <Link href="/sign-up" className="w-full sm:w-auto">
+            <Button
+              size="lg"
+              className="w-full gap-2 px-8 text-base font-semibold sm:w-auto"
+            >
               {t('cta')}
               <ArrowRight className="size-4" />
             </Button>
           </Link>
-          <a href="#how-it-works">
+          <a href="#how-it-works" className="w-full sm:w-auto">
             <Button
               variant="outline"
               size="lg"
-              className="gap-2 px-8 text-base font-semibold"
+              className="w-full gap-2 px-8 text-base font-semibold sm:w-auto"
             >
               {t('ctaSecondary')}
               <ChevronDown className="size-4" />
