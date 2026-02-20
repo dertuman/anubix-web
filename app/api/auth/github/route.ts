@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
   const state = randomBytes(16).toString('hex');
 
   // Store the return URL from query param (or default to /profile/integrations)
-  const returnTo = req.nextUrl.searchParams.get('returnTo') || '/profile/integrations';
+  // Validate that returnTo is a safe relative path to prevent open redirect attacks
+  const rawReturnTo = req.nextUrl.searchParams.get('returnTo') || '/profile/integrations';
+  const returnTo = rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : '/profile/integrations';
 
   // Build the state cookie value (state + returnTo)
   const statePayload = JSON.stringify({ state, returnTo });

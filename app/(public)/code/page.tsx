@@ -7,6 +7,9 @@
  * The code page is gated behind a simple password while we
  * work on major updates. Public users see a "coming soon" screen.
  *
+ * The password is verified server-side via /api/cloud/provision.
+ * The ACCESS_PASSWORD env var must be set on the server.
+ *
  * TO RE-ENABLE (remove password gate):
  * 1. Replace this entire file with:
  *
@@ -18,9 +21,6 @@
  *
  * 2. Also re-enable the provisioning API at:
  *    app/api/cloud/provision/route.ts
- *    (revert from git history)
- *
- * PASSWORD: anubix2026
  * ============================================================
  */
 
@@ -29,8 +29,6 @@ import { Lock, EyeIcon, EyeOffIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CodeView } from './components/code-view';
-
-const ACCESS_PASSWORD = 'anubix2026';
 
 export default function CodePage() {
   const [password, setPassword] = useState('');
@@ -42,13 +40,23 @@ export default function CodePage() {
     return <CodeView />;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ACCESS_PASSWORD) {
-      sessionStorage.setItem('anubix-access-password', password);
-      setUnlocked(true);
-      setError(false);
-    } else {
+    // Verify password server-side by checking the provision endpoint
+    try {
+      const res = await fetch('/api/auth/verify-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem('anubix-access-password', password);
+        setUnlocked(true);
+        setError(false);
+      } else {
+        setError(true);
+      }
+    } catch {
       setError(true);
     }
   };

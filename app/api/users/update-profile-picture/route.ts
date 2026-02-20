@@ -35,7 +35,9 @@ export async function POST(req: Request) {
     let path;
     if (isFile) {
       const buffer = await file.arrayBuffer();
-      const key = randomUppercaseString() + '_' + file.name;
+      // Sanitize file name: strip path separators and directory traversal
+      const safeName = file.name.replace(/[/\\]/g, '_').replace(/\.\./g, '_');
+      const key = randomUppercaseString() + '_' + safeName;
 
       const { error: uploadError } = await storage.storage
         .from(BUCKET)
@@ -75,6 +77,7 @@ export async function POST(req: Request) {
     }
 
     // Delete old profile picture from storage
+    // Validate the key to prevent path traversal attacks
     if (
       currentProfilePicture &&
       currentProfilePicture.length > 0 &&
@@ -83,7 +86,7 @@ export async function POST(req: Request) {
       currentProfilePicture.includes(BUCKET)
     ) {
       const oldKey = currentProfilePicture.split(`${BUCKET}/`).pop();
-      if (oldKey) {
+      if (oldKey && !oldKey.includes('..') && !oldKey.startsWith('/')) {
         await storage.storage.from(BUCKET).remove([oldKey]);
       }
     }

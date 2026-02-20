@@ -18,19 +18,15 @@ import {
  * ============================================================
  * TEMPORARILY PASSWORD-PROTECTED
  * ============================================================
- * Provisioning requires the X-Access-Password header to match.
- * This prevents unauthorized deployments while we test.
+ * Provisioning requires the X-Access-Password header to match
+ * the ACCESS_PASSWORD environment variable.
  *
  * TO RE-ENABLE (remove password gate):
- * 1. Delete the ACCESS_PASSWORD constant and the password
- *    check block at the top of POST.
+ * 1. Delete the password check block at the top of POST.
  * 2. Also remove the password gate from the code page at:
  *      app/(public)/code/page.tsx
- *
- * PASSWORD: anubix2026
  * ============================================================
  */
-const ACCESS_PASSWORD = 'anubix2026';
 
 // Allow up to 300s for Fly.io provisioning (app + volume + machine + template install + health check)
 // Heavy templates like talkartech-fullstack need 3-5 min for git clone + npm install before the server starts.
@@ -45,12 +41,15 @@ export const maxDuration = 300;
  */
 export async function POST(req: NextRequest) {
   // ── Password gate (temporary) ─────────────────────────────
-  const accessPassword = req.headers.get('x-access-password');
-  if (accessPassword !== ACCESS_PASSWORD) {
-    return NextResponse.json(
-      { error: 'Provisioning is temporarily disabled. Something amazing is coming soon.' },
-      { status: 503 },
-    );
+  const requiredPassword = process.env.ACCESS_PASSWORD;
+  if (requiredPassword) {
+    const accessPassword = req.headers.get('x-access-password');
+    if (accessPassword !== requiredPassword) {
+      return NextResponse.json(
+        { error: 'Provisioning is temporarily disabled. Something amazing is coming soon.' },
+        { status: 503 },
+      );
+    }
   }
 
   const { userId } = await auth();
