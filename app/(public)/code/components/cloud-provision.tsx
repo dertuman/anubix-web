@@ -2,17 +2,20 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import {
   AlertCircle,
   Check,
   Cloud,
+  EyeIcon,
+  EyeOffIcon,
   Github,
+  Key,
   Loader2,
   Minus,
   Play,
   Plus,
   Search,
+  Terminal,
   Trash2,
 } from 'lucide-react';
 
@@ -184,6 +187,38 @@ function SetupForm({
   const isGitTemplate = templateValue === 'git';
   const githubRepos = useGitHubRepos(isGitTemplate && github.isConnected);
 
+  // Inline Claude auth form state
+  const [showClaudeForm, setShowClaudeForm] = useState(false);
+  const [claudeAuthTab, setClaudeAuthTab] = useState<'cli' | 'sdk'>('cli');
+  const [claudeAuthJson, setClaudeAuthJson] = useState('');
+  const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [claudeSaving, setClaudeSaving] = useState(false);
+  const [claudeError, setClaudeError] = useState<string | null>(null);
+
+  const canSaveClaude =
+    (claudeAuthTab === 'cli' && claudeAuthJson.trim().length > 0) ||
+    (claudeAuthTab === 'sdk' && anthropicApiKey.trim().length > 0);
+
+  const handleClaudeSave = async () => {
+    setClaudeSaving(true);
+    setClaudeError(null);
+    try {
+      await claude.save({
+        claudeMode: claudeAuthTab,
+        claudeAuthJson: claudeAuthTab === 'cli' ? claudeAuthJson.trim() : undefined,
+        anthropicApiKey: claudeAuthTab === 'sdk' ? anthropicApiKey.trim() : undefined,
+      });
+      setShowClaudeForm(false);
+      setClaudeAuthJson('');
+      setAnthropicApiKey('');
+    } catch (err) {
+      setClaudeError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setClaudeSaving(false);
+    }
+  };
+
   const realTemplateValue = templateValue === '__empty' ? '' : templateValue;
   const selectedTemplate = TEMPLATES.find(t => t.value === realTemplateValue);
   const isPresetGit = !!(selectedTemplate?.gitUrl);
@@ -298,15 +333,107 @@ function SetupForm({
               <span className="flex-1">Claude {claude.mode === 'cli' ? 'Pro/Max' : 'API Key'}</span>
               <Check className="size-4 text-green-500" />
             </div>
-          ) : (
-            <Link
-              href="/profile/integrations"
-              className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+          ) : !showClaudeForm ? (
+            <button
+              onClick={() => setShowClaudeForm(true)}
+              className="flex w-full items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
             >
               <AlertCircle className="size-4 shrink-0" />
-              <span className="flex-1">Connect Claude to launch</span>
+              <span className="flex-1 text-left">Connect Claude to launch</span>
               <span className="text-xs underline">Setup</span>
-            </Link>
+            </button>
+          ) : (
+            <div className="space-y-3 rounded-lg border border-border/30 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Connect Claude</span>
+                <button
+                  onClick={() => { setShowClaudeForm(false); setClaudeError(null); }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* Mode tabs */}
+              <div className="flex rounded-lg border border-border/30 p-0.5">
+                <button
+                  onClick={() => setClaudeAuthTab('cli')}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    claudeAuthTab === 'cli'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Terminal className="size-3" />
+                  Pro/Max
+                </button>
+                <button
+                  onClick={() => setClaudeAuthTab('sdk')}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    claudeAuthTab === 'sdk'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Key className="size-3" />
+                  API Key
+                </button>
+              </div>
+
+              {claudeAuthTab === 'cli' ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Run <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">claude /login</code> in
+                    your terminal, then paste the contents of{' '}
+                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.claude/.credentials.json</code>
+                  </p>
+                  <Textarea
+                    value={claudeAuthJson}
+                    onChange={(e) => setClaudeAuthJson(e.target.value)}
+                    placeholder={'{"claudeAiOauth":{"accessToken":"...","refreshToken":"..."}}'}
+                    rows={3}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={anthropicApiKey}
+                      onChange={(e) => setAnthropicApiKey(e.target.value)}
+                      placeholder="sk-ant-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowApiKey((p) => !p)}
+                    >
+                      {showApiKey ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {claudeError && (
+                <p className="text-xs text-destructive">{claudeError}</p>
+              )}
+
+              <Button
+                size="sm"
+                onClick={handleClaudeSave}
+                disabled={claudeSaving || !canSaveClaude}
+                className="w-full gap-1"
+              >
+                {claudeSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                Save
+              </Button>
+            </div>
           )}
 
           {/* GitHub connection */}
