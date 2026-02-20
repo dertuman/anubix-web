@@ -151,6 +151,7 @@ export async function createFlyMachine(
     volumeId,
     templateName,
     gitRepoUrl,
+    region,
     memoryMb = 512,
   } = options;
 
@@ -176,6 +177,7 @@ export async function createFlyMachine(
   if (gitRepoUrl) env.GIT_REPO_URL = gitRepoUrl;
 
   const body = {
+    region: region || undefined,
     config: {
       image: getBridgeImage(),
       env,

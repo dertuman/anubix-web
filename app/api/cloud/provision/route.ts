@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
       claudeAuthJson: claudeAuthJson || undefined,
       anthropicApiKey: anthropicApiKey || undefined,
       volumeId,
+      region,
       templateName: templateName || undefined,
       gitRepoUrl: gitRepoUrl || undefined,
       memoryMb: 512,
