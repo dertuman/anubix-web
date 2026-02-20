@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, FolderPlus, Upload } from 'lucide-react';
+import { Eye, FolderPlus, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { ConfirmationDialog } from '@/components/confirmation-dialog';
 
 import { BridgeSetup } from './bridge-setup';
 import { CloudProvision } from './cloud-provision';
@@ -34,7 +35,7 @@ export function CodeView() {
   const {
     status, connect, connectionError, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
-    pullSession, messages, sendMessage, approve, deny, answerQuestion, abort,
+    pullSession, messages, sendMessage, clearConversation, approve, deny, answerQuestion, abort,
     isBusy, slashCommands, connectionHealth,
     sessionLiveStates, fetchRepos,
   } = useClaudeCode();
@@ -45,6 +46,7 @@ export function CodeView() {
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const dragCounterRef = useRef(0);
   const codeInputRef = useRef<CodeInputHandle>(null);
 
@@ -255,9 +257,29 @@ export function CodeView() {
               <span className={cn(statusBadgeClass(activeSession.status), 'hidden sm:inline-flex')}>{t(`status.${activeSession.status}`)}</span>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {/* Context usage gauge */}
             <ContextGauge input={tokenUsage.input} output={tokenUsage.output} total={tokenUsage.total} />
+            {/* Clear conversation */}
+            <button
+              onClick={() => setClearDialogOpen(true)}
+              disabled={messages.length === 0}
+              className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+              title="Clear conversation"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+            <ConfirmationDialog
+              isOpen={clearDialogOpen}
+              onOpenChange={setClearDialogOpen}
+              title="Clear conversation"
+              description="This will clear all messages in the current session. This action cannot be undone."
+              confirmButtonText="Clear"
+              handleConfirm={() => {
+                clearConversation();
+                setClearDialogOpen(false);
+              }}
+            />
             {previewUrl && (
               <button
                 onClick={() => window.open(previewUrl, '_blank')}
