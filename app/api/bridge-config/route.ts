@@ -49,6 +49,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'bridgeUrl is required' }, { status: 400 });
   }
 
+  // Validate bridge URL to prevent SSRF — only allow HTTPS with public hostnames
+  try {
+    const parsed = new URL(bridgeUrl);
+    if (parsed.protocol !== 'https:') {
+      return NextResponse.json({ error: 'bridgeUrl must use HTTPS' }, { status: 400 });
+    }
+    const hostname = parsed.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.local') || hostname.startsWith('10.') || hostname.startsWith('192.168.') || hostname.startsWith('172.')) {
+      return NextResponse.json({ error: 'bridgeUrl must not point to a private/internal address' }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'bridgeUrl is not a valid URL' }, { status: 400 });
+  }
+
   const encrypted = apiKey ? encrypt(apiKey) : '';
 
   const { error } = await supabase
