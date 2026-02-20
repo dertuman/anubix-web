@@ -6,6 +6,7 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt, decrypt } from '@/lib/encryption';
 import {
   createFlyApp,
+  allocateFlyIps,
   createFlyVolume,
   createFlyMachine,
   waitForMachineState,
@@ -131,8 +132,9 @@ export async function POST(req: NextRequest) {
   let machineId: string | undefined;
 
   try {
-    // 1. Create app
+    // 1. Create app + allocate IPs (needed for .fly.dev DNS)
     await createFlyApp(appName);
+    await allocateFlyIps(appName);
 
     // 2. Create volume
     const volume = await createFlyVolume(appName, region, 3); // 3GB: template + node_modules + workspace

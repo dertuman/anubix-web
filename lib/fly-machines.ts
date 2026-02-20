@@ -6,6 +6,7 @@
  */
 
 const FLY_API_BASE = 'https://api.machines.dev/v1';
+const FLY_PLATFORM_API = 'https://api.fly.io/graphql';
 
 function getToken(): string {
   const token = process.env.FLY_API_TOKEN;
@@ -88,6 +89,41 @@ export async function destroyFlyApp(appName: string): Promise<void> {
   await flyFetchOk(`/apps/${appName}`, { method: 'DELETE' });
 }
 
+/**
+ * Allocate shared IPv4 and IPv6 addresses for a Fly app.
+ * Without this, the app's .fly.dev domain won't resolve.
+ */
+export async function allocateFlyIps(appName: string): Promise<void> {
+  const mutation = `mutation($input: AllocateIPAddressInput!) {
+    allocateIpAddress(input: $input) {
+      ipAddress { id address type }
+    }
+  }`;
+
+  const allocate = async (type: string) => {
+    const res = await fetch(FLY_PLATFORM_API, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: { input: { appId: appName, type, region: '' } },
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Fly IP allocation (${type}) failed (${res.status}): ${body}`);
+    }
+  };
+
+  await Promise.all([
+    allocate('shared_v4'),
+    allocate('v6'),
+  ]);
+}
+
 // ── Volumes ──────────────────────────────────────────────────
 
 export interface FlyVolume {
@@ -158,6 +194,7 @@ export async function createFlyMachine(
   const env: Record<string, string> = {
     BRIDGE_API_KEY: bridgeApiKey,
     CLAUDE_MODE: claudeMode,
+    HOST: '0.0.0.0',
     PORT: '8080',
     REPOS_BASE_PATH: '/workspace',
     NODE_ENV: 'production',
@@ -295,13 +332,13 @@ export async function waitForBridgeHealth(
     try {
       const res = await fetch(`${bridgeUrl}/api/health`, {
         headers: { 'x-api-key': bridgeApiKey },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(15000),
       });
       if (res.ok) return;
-      // Log non-ok responses to help debug
+      // 502/503 = Fly proxy can't reach backend yet — keep trying
       console.log(`[health] attempt ${i + 1}/${maxAttempts}: status ${res.status}`);
     } catch (err) {
-      // DNS not ready or connection refused — keep trying
+      // DNS not ready, connection refused, or timeout — keep trying
       const msg = err instanceof Error ? err.message : String(err);
       console.log(`[health] attempt ${i + 1}/${maxAttempts}: ${msg}`);
     }
