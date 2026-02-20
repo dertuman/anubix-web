@@ -91,38 +91,17 @@ function EditSessionModal({
   const [envVarsByRepo, setEnvVarsByRepo] = useState<Record<string, EnvVarEntry[]>>({});
   const [loadingEnv, setLoadingEnv] = useState(true);
   const [savingEnv, setSavingEnv] = useState(false);
-  const [syncingEnv, setSyncingEnv] = useState(false);
   const [envMessage, setEnvMessage] = useState<string | null>(null);
   const [pasteInput, setPasteInput] = useState('');
 
-  // Fetch env vars on mount for each repo path
+  // Initialize empty env vars for each repo path
   useEffect(() => {
-    let cancelled = false;
-    const fetchAll = async () => {
-      const result: Record<string, EnvVarEntry[]> = {};
-      for (const rp of repoPaths) {
-        try {
-          const res = await fetch(`/api/cloud/env-vars?repo_path=${encodeURIComponent(rp)}`);
-          if (res.ok) {
-            const data = await res.json();
-            result[rp] = (data.vars ?? []).map((v: { key: string; value: string }) => ({
-              key: v.key,
-              value: v.value,
-            }));
-          } else {
-            result[rp] = [];
-          }
-        } catch {
-          result[rp] = [];
-        }
-      }
-      if (!cancelled) {
-        setEnvVarsByRepo(result);
-        setLoadingEnv(false);
-      }
-    };
-    fetchAll();
-    return () => { cancelled = true; };
+    const result: Record<string, EnvVarEntry[]> = {};
+    for (const rp of repoPaths) {
+      result[rp] = [];
+    }
+    setEnvVarsByRepo(result);
+    setLoadingEnv(false);
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeVars = envVarsByRepo[activeEnvRepo] ?? [];
@@ -171,55 +150,42 @@ function EditSessionModal({
     }
   };
 
-  const handleSaveAndSync = async () => {
+  const handlePushToMachine = async () => {
     const valid = activeVars.filter((v) => v.key.trim());
+    if (valid.length === 0) {
+      setEnvMessage('Error: No variables to push');
+      return;
+    }
     setSavingEnv(true);
     setEnvMessage(null);
     try {
-      // Step 1: Save to database
-      const saveRes = await fetch('/api/cloud/env-vars', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vars: valid, repo_path: activeEnvRepo }),
-      });
-      if (!saveRes.ok) {
-        const data = await saveRes.json();
-        setEnvMessage(`Error: ${data.error}`);
-        return;
+      // Convert array to Record<string, string> and push directly to bridge
+      const varsObj: Record<string, string> = {};
+      for (const v of valid) {
+        varsObj[v.key.trim()] = v.value;
       }
 
-      // Step 2: Sync to machine
-      setSyncingEnv(true);
-      const syncRes = await fetch('/api/cloud/env-vars/sync', {
+      const res = await fetch('/api/cloud/env-vars/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo_path: activeEnvRepo }),
+        body: JSON.stringify({ vars: varsObj, repo_path: activeEnvRepo }),
       });
-      const syncData = await syncRes.json();
-      if (!syncRes.ok) {
-        setEnvMessage(`Saved but sync failed: ${syncData.error}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setEnvMessage(`Error: ${data.error}`);
       } else {
-        setEnvMessage(`Saved & synced ${syncData.count} vars to machine`);
+        setEnvMessage(`Pushed ${data.count} vars to machine`);
         setTimeout(() => setEnvMessage(null), 4000);
       }
     } catch {
-      setEnvMessage('Error: Failed to save');
+      setEnvMessage('Error: Failed to push to machine');
     } finally {
       setSavingEnv(false);
-      setSyncingEnv(false);
     }
   };
 
-  const handleDeleteEnvVar = async (index: number) => {
-    const removed = activeVars[index];
+  const handleDeleteEnvVar = (index: number) => {
     setActiveVars((prev) => prev.filter((_, i) => i !== index));
-    if (removed.key.trim()) {
-      fetch('/api/cloud/env-vars', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: removed.key, repo_path: activeEnvRepo }),
-      }).catch(() => {});
-    }
   };
 
   // ── Session paths & name ────────────────────────────────
@@ -406,7 +372,7 @@ function EditSessionModal({
           <div className="border-border/20 mt-6 border-t pt-5">
             <h3 className="text-sm font-semibold">Environment Variables</h3>
             <p className="text-muted-foreground mt-0.5 text-xs">
-              Manage .env.local variables per repository.
+              Push .env.local variables directly to your machine.
             </p>
 
             {/* Repo tabs (only when multiple repos) */}
@@ -520,16 +486,16 @@ function EditSessionModal({
 
                 <Button
                   size="sm"
-                  onClick={handleSaveAndSync}
-                  disabled={savingEnv || syncingEnv}
+                  onClick={handlePushToMachine}
+                  disabled={savingEnv}
                   className="gap-1.5"
                 >
-                  {savingEnv || syncingEnv ? (
+                  {savingEnv ? (
                     <Loader2 className="size-3 animate-spin" />
                   ) : (
                     <RefreshCw className="size-3" />
                   )}
-                  {savingEnv ? 'Saving…' : syncingEnv ? 'Syncing to machine…' : 'Save & Sync'}
+                  {savingEnv ? 'Pushing…' : 'Push to Machine'}
                 </Button>
               </div>
             )}
