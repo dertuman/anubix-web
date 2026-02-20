@@ -335,7 +335,7 @@ function ProvisioningView({ machine }: { machine: CloudMachine }) {
             <Cloud className="size-8 text-primary" />
           </div>
           <h2 className="text-xl font-bold">Setting up your environment</h2>
-          <p className="text-sm text-muted-foreground">This usually takes 10-30 seconds...</p>
+          <p className="text-sm text-muted-foreground">This usually takes 1-3 minutes...</p>
         </div>
 
         <div className="space-y-3">

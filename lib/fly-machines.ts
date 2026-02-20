@@ -273,13 +273,15 @@ export async function waitForMachineState(
  * Poll the bridge health endpoint until it responds OK.
  * First-time cold starts can take a while: Fly.io pulls the Docker image,
  * boots the container, runs init-workspace.sh, then starts the Node server.
- * We allow up to ~90s (30 attempts × 3s) to be safe.
+ * We allow up to ~3 min (40 attempts × 5s) to be safe.
+ * Templates like Next.js run npx create-next-app + npm install before
+ * the bridge server starts, which can take 2+ minutes on a small VM.
  */
 export async function waitForBridgeHealth(
   bridgeUrl: string,
   bridgeApiKey: string,
-  maxAttempts: number = 30,
-  delayMs: number = 3000,
+  maxAttempts: number = 40,
+  delayMs: number = 5000,
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
@@ -299,7 +301,7 @@ export async function waitForBridgeHealth(
       await new Promise((r) => setTimeout(r, delayMs));
     }
   }
-  throw new Error(`Bridge at ${bridgeUrl} did not become healthy after ${maxAttempts} attempts (~${Math.round(maxAttempts * delayMs / 1000)}s)`);
+  throw new Error(`Bridge at ${bridgeUrl} did not become healthy after ${maxAttempts} attempts (~${Math.round((maxAttempts * delayMs) / 1000)}s). The container may still be installing a project template.`);
 }
 
 // ── Cleanup helpers ──────────────────────────────────────────
