@@ -409,7 +409,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             onInput={handleInput}
             onPaste={handlePaste}
             placeholder={isBusy ? 'Type to queue a message...' : 'Message Claude Code...'}
-            className={cn('max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 text-sm [scrollbar-gutter:stable] focus-visible:ring-1', rightPadding)}
+            className={cn('max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 text-base md:text-sm [scrollbar-gutter:stable] focus-visible:ring-1', rightPadding)}
             rows={1}
             disabled={disabled}
           />
