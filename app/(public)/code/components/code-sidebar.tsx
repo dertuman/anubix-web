@@ -116,7 +116,7 @@ function EditSessionModal({
 
   const activeVars = envVarsByRepo[activeEnvRepo] ?? [];
 
-  const setActiveVars = (updater: (prev: EnvVarEntry[]) => EnvVarEntry[]) => {
+  const setActiveVars = (updater: (_prev: EnvVarEntry[]) => EnvVarEntry[]) => {
     setEnvVarsByRepo((prev) => ({
       ...prev,
       [activeEnvRepo]: updater(prev[activeEnvRepo] ?? []),
