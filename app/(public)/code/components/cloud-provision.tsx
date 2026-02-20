@@ -47,6 +47,9 @@ interface CloudProvisionProps {
   onManualSetup: () => void;
 }
 
+/** Key for persisting extra repos to clone after provisioning */
+const EXTRA_REPOS_KEY = 'anubix-extra-repos-to-clone';
+
 interface EnvVarEntry {
   key: string;
   value: string;
@@ -108,7 +111,24 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
   // ── Auto-connect when machine becomes running ────────────
   if (machine?.status === 'running' && machine.bridgeUrl && machine.bridgeApiKey) {
     // Schedule this for after render to avoid calling during render
-    setTimeout(() => onConnected(machine.bridgeUrl!, machine.bridgeApiKey!), 0);
+    setTimeout(() => {
+      // Clone any extra repos that were selected during provisioning
+      const extraReposJson = typeof window !== 'undefined' ? sessionStorage.getItem(EXTRA_REPOS_KEY) : null;
+      if (extraReposJson) {
+        sessionStorage.removeItem(EXTRA_REPOS_KEY);
+        try {
+          const urls = JSON.parse(extraReposJson) as string[];
+          for (const url of urls) {
+            fetch('/api/cloud/repos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url }),
+            }).catch(() => { /* best effort */ });
+          }
+        } catch { /* ignore */ }
+      }
+      onConnected(machine.bridgeUrl!, machine.bridgeApiKey!);
+    }, 0);
   }
 
   // ── Loading ──────────────────────────────────────────────
@@ -176,6 +196,7 @@ function SetupForm({
 }) {
   const [templateValue, setTemplateValue] = useState('talkartech');
   const [gitRepoUrl, setGitRepoUrl] = useState('');
+  const [selectedGitRepos, setSelectedGitRepos] = useState<GitHubRepo[]>([]);
   const [envVars, setEnvVars] = useState<EnvVarEntry[]>([]);
   const [manualGitUrl, setManualGitUrl] = useState(false);
   const [savingEnvVars, setSavingEnvVars] = useState(false);
@@ -223,13 +244,20 @@ function SetupForm({
   const selectedTemplate = TEMPLATES.find(t => t.value === realTemplateValue);
   const isPresetGit = !!(selectedTemplate?.gitUrl);
   const templateName = (isGitTemplate || isPresetGit) ? '' : realTemplateValue;
-  const resolvedGitUrl = isPresetGit ? selectedTemplate!.gitUrl : (isGitTemplate ? gitRepoUrl.trim() : '');
+  // Use first selected GitHub repo or manual URL
+  const primaryGitUrl = selectedGitRepos.length > 0
+    ? selectedGitRepos[0].clone_url
+    : gitRepoUrl.trim();
+  const resolvedGitUrl = isPresetGit ? selectedTemplate!.gitUrl : (isGitTemplate ? primaryGitUrl : '');
 
+  const hasGitRepo = isGitTemplate
+    ? (selectedGitRepos.length > 0 || gitRepoUrl.trim().length > 0)
+    : true;
   const canSubmit =
     !isWorking &&
     !savingEnvVars &&
     claude.isConnected &&
-    (!isGitTemplate || gitRepoUrl.trim().length > 0);
+    hasGitRepo;
 
   const mergeEnvVars = (parsed: EnvVarEntry[]) => {
     setEnvVars((prev) => {
@@ -269,8 +297,15 @@ function SetupForm({
   };
 
   const handleSelectRepo = (repo: GitHubRepo) => {
-    setGitRepoUrl(repo.clone_url);
-    githubRepos.setSearch('');
+    setSelectedGitRepos((prev) => {
+      const exists = prev.some((r) => r.full_name === repo.full_name);
+      if (exists) return prev.filter((r) => r.full_name !== repo.full_name);
+      return [...prev, repo];
+    });
+  };
+
+  const removeSelectedRepo = (fullName: string) => {
+    setSelectedGitRepos((prev) => prev.filter((r) => r.full_name !== fullName));
   };
 
   const handleLaunch = async () => {
@@ -294,6 +329,12 @@ function SetupForm({
       }
     }
 
+    // If multiple GitHub repos selected, store extras for post-provisioning cloning
+    if (selectedGitRepos.length > 1) {
+      const extraUrls = selectedGitRepos.slice(1).map((r) => r.clone_url);
+      sessionStorage.setItem(EXTRA_REPOS_KEY, JSON.stringify(extraUrls));
+    }
+
     onProvision({
       templateName: templateName || undefined,
       gitRepoUrl: resolvedGitUrl || undefined,
@@ -301,8 +342,8 @@ function SetupForm({
   };
 
   return (
-    <div className="flex h-full items-start justify-center overflow-y-auto p-4 pt-8">
-      <div className="w-full max-w-md space-y-5 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
+    <div className="flex h-full items-start justify-center overflow-y-auto p-3 pt-6 sm:p-4 sm:pt-8">
+      <div className="w-full max-w-md space-y-4 rounded-2xl border border-border/6 bg-card/30 p-4 backdrop-blur-sm sm:space-y-5 sm:p-6">
         {/* Header */}
         <div className="space-y-1 text-center">
           <div className="mx-auto mb-3 flex items-center justify-center">
@@ -469,6 +510,7 @@ function SetupForm({
               onValueChange={(val) => {
                 setTemplateValue(val);
                 setGitRepoUrl('');
+                setSelectedGitRepos([]);
                 setManualGitUrl(false);
               }}
             >
@@ -488,50 +530,81 @@ function SetupForm({
           {/* Git URL / Repo picker */}
           {isGitTemplate && (
             <div className="space-y-2">
-              <Label htmlFor="git-url">Git Repository</Label>
+              <Label htmlFor="git-url">
+                Git {selectedGitRepos.length > 1 ? 'Repositories' : 'Repository'}
+                {selectedGitRepos.length > 0 && (
+                  <span className="ml-1 text-xs text-muted-foreground font-normal">
+                    ({selectedGitRepos.length} selected)
+                  </span>
+                )}
+              </Label>
 
               {github.isConnected && !manualGitUrl ? (
                 <>
-                  {gitRepoUrl && (
-                    <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
-                      <span className="flex-1 truncate">{gitRepoUrl}</span>
-                      <button
-                        onClick={() => setGitRepoUrl('')}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Minus className="size-3" />
-                      </button>
+                  {/* Selected repos chips */}
+                  {selectedGitRepos.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedGitRepos.map((repo) => (
+                        <span
+                          key={repo.full_name}
+                          className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs text-primary"
+                        >
+                          {repo.full_name.split('/').pop()}
+                          <button
+                            onClick={() => removeSelectedRepo(repo.full_name)}
+                            className="ml-0.5 rounded-sm transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Minus className="size-3" />
+                          </button>
+                        </span>
+                      ))}
                     </div>
                   )}
 
-                  {!gitRepoUrl && (
-                    <div className="space-y-1">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          value={githubRepos.search}
-                          onChange={(e) => githubRepos.setSearch(e.target.value)}
-                          placeholder="Search your repos..."
-                          className="pl-8 text-sm"
-                        />
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={githubRepos.search}
+                        onChange={(e) => githubRepos.setSearch(e.target.value)}
+                        placeholder="Search your repos..."
+                        className="pl-8 text-sm"
+                      />
+                    </div>
+                    {githubRepos.isLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
                       </div>
-                      {githubRepos.isLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : (
-                        <div className="max-h-40 overflow-y-auto rounded-md border border-border/30">
-                          {githubRepos.filteredRepos.length === 0 ? (
-                            <p className="p-3 text-center text-xs text-muted-foreground">
-                              No repos found
-                            </p>
-                          ) : (
-                            githubRepos.filteredRepos.slice(0, 20).map((repo) => (
+                    ) : (
+                      <div className="max-h-40 overflow-y-auto rounded-md border border-border/30">
+                        {githubRepos.filteredRepos.length === 0 ? (
+                          <p className="p-3 text-center text-xs text-muted-foreground">
+                            No repos found
+                          </p>
+                        ) : (
+                          githubRepos.filteredRepos.slice(0, 20).map((repo) => {
+                            const isSelected = selectedGitRepos.some((r) => r.full_name === repo.full_name);
+                            return (
                               <button
                                 key={repo.full_name}
                                 onClick={() => handleSelectRepo(repo)}
-                                className="flex w-full items-center gap-2 border-b border-border/10 px-3 py-2 text-left text-sm hover:bg-muted/50 last:border-0"
+                                className={cn(
+                                  'flex w-full items-center gap-2 border-b border-border/10 px-3 py-2 text-left text-sm last:border-0 transition-colors',
+                                  isSelected ? 'bg-primary/10 text-foreground' : 'hover:bg-muted/50',
+                                )}
                               >
+                                <div
+                                  className={cn(
+                                    'flex size-4 shrink-0 items-center justify-center rounded border',
+                                    isSelected
+                                      ? 'border-primary bg-primary text-primary-foreground'
+                                      : 'border-muted-foreground/30',
+                                  )}
+                                >
+                                  {isSelected && (
+                                    <Check className="size-3" />
+                                  )}
+                                </div>
                                 <span className="flex-1 truncate">{repo.full_name}</span>
                                 {repo.private && (
                                   <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -539,12 +612,12 @@ function SetupForm({
                                   </span>
                                 )}
                               </button>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     onClick={() => setManualGitUrl(true)}
@@ -610,18 +683,18 @@ function SetupForm({
                 {envVars.length > 0 && (
                   <div className="space-y-2">
                     {envVars.map((envVar, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                      <div key={i} className="flex items-center gap-1.5 sm:gap-2">
                         <Input
                           value={envVar.key}
                           onChange={(e) => setEnvVars((prev) => prev.map((v, j) => (j === i ? { ...v, key: e.target.value } : v)))}
                           placeholder="KEY"
-                          className="flex-1 font-mono text-xs"
+                          className="min-w-0 flex-1 font-mono text-xs"
                         />
                         <Input
                           value={envVar.value}
                           onChange={(e) => setEnvVars((prev) => prev.map((v, j) => (j === i ? { ...v, value: e.target.value } : v)))}
                           placeholder="value"
-                          className="flex-1 text-xs"
+                          className="min-w-0 flex-1 text-xs"
                         />
                         <Button
                           type="button"

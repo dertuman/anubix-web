@@ -6,6 +6,7 @@ import {
   EllipsisVertical,
   FolderPlus,
   GitBranch,
+  Github,
   Loader2,
   Menu,
   PanelLeftClose,
@@ -21,6 +22,8 @@ import type { BridgeSession } from '@/types/code';
 import { getRecentRepoPaths } from '@/lib/stores/bridge-store';
 import { cn } from '@/lib/utils';
 import type { BridgeRepo, FetchReposResult } from '@/hooks/useClaudeCode';
+import { useGitHubRepos, type GitHubRepo } from '@/hooks/useGitHubRepos';
+import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 import type { PoolSessionState } from '@/hooks/useSessionPool';
 import { Button } from '@/components/ui/button';
 import {
@@ -241,7 +244,12 @@ export const CodeSidebar = memo(function CodeSidebar({
   const [cloneUrl, setCloneUrl] = useState('');
   const [cloning, setCloning] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
+  const [cloneMode, setCloneMode] = useState<'github' | 'url'>('github');
   const nameManuallyEdited = useRef(false);
+
+  const github = useGitHubConnection();
+  const githubRepos = useGitHubRepos(newOpen && github.isConnected);
+  const [ghCloneSearch, setGhCloneSearch] = useState('');
 
   /** Turn a folder name like "anubix-web" into "Anubix Web" */
   const prettifyRepoName = useCallback(
@@ -313,8 +321,8 @@ export const CodeSidebar = memo(function CodeSidebar({
     }
   };
 
-  const handleClone = async () => {
-    const url = cloneUrl.trim();
+  const handleClone = async (urlOverride?: string) => {
+    const url = (urlOverride ?? cloneUrl).trim();
     if (!url) return;
     setCloning(true);
     setCloneError(null);
@@ -339,12 +347,25 @@ export const CodeSidebar = memo(function CodeSidebar({
         setSelectedPaths((prev) => [...prev, repoName]);
       }
       setCloneUrl('');
+      setGhCloneSearch('');
     } catch {
       setCloneError('Failed to clone repository');
     } finally {
       setCloning(false);
     }
   };
+
+  const handleCloneGitHubRepo = (repo: GitHubRepo) => {
+    handleClone(repo.clone_url);
+  };
+
+  const filteredGhCloneRepos = useMemo(() => {
+    if (!github.isConnected) return [];
+    const repos = githubRepos.repos;
+    if (!ghCloneSearch.trim()) return repos;
+    const q = ghCloneSearch.toLowerCase();
+    return repos.filter((r) => r.full_name.toLowerCase().includes(q));
+  }, [github.isConnected, githubRepos.repos, ghCloneSearch]);
 
   const handleCreate = async () => {
     if (selectedPaths.length === 0) return;
@@ -532,29 +553,112 @@ export const CodeSidebar = memo(function CodeSidebar({
 
               {/* Clone from Git */}
               <div className="space-y-1.5">
-                <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                  <GitBranch className="size-3" />
-                  Clone a repository
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    value={cloneUrl}
-                    onChange={(e) => { setCloneUrl(e.target.value); setCloneError(null); }}
-                    placeholder="https://github.com/user/repo.git"
-                    className="text-xs"
-                    onKeyDown={(e) => e.key === 'Enter' && handleClone()}
-                    disabled={cloning}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClone}
-                    disabled={!cloneUrl.trim() || cloning}
-                    className="shrink-0"
-                  >
-                    {cloning ? <Loader2 className="size-3 animate-spin" /> : 'Clone'}
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                    <GitBranch className="size-3" />
+                    Clone a repository
+                  </p>
+                  <div className="flex rounded-md border border-border/30 p-0.5">
+                    <button
+                      onClick={() => setCloneMode('github')}
+                      className={cn(
+                        'flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors',
+                        cloneMode === 'github'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <Github className="size-2.5" />
+                      GitHub
+                    </button>
+                    <button
+                      onClick={() => setCloneMode('url')}
+                      className={cn(
+                        'flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors',
+                        cloneMode === 'url'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      URL
+                    </button>
+                  </div>
                 </div>
+
+                {cloneMode === 'github' ? (
+                  github.isConnected ? (
+                    <div className="space-y-1.5">
+                      <div className="relative">
+                        <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+                        <Input
+                          value={ghCloneSearch}
+                          onChange={(e) => setGhCloneSearch(e.target.value)}
+                          placeholder="Search your GitHub repos..."
+                          className="h-8 pl-8 text-xs"
+                          disabled={cloning}
+                        />
+                      </div>
+                      {githubRepos.isLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="text-muted-foreground size-4 animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="custom-scrollbar border-border/20 max-h-36 overflow-y-auto rounded-md border">
+                          {filteredGhCloneRepos.length === 0 ? (
+                            <p className="text-muted-foreground p-3 text-center text-xs">
+                              No repos found
+                            </p>
+                          ) : (
+                            filteredGhCloneRepos.slice(0, 30).map((repo) => (
+                              <button
+                                key={repo.full_name}
+                                onClick={() => handleCloneGitHubRepo(repo)}
+                                disabled={cloning}
+                                className="hover:bg-muted/50 flex w-full items-center gap-2 border-b border-border/10 px-3 py-1.5 text-left text-xs last:border-0 disabled:opacity-50"
+                              >
+                                <span className="min-w-0 flex-1 truncate">{repo.full_name}</span>
+                                {repo.private && (
+                                  <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-1.5 py-0.5 text-[9px]">
+                                    private
+                                  </span>
+                                )}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => github.connect('/code')}
+                      className="border-border/30 text-muted-foreground hover:border-foreground/20 hover:text-foreground flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-xs"
+                    >
+                      <Github className="size-3.5 shrink-0" />
+                      <span className="flex-1 text-left">Connect GitHub to browse repos</span>
+                    </button>
+                  )
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={cloneUrl}
+                      onChange={(e) => { setCloneUrl(e.target.value); setCloneError(null); }}
+                      placeholder="https://github.com/user/repo.git"
+                      className="text-xs"
+                      onKeyDown={(e) => e.key === 'Enter' && handleClone()}
+                      disabled={cloning}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleClone()}
+                      disabled={!cloneUrl.trim() || cloning}
+                      className="shrink-0"
+                    >
+                      {cloning ? <Loader2 className="size-3 animate-spin" /> : 'Clone'}
+                    </Button>
+                  </div>
+                )}
+
                 {cloneError && (
                   <p className="text-xs text-destructive">{cloneError}</p>
                 )}
