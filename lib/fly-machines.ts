@@ -196,7 +196,6 @@ export async function createFlyMachine(
     CLAUDE_MODE: claudeMode,
     HOST: '0.0.0.0',
     REPOS_BASE_PATH: '/workspace',
-    NODE_ENV: 'production',
     PREVIEW_FALLBACK_PORT: '3000',
   };
 
