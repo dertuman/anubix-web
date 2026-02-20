@@ -10,6 +10,9 @@
  * The password is verified server-side via /api/cloud/provision.
  * The ACCESS_PASSWORD env var must be set on the server.
  *
+ * The verified password is hashed (SHA-256) and stored in
+ * localStorage so returning users skip the gate automatically.
+ *
  * TO RE-ENABLE (remove password gate):
  * 1. Replace this entire file with:
  *
@@ -24,17 +27,72 @@
  * ============================================================
  */
 
-import { useState } from 'react';
-import { Lock, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Lock, EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CodeView } from './components/code-view';
 
+const STORAGE_KEY = 'anubix-access-hash';
+const SESSION_KEY = 'anubix-access-password';
+
+/** Hash a string with SHA-256 and return hex digest */
+async function hashPassword(password: string): Promise<string> {
+  const data = new TextEncoder().encode(password);
+  const buffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export default function CodePage() {
   const [password, setPassword] = useState('');
   const [unlocked, setUnlocked] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // On mount, check if we have a stored hash and re-verify it
+  useEffect(() => {
+    const storedHash = localStorage.getItem(STORAGE_KEY);
+    const storedPassword = sessionStorage.getItem(SESSION_KEY);
+
+    if (!storedHash || !storedPassword) {
+      setChecking(false);
+      return;
+    }
+
+    // Re-verify the stored password is still valid
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/verify-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: storedPassword }),
+        });
+        if (res.ok) {
+          setUnlocked(true);
+        } else {
+          // Password changed server-side — clear stale data
+          localStorage.removeItem(STORAGE_KEY);
+          sessionStorage.removeItem(SESSION_KEY);
+        }
+      } catch {
+        // Network error — still allow if we have a stored hash (offline-friendly)
+        setUnlocked(true);
+      } finally {
+        setChecking(false);
+      }
+    })();
+  }, []);
+
+  if (checking) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (unlocked) {
     return <CodeView />;
@@ -42,7 +100,6 @@ export default function CodePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Verify password server-side by checking the provision endpoint
     try {
       const res = await fetch('/api/auth/verify-access', {
         method: 'POST',
@@ -50,7 +107,11 @@ export default function CodePage() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        sessionStorage.setItem('anubix-access-password', password);
+        // Store hash in localStorage (persists across sessions)
+        const hash = await hashPassword(password);
+        localStorage.setItem(STORAGE_KEY, hash);
+        // Store raw password in sessionStorage for re-verification
+        sessionStorage.setItem(SESSION_KEY, password);
         setUnlocked(true);
         setError(false);
       } else {

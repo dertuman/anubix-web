@@ -314,7 +314,7 @@ function SetupForm({
   };
 
   return (
-    <div className="flex h-full items-start justify-center overflow-y-auto p-3 pt-6 sm:p-4 sm:pt-8">
+    <div className="flex h-full items-center justify-center overflow-y-auto p-3 sm:p-4">
       <div className="w-full max-w-md space-y-4 rounded-2xl border border-border/6 bg-card/30 p-4 backdrop-blur-sm sm:space-y-5 sm:p-6">
         {/* Header */}
         <div className="space-y-1 text-center">
