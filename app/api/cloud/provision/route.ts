@@ -13,6 +13,9 @@ import {
   teardownFlyResources,
 } from '@/lib/fly-machines';
 
+// Allow up to 120s for Fly.io provisioning (app + volume + machine + health check)
+export const maxDuration = 120;
+
 /**
  * POST /api/cloud/provision
  *

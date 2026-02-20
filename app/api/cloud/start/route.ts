@@ -3,6 +3,9 @@ import { auth } from '@clerk/nextjs/server';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
+
+// Allow up to 60s for machine restart + health check
+export const maxDuration = 60;
 import {
   startFlyMachine,
   waitForMachineState,

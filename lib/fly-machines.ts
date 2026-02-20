@@ -271,13 +271,15 @@ export async function waitForMachineState(
 
 /**
  * Poll the bridge health endpoint until it responds OK.
- * Fly.io DNS can take a few seconds after machine starts.
+ * First-time cold starts can take a while: Fly.io pulls the Docker image,
+ * boots the container, runs init-workspace.sh, then starts the Node server.
+ * We allow up to ~90s (30 attempts × 3s) to be safe.
  */
 export async function waitForBridgeHealth(
   bridgeUrl: string,
   bridgeApiKey: string,
-  maxAttempts: number = 15,
-  delayMs: number = 2000,
+  maxAttempts: number = 30,
+  delayMs: number = 3000,
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
@@ -286,14 +288,18 @@ export async function waitForBridgeHealth(
         signal: AbortSignal.timeout(5000),
       });
       if (res.ok) return;
-    } catch {
+      // Log non-ok responses to help debug
+      console.log(`[health] attempt ${i + 1}/${maxAttempts}: status ${res.status}`);
+    } catch (err) {
       // DNS not ready or connection refused — keep trying
+      const msg = err instanceof Error ? err.message : String(err);
+      console.log(`[health] attempt ${i + 1}/${maxAttempts}: ${msg}`);
     }
     if (i < maxAttempts - 1) {
       await new Promise((r) => setTimeout(r, delayMs));
     }
   }
-  throw new Error(`Bridge at ${bridgeUrl} did not become healthy after ${maxAttempts} attempts`);
+  throw new Error(`Bridge at ${bridgeUrl} did not become healthy after ${maxAttempts} attempts (~${Math.round(maxAttempts * delayMs / 1000)}s)`);
 }
 
 // ── Cleanup helpers ──────────────────────────────────────────
