@@ -243,6 +243,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      claude_connections: {
+        Row: {
+          id: string;
+          user_id: string;
+          claude_mode: string;
+          auth_json_encrypted: string | null;
+          api_key_encrypted: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          claude_mode?: string;
+          auth_json_encrypted?: string | null;
+          api_key_encrypted?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          claude_mode?: string;
+          auth_json_encrypted?: string | null;
+          api_key_encrypted?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       cloud_machines: {
         Row: {
           id: string;
@@ -354,3 +384,7 @@ export type ProjectEnvVarUpdate = Database['public']['Tables']['project_env_vars
 export type GitHubConnection = Database['public']['Tables']['github_connections']['Row'];
 export type GitHubConnectionInsert = Database['public']['Tables']['github_connections']['Insert'];
 export type GitHubConnectionUpdate = Database['public']['Tables']['github_connections']['Update'];
+
+export type ClaudeConnection = Database['public']['Tables']['claude_connections']['Row'];
+export type ClaudeConnectionInsert = Database['public']['Tables']['claude_connections']['Insert'];
+export type ClaudeConnectionUpdate = Database['public']['Tables']['claude_connections']['Update'];

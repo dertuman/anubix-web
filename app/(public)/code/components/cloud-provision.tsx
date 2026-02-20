@@ -2,20 +2,17 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   AlertCircle,
   Check,
   Cloud,
-  EyeIcon,
-  EyeOffIcon,
   Github,
-  Key,
   Loader2,
   Minus,
   Play,
   Plus,
   Search,
-  Terminal,
   Trash2,
 } from 'lucide-react';
 
@@ -36,6 +33,7 @@ import {
   type CloudMachine,
   type ProvisionOptions,
 } from '@/hooks/useCloudMachine';
+import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 import { useGitHubRepos, type GitHubRepo } from '@/hooks/useGitHubRepos';
 
@@ -45,8 +43,6 @@ interface CloudProvisionProps {
   onConnected: (_bridgeUrl: string, _bridgeApiKey: string) => void;
   onManualSetup: () => void;
 }
-
-type AuthTab = 'cli' | 'sdk' | 'managed';
 
 interface EnvVarEntry {
   key: string;
@@ -175,47 +171,30 @@ function SetupForm({
   isWorking: boolean;
   error: string | null;
 }) {
-  const [authTab, setAuthTab] = useState<AuthTab>('cli');
-  const [claudeAuthJson, setClaudeAuthJson] = useState('');
-  const [anthropicApiKey, setAnthropicApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
   const [templateValue, setTemplateValue] = useState('talkartech');
   const [gitRepoUrl, setGitRepoUrl] = useState('');
   const [envVars, setEnvVars] = useState<EnvVarEntry[]>([]);
   const [manualGitUrl, setManualGitUrl] = useState(false);
   const [savingEnvVars, setSavingEnvVars] = useState(false);
+  const [pasteInput, setPasteInput] = useState('');
+  const [showEnvVars, setShowEnvVars] = useState(false);
 
+  const claude = useClaudeConnection();
   const github = useGitHubConnection();
   const isGitTemplate = templateValue === 'git';
   const githubRepos = useGitHubRepos(isGitTemplate && github.isConnected);
 
   const realTemplateValue = templateValue === '__empty' ? '' : templateValue;
   const selectedTemplate = TEMPLATES.find(t => t.value === realTemplateValue);
-  const isPresetGit = !!(selectedTemplate?.gitUrl);  // e.g. talkartech
+  const isPresetGit = !!(selectedTemplate?.gitUrl);
   const templateName = (isGitTemplate || isPresetGit) ? '' : realTemplateValue;
   const resolvedGitUrl = isPresetGit ? selectedTemplate!.gitUrl : (isGitTemplate ? gitRepoUrl.trim() : '');
 
   const canSubmit =
     !isWorking &&
     !savingEnvVars &&
-    authTab !== 'managed' &&
-    ((authTab === 'cli' && claudeAuthJson.trim().length > 0) ||
-      (authTab === 'sdk' && anthropicApiKey.trim().length > 0)) &&
+    claude.isConnected &&
     (!isGitTemplate || gitRepoUrl.trim().length > 0);
-
-  const handleAddEnvVar = () => {
-    setEnvVars((prev) => [...prev, { key: '', value: '' }]);
-  };
-
-  const handleRemoveEnvVar = (index: number) => {
-    setEnvVars((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleEnvVarChange = (index: number, field: 'key' | 'value', val: string) => {
-    setEnvVars((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: val } : v)));
-  };
-
-  const [pasteInput, setPasteInput] = useState('');
 
   const mergeEnvVars = (parsed: EnvVarEntry[]) => {
     setEnvVars((prev) => {
@@ -234,7 +213,6 @@ function SetupForm({
     });
   };
 
-  // Desktop: intercept paste event directly from clipboard
   const handleEnvVarPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const text = e.clipboardData.getData('text');
     const parsed = parseEnvString(text);
@@ -245,7 +223,6 @@ function SetupForm({
     }
   };
 
-  // Mobile fallback: auto-parse on onChange (mobile paste fires onChange, not onPaste)
   const handleEnvInput = (text: string) => {
     const parsed = parseEnvString(text);
     if (parsed.length > 0) {
@@ -262,7 +239,6 @@ function SetupForm({
   };
 
   const handleLaunch = async () => {
-    // Save env vars to DB if any are set
     const validEnvVars = envVars.filter((v) => v.key.trim());
     if (validEnvVars.length > 0) {
       setSavingEnvVars(true);
@@ -284,9 +260,6 @@ function SetupForm({
     }
 
     onProvision({
-      claudeMode: authTab as 'cli' | 'sdk',
-      claudeAuthJson: authTab === 'cli' ? claudeAuthJson.trim() : undefined,
-      anthropicApiKey: authTab === 'sdk' ? anthropicApiKey.trim() : undefined,
       templateName: templateName || undefined,
       gitRepoUrl: resolvedGitUrl || undefined,
     });
@@ -294,16 +267,13 @@ function SetupForm({
 
   return (
     <div className="flex h-full items-start justify-center overflow-y-auto p-4 pt-8">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
+      <div className="w-full max-w-md space-y-5 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
         {/* Header */}
         <div className="space-y-1 text-center">
           <div className="mx-auto mb-3 flex items-center justify-center">
-            <Image src="/logo.webp" alt="Anubix logo" width={100} height={100} />
+            <Image src="/logo.webp" alt="Anubix logo" width={80} height={80} />
           </div>
           <h2 className="text-xl font-bold">Launch Cloud Environment</h2>
-          <p className="text-sm text-muted-foreground">
-            Your own cloud dev environment with Claude Code, powered by Fly.io
-          </p>
         </div>
 
         {/* Error */}
@@ -314,103 +284,56 @@ function SetupForm({
           </div>
         )}
 
-        {/* Auth tabs */}
+        {/* Connection status badges */}
+        <div className="space-y-2">
+          {/* Claude connection */}
+          {claude.isLoading ? (
+            <div className="flex items-center gap-2 rounded-lg border border-border/30 px-3 py-2.5 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Checking Claude...
+            </div>
+          ) : claude.isConnected ? (
+            <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-2.5 text-sm">
+              <div className="size-2 shrink-0 rounded-full bg-green-500" />
+              <span className="flex-1">Claude {claude.mode === 'cli' ? 'Pro/Max' : 'API Key'}</span>
+              <Check className="size-4 text-green-500" />
+            </div>
+          ) : (
+            <Link
+              href="/profile/integrations"
+              className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+            >
+              <AlertCircle className="size-4 shrink-0" />
+              <span className="flex-1">Connect Claude to launch</span>
+              <span className="text-xs underline">Setup</span>
+            </Link>
+          )}
+
+          {/* GitHub connection */}
+          {github.isLoading ? (
+            <div className="flex items-center gap-2 rounded-lg border border-border/30 px-3 py-2.5 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Checking GitHub...
+            </div>
+          ) : github.isConnected ? (
+            <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-2.5 text-sm">
+              <Github className="size-4 shrink-0" />
+              <span className="flex-1 truncate">{github.username}</span>
+              <Check className="size-4 text-green-500" />
+            </div>
+          ) : (
+            <button
+              onClick={() => github.connect('/code')}
+              className="flex w-full items-center gap-2 rounded-lg border border-border/30 px-3 py-2.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+            >
+              <Github className="size-4 shrink-0" />
+              <span className="flex-1 text-left">Connect GitHub (optional)</span>
+              <Plus className="size-4" />
+            </button>
+          )}
+        </div>
+
         <div className="space-y-4">
-          <div className="flex rounded-lg border border-border/30 p-0.5">
-            <button
-              onClick={() => setAuthTab('cli')}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                authTab === 'cli'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <Terminal className="size-3" />
-              Pro/Max
-            </button>
-            <button
-              onClick={() => setAuthTab('sdk')}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                authTab === 'sdk'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <Key className="size-3" />
-              API Key
-            </button>
-            <button
-              disabled
-              className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground/50"
-            >
-              <Cloud className="size-3" />
-              Managed (Soon)
-            </button>
-          </div>
-
-          {/* CLI mode */}
-          {authTab === 'cli' && (
-            <div className="space-y-2">
-              <Label htmlFor="claude-auth">Claude Code Credentials</Label>
-              <p className="text-xs text-muted-foreground">
-                Run <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">claude /login</code> in
-                your terminal, then paste the contents of{' '}
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.claude/.credentials.json</code>
-              </p>
-              <Textarea
-                id="claude-auth"
-                value={claudeAuthJson}
-                onChange={(e) => setClaudeAuthJson(e.target.value)}
-                placeholder='{"token": "..."}'
-                rows={3}
-                className="font-mono text-xs"
-              />
-              <p className="text-[10px] text-muted-foreground/70">
-                Uses your Claude Pro/Max subscription. No API charges. (Recommended)
-              </p>
-            </div>
-          )}
-
-          {/* SDK mode */}
-          {authTab === 'sdk' && (
-            <div className="space-y-2">
-              <Label htmlFor="anthropic-key">Anthropic API Key</Label>
-              <div className="relative">
-                <Input
-                  id="anthropic-key"
-                  type={showApiKey ? 'text' : 'password'}
-                  value={anthropicApiKey}
-                  onChange={(e) => setAnthropicApiKey(e.target.value)}
-                  placeholder="sk-ant-..."
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowApiKey((p) => !p)}
-                >
-                  {showApiKey ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground/70">
-                Pay per token. Your key is encrypted and stored securely.
-              </p>
-            </div>
-          )}
-
-          {/* Managed mode placeholder */}
-          {authTab === 'managed' && (
-            <div className="rounded-lg border border-border/30 bg-muted/30 p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                No key needed &mdash; coming soon. We&apos;ll handle the API costs as part of your subscription.
-              </p>
-            </div>
-          )}
-
           {/* Template selector */}
           <div className="space-y-2">
             <Label>Project Template</Label>
@@ -435,20 +358,13 @@ function SetupForm({
             </Select>
           </div>
 
-          {/* Git URL / Repo picker (shown when git template selected) */}
+          {/* Git URL / Repo picker */}
           {isGitTemplate && (
             <div className="space-y-2">
               <Label htmlFor="git-url">Git Repository</Label>
 
               {github.isConnected && !manualGitUrl ? (
                 <>
-                  {/* GitHub connected — repo picker */}
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Github className="size-3" />
-                    <span>Connected as <strong>{github.username}</strong></span>
-                  </div>
-
-                  {/* Selected repo display */}
                   {gitRepoUrl && (
                     <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
                       <span className="flex-1 truncate">{gitRepoUrl}</span>
@@ -461,7 +377,6 @@ function SetupForm({
                     </div>
                   )}
 
-                  {/* Repo search */}
                   {!gitRepoUrl && (
                     <div className="space-y-1">
                       <div className="relative">
@@ -513,7 +428,6 @@ function SetupForm({
                 </>
               ) : (
                 <>
-                  {/* Manual URL input */}
                   <Input
                     id="git-url"
                     value={gitRepoUrl}
@@ -545,68 +459,69 @@ function SetupForm({
             </div>
           )}
 
-          {/* Environment Variables */}
+          {/* Environment Variables (collapsible) */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Environment Variables</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleAddEnvVar}
-                className="h-6 gap-1 px-2 text-xs"
-              >
-                <Plus className="size-3" />
-                Add
-              </Button>
-            </div>
+            <button
+              onClick={() => setShowEnvVars(!showEnvVars)}
+              className="flex w-full items-center justify-between text-sm font-medium"
+            >
+              <span>Environment Variables {envVars.length > 0 && `(${envVars.length})`}</span>
+              <Plus className={cn('size-4 text-muted-foreground transition-transform', showEnvVars && 'rotate-45')} />
+            </button>
 
-            {/* Paste area — always visible, auto-parses on paste/change */}
-            <Textarea
-              value={pasteInput}
-              onChange={(e) => handleEnvInput(e.target.value)}
-              onPaste={handleEnvVarPaste}
-              placeholder={'Paste .env contents here'}
-              rows={2}
-              className="font-mono text-xs"
-            />
+            {showEnvVars && (
+              <>
+                <Textarea
+                  value={pasteInput}
+                  onChange={(e) => handleEnvInput(e.target.value)}
+                  onPaste={handleEnvVarPaste}
+                  placeholder={'Paste .env contents here'}
+                  rows={2}
+                  className="font-mono text-xs"
+                />
 
-            {/* Parsed key-value rows */}
-            {envVars.length > 0 && (
-              <div className="space-y-2">
-                {envVars.map((envVar, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={envVar.key}
-                      onChange={(e) => handleEnvVarChange(i, 'key', e.target.value)}
-                      placeholder="KEY"
-                      className="flex-1 font-mono text-xs"
-                    />
-                    <Input
-                      value={envVar.value}
-                      onChange={(e) => handleEnvVarChange(i, 'value', e.target.value)}
-                      placeholder="value"
-                      className="flex-1 text-xs"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveEnvVar(i)}
-                      className="h-8 w-8 shrink-0 p-0"
-                    >
-                      <Minus className="size-3" />
-                    </Button>
+                {envVars.length > 0 && (
+                  <div className="space-y-2">
+                    {envVars.map((envVar, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          value={envVar.key}
+                          onChange={(e) => setEnvVars((prev) => prev.map((v, j) => (j === i ? { ...v, key: e.target.value } : v)))}
+                          placeholder="KEY"
+                          className="flex-1 font-mono text-xs"
+                        />
+                        <Input
+                          value={envVar.value}
+                          onChange={(e) => setEnvVars((prev) => prev.map((v, j) => (j === i ? { ...v, value: e.target.value } : v)))}
+                          placeholder="value"
+                          className="flex-1 text-xs"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEnvVars((prev) => prev.filter((_, j) => j !== i))}
+                          className="h-8 w-8 shrink-0 p-0"
+                        >
+                          <Minus className="size-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            <p className="text-[10px] text-muted-foreground/70">
-              {envVars.length === 0
-                ? 'Paste your .env file above or add variables one by one.'
-                : `${envVars.length} variable${envVars.length === 1 ? '' : 's'} — written to .env.local`}
-            </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEnvVars((prev) => [...prev, { key: '', value: '' }])}
+                  className="h-7 gap-1 px-2 text-xs"
+                >
+                  <Plus className="size-3" />
+                  Add variable
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Launch button */}

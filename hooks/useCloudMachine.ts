@@ -31,9 +31,6 @@ export interface CloudMachine {
 }
 
 export interface ProvisionOptions {
-  claudeMode: 'cli' | 'sdk';
-  claudeAuthJson?: string;
-  anthropicApiKey?: string;
   templateName?: string;
   gitRepoUrl?: string;
   region?: string;
@@ -169,7 +166,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
             bridgeApiKey: data.bridgeApiKey,
             previewUrl: data.previewUrl,
             region: opts.region || 'lhr',
-            claudeMode: opts.claudeMode,
+            claudeMode: 'cli',
             templateName: opts.templateName || null,
             gitRepoUrl: opts.gitRepoUrl || null,
             errorMessage: null,

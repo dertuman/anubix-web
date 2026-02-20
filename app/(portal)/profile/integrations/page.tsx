@@ -2,17 +2,26 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Check,
+  EyeIcon,
+  EyeOffIcon,
   Github,
+  Key,
   Loader2,
   Minus,
   Plus,
   RefreshCw,
+  Terminal,
+  Trash2,
 } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 
 // ── Types ────────────────────────────────────────────────────
@@ -28,7 +37,6 @@ function parseEnvString(text: string): EnvVarEntry[] {
   for (const raw of text.split('\n')) {
     let line = raw.trim();
     if (!line || line.startsWith('#')) continue;
-    // Handle `export KEY=value`
     if (line.startsWith('export ')) line = line.slice(7).trim();
     const eqIdx = line.indexOf('=');
     if (eqIdx === -1) continue;
@@ -57,9 +65,196 @@ export default function IntegrationsPage() {
         </p>
       </div>
       <Separator />
+      <ClaudeCard />
+      <Separator />
       <GitHubCard />
       <Separator />
       <EnvVarsCard />
+    </div>
+  );
+}
+
+// ── Claude Card ─────────────────────────────────────────────
+
+function ClaudeCard() {
+  const { isConnected, mode, isLoading, save, disconnect } = useClaudeConnection();
+  const [editing, setEditing] = useState(false);
+  const [authTab, setAuthTab] = useState<'cli' | 'sdk'>('cli');
+  const [claudeAuthJson, setClaudeAuthJson] = useState('');
+  const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await save({
+        claudeMode: authTab,
+        claudeAuthJson: authTab === 'cli' ? claudeAuthJson.trim() : undefined,
+        anthropicApiKey: authTab === 'sdk' ? anthropicApiKey.trim() : undefined,
+      });
+      setEditing(false);
+      setClaudeAuthJson('');
+      setAnthropicApiKey('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    await disconnect();
+    setEditing(false);
+  };
+
+  const canSave =
+    (authTab === 'cli' && claudeAuthJson.trim().length > 0) ||
+    (authTab === 'sdk' && anthropicApiKey.trim().length > 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-lg border border-border/30 bg-muted/50">
+          <Terminal className="size-5" />
+        </div>
+        <div className="flex-1">
+          <h4 className="text-sm font-medium">Claude Code</h4>
+          <p className="text-xs text-muted-foreground">
+            Required to use cloud workspaces. Your credentials are encrypted.
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          Checking connection...
+        </div>
+      ) : isConnected && !editing ? (
+        <div className="flex items-center justify-between rounded-lg border border-border/30 bg-muted/20 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="size-2 rounded-full bg-green-500" />
+            Connected ({mode === 'cli' ? 'Pro/Max' : 'API Key'})
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditing(true)}
+            >
+              Update
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDisconnect}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="size-3" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* Mode tabs */}
+          <div className="flex rounded-lg border border-border/30 p-0.5">
+            <button
+              onClick={() => setAuthTab('cli')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                authTab === 'cli'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Terminal className="size-3" />
+              Pro/Max
+            </button>
+            <button
+              onClick={() => setAuthTab('sdk')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                authTab === 'sdk'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Key className="size-3" />
+              API Key
+            </button>
+          </div>
+
+          {authTab === 'cli' ? (
+            <div className="space-y-2">
+              <Label htmlFor="claude-auth">Claude Code Credentials</Label>
+              <p className="text-xs text-muted-foreground">
+                Run <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">claude /login</code> in
+                your terminal, then paste the contents of{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.claude/.credentials.json</code>
+              </p>
+              <Textarea
+                id="claude-auth"
+                value={claudeAuthJson}
+                onChange={(e) => setClaudeAuthJson(e.target.value)}
+                placeholder={'{"claudeAiOauth":{"accessToken":"...","refreshToken":"..."}}'}
+                rows={3}
+                className="font-mono text-xs"
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="anthropic-key">Anthropic API Key</Label>
+              <div className="relative">
+                <Input
+                  id="anthropic-key"
+                  type={showApiKey ? 'text' : 'password'}
+                  value={anthropicApiKey}
+                  onChange={(e) => setAnthropicApiKey(e.target.value)}
+                  placeholder="sk-ant-..."
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowApiKey((p) => !p)}
+                >
+                  {showApiKey ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <p className="text-xs text-destructive">{error}</p>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving || !canSave}
+              className="gap-1"
+            >
+              {saving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+              Save
+            </Button>
+            {editing && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -147,7 +342,6 @@ function EnvVarsCard() {
     });
   };
 
-  // Desktop: intercept paste event directly from clipboard
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const text = e.clipboardData.getData('text');
     const parsed = parseEnvString(text);
@@ -158,7 +352,6 @@ function EnvVarsCard() {
     }
   };
 
-  // Mobile fallback: auto-parse on onChange (mobile paste fires onChange, not onPaste)
   const handleEnvInput = (text: string) => {
     const parsed = parseEnvString(text);
     if (parsed.length > 0) {
@@ -194,7 +387,6 @@ function EnvVarsCard() {
     const removed = envVars[index];
     setEnvVars((prev) => prev.filter((_, i) => i !== index));
 
-    // If the key was saved in DB, delete it
     if (removed.key.trim()) {
       await fetch('/api/cloud/env-vars', {
         method: 'DELETE',
@@ -274,7 +466,6 @@ function EnvVarsCard() {
         </div>
       ) : (
         <>
-          {/* Paste area — always visible, auto-parses on paste/change */}
           <Textarea
             value={pasteInput}
             onChange={(e) => handleEnvInput(e.target.value)}
@@ -284,7 +475,6 @@ function EnvVarsCard() {
             className="font-mono text-xs"
           />
 
-          {/* Parsed key-value rows */}
           {envVars.length > 0 && (
             <div className="space-y-2">
               {envVars.map((v, i) => (
