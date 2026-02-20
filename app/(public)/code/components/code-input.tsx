@@ -430,7 +430,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
                 <Mic className={cn(canSend || isBusy ? 'size-4 sm:size-[18px]' : 'size-5 sm:size-[22px]')} />
               </Button>
               {canSend && (
-                <Button size="icon" onClick={handleSend} disabled={disabled} className="size-10 rounded-xl sm:size-11" title={isBusy ? 'Queue message' : 'Send message'}>
+                <Button size="icon" onClick={handleSend} disabled={disabled} className="size-10 rounded-xl ring-1 ring-primary/20 sm:size-11" title={isBusy ? 'Queue message' : 'Send message'}>
                   <ArrowUp className="size-5" />
                 </Button>
               )}

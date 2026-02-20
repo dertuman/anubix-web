@@ -364,7 +364,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 </Button>
               )}
               {canSend && (
-                <Button size="icon" onClick={handleSend} disabled={disabled || isStreaming} className="size-10 rounded-xl sm:size-11" title="Send message">
+                <Button size="icon" onClick={handleSend} disabled={disabled || isStreaming} className="size-10 rounded-xl ring-1 ring-primary/20 sm:size-11" title="Send message">
                   <ArrowUp className="size-5" />
                 </Button>
               )}
