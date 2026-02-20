@@ -26,6 +26,19 @@ export const maxDuration = 300;
  * and API key so the client can auto-connect.
  */
 export async function POST(req: NextRequest) {
+  /**
+   * ============================================================
+   * TEMPORARILY DISABLED — Provisioning suspended
+   * ============================================================
+   * TO RE-ENABLE: Remove this early return block (the 503 response below).
+   * Also restore the code page at: app/(public)/code/page.tsx
+   * ============================================================
+   */
+  return NextResponse.json(
+    { error: 'Provisioning is temporarily disabled. Something amazing is coming soon.' },
+    { status: 503 },
+  );
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
@@ -77,7 +90,7 @@ export async function POST(req: NextRequest) {
         bridgeApiKey: existing.bridge_api_key_encrypted
           ? decrypt(existing.bridge_api_key_encrypted)
           : '',
-        previewUrl: existing.bridge_url ? `${existing.bridge_url!.replace(/\/$/, '')}:3000/` : null,
+        previewUrl: existing.bridge_url || null,
         status: 'running',
       });
     }
@@ -189,7 +202,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       bridgeUrl,
       bridgeApiKey,
-      previewUrl: `${bridgeUrl}:3000/`,
+      previewUrl: bridgeUrl,
       status: 'running',
     });
   } catch (err) {

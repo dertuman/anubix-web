@@ -218,25 +218,16 @@ export async function createFlyMachine(
       env,
       services: [
         {
-          // Bridge API + WebSocket
+          // Bridge API + WebSocket + dev server preview (reverse-proxied)
+          // All traffic comes through port 443 → internal 8080.
+          // The bridge forwards non-/_bridge/ requests to the dev server on port 3000.
+          // Port 3000 is NOT exposed externally because Fly shared IPs only support 80/443.
           ports: [
             { port: 443, handlers: ['tls', 'http'] },
             { port: 80, handlers: ['http'] },
           ],
           protocol: 'tcp',
           internal_port: 8080,
-          force_instance_key: null,
-          autostart: true,
-          autostop: 'off',
-          min_machines_running: 0,
-        },
-        {
-          // Dev server preview — direct access, no proxy
-          ports: [
-            { port: 3000, handlers: ['tls', 'http'] },
-          ],
-          protocol: 'tcp',
-          internal_port: 3000,
           force_instance_key: null,
           autostart: true,
           autostop: 'off',

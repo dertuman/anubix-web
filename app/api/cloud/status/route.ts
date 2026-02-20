@@ -62,7 +62,7 @@ export async function GET() {
       bridgeApiKey: data.bridge_api_key_encrypted
         ? decrypt(data.bridge_api_key_encrypted)
         : null,
-      previewUrl: data.bridge_url ? `${data.bridge_url.replace(/\/$/, '')}:3000/` : null,
+      previewUrl: data.bridge_url || null,
       region: data.fly_region,
       claudeMode: data.claude_mode,
       templateName: data.template_name,
