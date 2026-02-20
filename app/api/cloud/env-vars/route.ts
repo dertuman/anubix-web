@@ -39,11 +39,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const vars = (data ?? []).map((row) => ({
-    key: row.key,
-    value: decrypt(row.value_encrypted),
-    repo_path: row.repo_path ?? '__global__',
-  }));
+  const vars: { key: string; value: string; repo_path: string }[] = [];
+  for (const row of data ?? []) {
+    try {
+      vars.push({
+        key: row.key,
+        value: decrypt(row.value_encrypted),
+        repo_path: row.repo_path ?? '__global__',
+      });
+    } catch {
+      // Skip vars that can't be decrypted (e.g. encrypted with a different key)
+      vars.push({
+        key: row.key,
+        value: '',
+        repo_path: row.repo_path ?? '__global__',
+      });
+    }
+  }
 
   return NextResponse.json({ vars });
 }

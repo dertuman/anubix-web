@@ -171,49 +171,41 @@ function EditSessionModal({
     }
   };
 
-  const handleSaveEnv = async () => {
+  const handleSaveAndSync = async () => {
     const valid = activeVars.filter((v) => v.key.trim());
     setSavingEnv(true);
     setEnvMessage(null);
     try {
-      const res = await fetch('/api/cloud/env-vars', {
+      // Step 1: Save to database
+      const saveRes = await fetch('/api/cloud/env-vars', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vars: valid, repo_path: activeEnvRepo }),
       });
-      if (!res.ok) {
-        const data = await res.json();
+      if (!saveRes.ok) {
+        const data = await saveRes.json();
         setEnvMessage(`Error: ${data.error}`);
+        return;
+      }
+
+      // Step 2: Sync to machine
+      setSyncingEnv(true);
+      const syncRes = await fetch('/api/cloud/env-vars/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo_path: activeEnvRepo }),
+      });
+      const syncData = await syncRes.json();
+      if (!syncRes.ok) {
+        setEnvMessage(`Saved but sync failed: ${syncData.error}`);
       } else {
-        setEnvMessage('Saved');
-        setTimeout(() => setEnvMessage(null), 3000);
+        setEnvMessage(`Saved & synced ${syncData.count} vars to machine`);
+        setTimeout(() => setEnvMessage(null), 4000);
       }
     } catch {
       setEnvMessage('Error: Failed to save');
     } finally {
       setSavingEnv(false);
-    }
-  };
-
-  const handleSyncEnv = async () => {
-    setSyncingEnv(true);
-    setEnvMessage(null);
-    try {
-      const res = await fetch('/api/cloud/env-vars/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo_path: activeEnvRepo }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setEnvMessage(`Sync error: ${data.error}`);
-      } else {
-        setEnvMessage(`Synced ${data.count} vars to machine`);
-        setTimeout(() => setEnvMessage(null), 3000);
-      }
-    } catch {
-      setEnvMessage('Sync error: Failed to reach machine');
-    } finally {
       setSyncingEnv(false);
     }
   };
@@ -526,31 +518,19 @@ function EditSessionModal({
                   </p>
                 )}
 
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleSaveEnv}
-                    disabled={savingEnv}
-                    className="gap-1"
-                  >
-                    {savingEnv ? <Loader2 className="size-3 animate-spin" /> : null}
-                    Save Env Vars
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSyncEnv}
-                    disabled={syncingEnv}
-                    className="gap-1"
-                  >
-                    {syncingEnv ? (
-                      <Loader2 className="size-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="size-3" />
-                    )}
-                    Sync to Machine
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  onClick={handleSaveAndSync}
+                  disabled={savingEnv || syncingEnv}
+                  className="gap-1.5"
+                >
+                  {savingEnv || syncingEnv ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="size-3" />
+                  )}
+                  {savingEnv ? 'Saving…' : syncingEnv ? 'Syncing to machine…' : 'Save & Sync'}
+                </Button>
               </div>
             )}
           </div>

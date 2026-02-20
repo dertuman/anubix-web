@@ -48,7 +48,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Machine missing bridge credentials' }, { status: 500 });
   }
 
-  const bridgeApiKey = decrypt(machine.bridge_api_key_encrypted);
+  let bridgeApiKey: string;
+  try {
+    bridgeApiKey = decrypt(machine.bridge_api_key_encrypted);
+  } catch {
+    return NextResponse.json({ error: 'Failed to decrypt bridge credentials — encryption key may have changed' }, { status: 500 });
+  }
 
   // Fetch all env vars for user
   const { data: envRows, error: envErr } = await supabase
@@ -68,14 +73,22 @@ export async function POST(req: NextRequest) {
     // First, add __global__ vars
     for (const row of allRows) {
       if (row.repo_path === '__global__') {
-        vars[row.key] = decrypt(row.value_encrypted);
+        try {
+          vars[row.key] = decrypt(row.value_encrypted);
+        } catch {
+          // Skip vars that can't be decrypted
+        }
       }
     }
     // Then, repo-specific vars override globals
     if (targetRepo !== '__global__') {
       for (const row of allRows) {
         if (row.repo_path === targetRepo) {
-          vars[row.key] = decrypt(row.value_encrypted);
+          try {
+            vars[row.key] = decrypt(row.value_encrypted);
+          } catch {
+            // Skip vars that can't be decrypted
+          }
         }
       }
     }
