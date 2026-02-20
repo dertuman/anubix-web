@@ -393,7 +393,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
     // ── Default UI ──────────────────────────────────────────────
 
     return (
-      <div className="shrink-0 border-t border-border/20 px-4 pb-4 pt-3">
+      <div className="shrink-0 border-t border-border/20 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
         <div className="relative mx-auto">
           {queueBar}
           {filePreview}
@@ -420,7 +420,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             </Button>
           </div>
 
-          <div className="absolute bottom-2 right-5 flex items-center gap-1">
+          <div className="absolute bottom-2 right-3 flex items-center gap-1 sm:right-5">
             <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-8 rounded-lg text-muted-foreground hover:text-primary" title="Record voice">
               <Mic className={cn('size-4', canSend && 'size-3.5')} />
             </Button>

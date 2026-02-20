@@ -184,30 +184,30 @@ export function CodeView() {
 
   // ── Shared header actions ──────────────────────────────────
   const headerActions = (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 sm:gap-1">
       {connectionHealth === 'failed' && (
-        <Button variant="ghost" size="icon" onClick={retry} title="Retry connection" className="size-8 text-warning hover:text-warning/80"><RotateCw className="size-3.5" /></Button>
+        <Button variant="ghost" size="icon" onClick={retry} title="Retry connection" className="size-7 sm:size-8 text-warning hover:text-warning/80"><RotateCw className="size-3.5" /></Button>
       )}
       {previewUrl && (
-        <Button variant="ghost" size="icon" onClick={() => window.open(previewUrl, '_blank')} title="Open preview" className="size-8 text-muted-foreground">
+        <Button variant="ghost" size="icon" onClick={() => window.open(previewUrl, '_blank')} title="Open preview" className="size-7 sm:size-8 text-muted-foreground">
           <ExternalLink className="size-3.5" />
         </Button>
       )}
       {activeSessionId && (
         <>
-          <Button variant="ghost" size="icon" onClick={handlePull} title="Git pull" className="size-8 text-muted-foreground" disabled={pulling || isBusy}>
+          <Button variant="ghost" size="icon" onClick={handlePull} title="Git pull" className="size-7 sm:size-8 text-muted-foreground" disabled={pulling || isBusy}>
             <Download className={cn('size-3.5', pulling && 'animate-bounce')} />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleCopyMarkdown} title="Copy as Markdown" className={cn('size-8 text-muted-foreground', mdCopied && 'text-primary')} disabled={messages.length === 0}>
+          <Button variant="ghost" size="icon" onClick={handleCopyMarkdown} title="Copy as Markdown" className={cn('hidden sm:inline-flex size-8 text-muted-foreground', mdCopied && 'text-primary')} disabled={messages.length === 0}>
             {mdCopied ? <ClipboardCheck className="size-3.5" /> : <ClipboardCopy className="size-3.5" />}
           </Button>
         </>
       )}
-      <Button variant="ghost" size="icon" onClick={clearConversation} title="Clear conversation" className="size-8 text-muted-foreground hover:text-destructive" disabled={!activeSessionId || messages.length === 0 || isBusy}>
+      <Button variant="ghost" size="icon" onClick={clearConversation} title="Clear conversation" className="hidden sm:inline-flex size-8 text-muted-foreground hover:text-destructive" disabled={!activeSessionId || messages.length === 0 || isBusy}>
         <Trash2 className="size-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={refreshSessions} className="size-8 text-muted-foreground"><RefreshCw className="size-3.5" /></Button>
-      <Button variant="ghost" size="icon" onClick={disconnect} className="size-8 text-muted-foreground hover:text-destructive"><Power className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon" onClick={refreshSessions} className="size-7 sm:size-8 text-muted-foreground"><RefreshCw className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon" onClick={disconnect} className="size-7 sm:size-8 text-muted-foreground hover:text-destructive"><Power className="size-3.5" /></Button>
     </div>
   );
 
@@ -218,21 +218,21 @@ export function CodeView() {
         <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
-          <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-4">
+          <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
             <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
             {headerActions}
           </div>
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
-            <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
-              <span className="text-2xl font-bold text-primary">A</span>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 sm:gap-4">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
+              <span className="text-xl font-bold text-primary sm:text-2xl">A</span>
             </div>
-            <p className="text-lg font-medium text-foreground">{t('sessions.selectSession')}</p>
-            <p className="text-sm text-muted-foreground">Select a session from the sidebar or create a new one</p>
+            <p className="text-base font-medium text-foreground sm:text-lg">{t('sessions.selectSession')}</p>
+            <p className="text-center text-sm text-muted-foreground">Select a session from the sidebar or create a new one</p>
             <Button onClick={() => setNewSessionOpen(true)} className="mt-2 gap-2">
               <FolderPlus className="size-4" />{t('sessions.newSession')}
             </Button>
           </div>
-          <div className="shrink-0 border-t border-border/20 px-4 pb-4 pt-3">
+          <div className="shrink-0 border-t border-border/20 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
             <div className="relative mx-auto">
               <Textarea placeholder={t('messages.inputPlaceholder')} className="max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-4 pr-20 text-sm focus-visible:ring-1" rows={1} disabled />
             </div>
@@ -250,21 +250,23 @@ export function CodeView() {
         {dragOverlay}
 
         {/* Header */}
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-4">
-          <div className="flex items-center gap-2">
+        <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
-            <span className="truncate text-sm font-medium">{activeSession?.name}</span>
+            <span className="min-w-0 truncate text-sm font-medium">{activeSession?.name}</span>
             {activeSession && connectionHealth === 'connected' && (
-              <span className={statusBadgeClass(activeSession.status)}>{t(`status.${activeSession.status}`)}</span>
+              <span className={cn(statusBadgeClass(activeSession.status), 'hidden sm:inline-flex')}>{t(`status.${activeSession.status}`)}</span>
             )}
             {connectionHealth === 'reconnecting' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
-                <span className="size-1.5 animate-pulse rounded-full bg-warning" />Reconnecting...
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning sm:px-2">
+                <span className="size-1.5 animate-pulse rounded-full bg-warning" />
+                <span className="hidden sm:inline">Reconnecting...</span>
               </span>
             )}
             {connectionHealth === 'failed' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
-                <span className="size-1.5 rounded-full bg-destructive" />Connection lost
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive sm:px-2">
+                <span className="size-1.5 rounded-full bg-destructive" />
+                <span className="hidden sm:inline">Connection lost</span>
               </span>
             )}
           </div>
