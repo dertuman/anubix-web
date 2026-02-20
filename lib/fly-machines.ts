@@ -328,7 +328,7 @@ export async function waitForBridgeHealth(
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const res = await fetch(`${bridgeUrl}/api/health`, {
+      const res = await fetch(`${bridgeUrl}/_bridge/health`, {
         headers: { 'x-api-key': bridgeApiKey },
         signal: AbortSignal.timeout(15000),
       });

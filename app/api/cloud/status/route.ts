@@ -39,7 +39,7 @@ export async function GET() {
     data.bridge_api_key_encrypted
   ) {
     try {
-      const res = await fetch(`${data.bridge_url}/api/health`, {
+      const res = await fetch(`${data.bridge_url}/_bridge/health`, {
         headers: { 'x-api-key': decrypt(data.bridge_api_key_encrypted) },
         signal: AbortSignal.timeout(5000),
       });
@@ -62,7 +62,7 @@ export async function GET() {
       bridgeApiKey: data.bridge_api_key_encrypted
         ? decrypt(data.bridge_api_key_encrypted)
         : null,
-      previewUrl: data.bridge_url ? `${data.bridge_url}/preview/` : null,
+      previewUrl: data.bridge_url ? `${data.bridge_url}/` : null,
       region: data.fly_region,
       claudeMode: data.claude_mode,
       templateName: data.template_name,

@@ -102,7 +102,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
   // ── HTTP helpers ──────────────────────────────────────────
 
   const apiFetch = useCallback(async (path: string, init?: RequestInit) => {
-    const url = `${httpBase(baseUrlRef.current)}/api${path}`;
+    const url = `${httpBase(baseUrlRef.current)}/_bridge${path}`;
     const res = await fetch(url, {
       ...init,
       headers: {
@@ -145,7 +145,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     setConnectionError(null);
 
     try {
-      const res = await fetch(`${httpBase(baseUrlRef.current)}/api/health`, {
+      const res = await fetch(`${httpBase(baseUrlRef.current)}/_bridge/health`, {
         headers: keyRef.current ? { 'x-api-key': keyRef.current } : {},
       });
       if (!res.ok) {

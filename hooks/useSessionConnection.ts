@@ -310,7 +310,7 @@ export class SessionConnection {
 
       try {
         const httpBase = this.baseUrl.replace(/^ws(s?):\/\//, 'http$1://');
-        const res = await fetch(`${httpBase}/api/sessions/${this.sessionId}/messages`, {
+        const res = await fetch(`${httpBase}/_bridge/sessions/${this.sessionId}/messages`, {
           headers: { 'x-api-key': this.apiKey },
         });
 

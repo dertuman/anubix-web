@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         bridgeApiKey: existing.bridge_api_key_encrypted
           ? decrypt(existing.bridge_api_key_encrypted)
           : '',
-        previewUrl: existing.bridge_url ? `${existing.bridge_url}/preview/` : null,
+        previewUrl: existing.bridge_url ? `${existing.bridge_url}/` : null,
         status: 'running',
       });
     }
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       bridgeUrl,
       bridgeApiKey,
-      previewUrl: `${bridgeUrl}/preview/`,
+      previewUrl: `${bridgeUrl}/`,
       status: 'running',
     });
   } catch (err) {
