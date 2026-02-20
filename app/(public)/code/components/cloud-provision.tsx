@@ -36,11 +36,12 @@ interface CloudProvisionProps {
 type AuthTab = 'cli' | 'sdk';
 
 const TEMPLATES = [
-  { value: '', label: 'Empty workspace' },
-  { value: 'nextjs', label: 'Next.js' },
-  { value: 'vite-react', label: 'Vite + React' },
-  { value: 'vanilla', label: 'Vanilla HTML/JS' },
-  { value: 'git', label: 'Clone from Git' },
+  { value: 'talkartech', label: 'Talkartech Fullstack (Recommended)', gitUrl: 'https://github.com/dertuman/talkartech-fullstack-template.git' },
+  { value: '', label: 'Empty workspace', gitUrl: '' },
+  { value: 'nextjs', label: 'Next.js', gitUrl: '' },
+  { value: 'vite-react', label: 'Vite + React', gitUrl: '' },
+  { value: 'vanilla', label: 'Vanilla HTML/JS', gitUrl: '' },
+  { value: 'git', label: 'Clone from Git URL', gitUrl: '' },
 ] as const;
 
 const PROVISION_STEPS = [
@@ -136,11 +137,14 @@ function SetupForm({
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [templateValue, setTemplateValue] = useState('');
+  const [templateValue, setTemplateValue] = useState('talkartech');
   const [gitRepoUrl, setGitRepoUrl] = useState('');
 
+  const selectedTemplate = TEMPLATES.find(t => t.value === templateValue);
   const isGitTemplate = templateValue === 'git';
-  const templateName = isGitTemplate ? '' : templateValue;
+  const isPresetGit = !!(selectedTemplate?.gitUrl);  // e.g. talkartech
+  const templateName = (isGitTemplate || isPresetGit) ? '' : templateValue;
+  const resolvedGitUrl = isPresetGit ? selectedTemplate!.gitUrl : (isGitTemplate ? gitRepoUrl.trim() : '');
 
   const canSubmit =
     !isWorking &&
@@ -154,7 +158,7 @@ function SetupForm({
       claudeAuthJson: authTab === 'cli' ? claudeAuthJson.trim() : undefined,
       anthropicApiKey: authTab === 'sdk' ? anthropicApiKey.trim() : undefined,
       templateName: templateName || undefined,
-      gitRepoUrl: isGitTemplate ? gitRepoUrl.trim() : undefined,
+      gitRepoUrl: resolvedGitUrl || undefined,
     });
   };
 

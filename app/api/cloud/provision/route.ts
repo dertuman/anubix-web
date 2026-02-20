@@ -13,8 +13,9 @@ import {
   teardownFlyResources,
 } from '@/lib/fly-machines';
 
-// Allow up to 120s for Fly.io provisioning (app + volume + machine + health check)
-export const maxDuration = 120;
+// Allow up to 300s for Fly.io provisioning (app + volume + machine + template install + health check)
+// Heavy templates like talkartech-fullstack need 3-5 min for git clone + npm install before the server starts.
+export const maxDuration = 300;
 
 /**
  * POST /api/cloud/provision
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
     await createFlyApp(appName);
 
     // 2. Create volume
-    const volume = await createFlyVolume(appName, region);
+    const volume = await createFlyVolume(appName, region, 3); // 3GB: template + node_modules + workspace
     volumeId = volume.id;
 
     // 3. Create machine
@@ -147,7 +148,7 @@ export async function POST(req: NextRequest) {
       region,
       templateName: templateName || undefined,
       gitRepoUrl: gitRepoUrl || undefined,
-      memoryMb: 512,
+      memoryMb: 1024, // 1GB RAM: needed for npm install of heavy templates + Claude Code
     });
     machineId = machine.id;
 
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest) {
     }).eq('user_id', userId);
 
     // 4. Wait for machine to start
-    await waitForMachineState(appName, machineId, 'started', 60);
+    await waitForMachineState(appName, machineId, 'started', 120);
 
     // 5. Wait for bridge health check
     await waitForBridgeHealth(bridgeUrl, bridgeApiKey);

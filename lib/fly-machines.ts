@@ -152,7 +152,7 @@ export async function createFlyMachine(
     templateName,
     gitRepoUrl,
     region,
-    memoryMb = 512,
+    memoryMb = 1024,
   } = options;
 
   const env: Record<string, string> = {
@@ -208,17 +208,13 @@ export async function createFlyMachine(
         cpus: 1,
         memory_mb: memoryMb,
       },
-      checks: {
-        bridge_health: {
-          type: 'http',
-          port: 8080,
-          method: 'GET',
-          path: '/api/health',
-          interval: '30s',
-          timeout: '5s',
-          headers: [{ name: 'x-api-key', values: [bridgeApiKey] }],
-        },
-      },
+      // NOTE: We intentionally do NOT define Fly.io-level health checks here.
+      // The init-workspace.sh script can take 3-5+ minutes to clone a repo and
+      // run npm install before the bridge server starts listening.
+      // If Fly.io's health check fails during that time, it will restart or
+      // destroy the machine — which is why machines were "disappearing".
+      // Instead, our own waitForBridgeHealth() polls from the API route, which
+      // is safe because it doesn't affect the machine lifecycle.
     },
   };
 
@@ -273,14 +269,15 @@ export async function waitForMachineState(
  * Poll the bridge health endpoint until it responds OK.
  * First-time cold starts can take a while: Fly.io pulls the Docker image,
  * boots the container, runs init-workspace.sh, then starts the Node server.
- * We allow up to ~3 min (40 attempts × 5s) to be safe.
- * Templates like Next.js run npx create-next-app + npm install before
- * the bridge server starts, which can take 2+ minutes on a small VM.
+ * We allow up to ~5 min (60 attempts × 5s) to be safe.
+ * Heavy templates (e.g. talkartech-fullstack with 76 deps + 974 packages)
+ * need git clone + npm install before the bridge server starts, which
+ * can take 3-5 minutes on a 1GB VM.
  */
 export async function waitForBridgeHealth(
   bridgeUrl: string,
   bridgeApiKey: string,
-  maxAttempts: number = 40,
+  maxAttempts: number = 60,
   delayMs: number = 5000,
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
