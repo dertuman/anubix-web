@@ -6,9 +6,11 @@ import { encrypt, decrypt } from '@/lib/encryption';
 
 /**
  * GET /api/cloud/env-vars
- * Returns all env vars for the authenticated user (values decrypted).
+ * Returns env vars for the authenticated user.
+ * Optional query param: ?repo_path=<name> to filter by repo.
+ * Response includes repo_path for each var.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
@@ -19,11 +21,19 @@ export async function GET() {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
-  const { data, error } = await supabase
+  const repoPath = req.nextUrl.searchParams.get('repo_path');
+
+  let query = supabase
     .from('project_env_vars')
     .select()
     .eq('user_id', userId)
     .order('key');
+
+  if (repoPath) {
+    query = query.eq('repo_path', repoPath);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,6 +42,7 @@ export async function GET() {
   const vars = (data ?? []).map((row) => ({
     key: row.key,
     value: decrypt(row.value_encrypted),
+    repo_path: row.repo_path ?? '__global__',
   }));
 
   return NextResponse.json({ vars });
@@ -40,7 +51,7 @@ export async function GET() {
 /**
  * PUT /api/cloud/env-vars
  * Upserts a batch of key-value pairs.
- * Body: { vars: [{key: string, value: string}] }
+ * Body: { vars: [{key: string, value: string}], repo_path?: string }
  */
 export async function PUT(req: NextRequest) {
   const { userId } = await auth();
@@ -54,7 +65,11 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { vars } = body as { vars: { key: string; value: string }[] };
+  const { vars, repo_path } = body as {
+    vars: { key: string; value: string }[];
+    repo_path?: string;
+  };
+  const repoPath = repo_path || '__global__';
 
   if (!Array.isArray(vars)) {
     return NextResponse.json({ error: 'vars must be an array' }, { status: 400 });
@@ -70,12 +85,13 @@ export async function PUT(req: NextRequest) {
     user_id: userId,
     key: v.key.trim(),
     value_encrypted: encrypt(v.value),
+    repo_path: repoPath,
     updated_at: new Date().toISOString(),
   }));
 
   const { error } = await supabase
     .from('project_env_vars')
-    .upsert(rows, { onConflict: 'user_id,key' });
+    .upsert(rows, { onConflict: 'user_id,repo_path,key' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -87,7 +103,7 @@ export async function PUT(req: NextRequest) {
 /**
  * DELETE /api/cloud/env-vars
  * Deletes a single env var by key.
- * Body: { key: string }
+ * Body: { key: string, repo_path?: string }
  */
 export async function DELETE(req: NextRequest) {
   const { userId } = await auth();
@@ -101,7 +117,8 @@ export async function DELETE(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { key } = body as { key: string };
+  const { key, repo_path } = body as { key: string; repo_path?: string };
+  const repoPath = repo_path || '__global__';
 
   if (!key) {
     return NextResponse.json({ error: 'key is required' }, { status: 400 });
@@ -111,6 +128,7 @@ export async function DELETE(req: NextRequest) {
     .from('project_env_vars')
     .delete()
     .eq('user_id', userId)
+    .eq('repo_path', repoPath)
     .eq('key', key);
 
   if (error) {

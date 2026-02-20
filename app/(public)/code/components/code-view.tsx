@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ClipboardCheck, ClipboardCopy, Download, ExternalLink, FolderPlus, Power, RefreshCw, RotateCw, Trash2, Upload } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { useScopedI18n } from '@/locales/client';
 import { useClaudeCode } from '@/hooks/useClaudeCode';
@@ -219,7 +221,12 @@ export function CodeView() {
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
-            <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
+            <div className="flex items-center gap-1">
+              <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
+                <Image src="/logo.webp" alt="Anubix" width={24} height={24} />
+              </Link>
+              <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
+            </div>
             {headerActions}
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 sm:gap-4">
@@ -252,6 +259,9 @@ export function CodeView() {
         {/* Header */}
         <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+            <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
+              <Image src="/logo.webp" alt="Anubix" width={24} height={24} />
+            </Link>
             <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
             <span className="min-w-0 truncate text-sm font-medium">{activeSession?.name}</span>
             {activeSession && connectionHealth === 'connected' && (

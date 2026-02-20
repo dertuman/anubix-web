@@ -53,18 +53,20 @@ async function ConfiguredBody({
   const { default: ReactQueryProvider } = await import(
     '@/components/react-query-provider'
   );
-  const { SiteHeader } = await import('@/components/site-header');
+  const { ConditionalHeader } = await import('@/components/conditional-header');
   const { ConditionalFooter } = await import('@/components/conditional-footer');
   const { TailwindIndicator } = await import('@/components/tailwind-indicator');
+  const { ThemeColorMeta } = await import('@/components/theme-color-meta');
 
   return (
     <ClerkProvider>
       <ReactQueryProvider>
         <ThemeProvider attribute="class" defaultTheme="dark">
+          <ThemeColorMeta />
           <I18nProviderClient locale={locale}>
             <UserDataProvider>
               <div className="relative flex min-h-dvh flex-col">
-                <SiteHeader />
+                <ConditionalHeader />
                 <div className="flex flex-1 flex-col">{children}</div>
                 <ConditionalFooter />
               </div>
@@ -119,8 +121,7 @@ export default async function RootLayout({
           </>
         )}
 
-        {/* Theme colour — used by browsers, Discord embed accent, and mobile UI */}
-        <meta name="theme-color" content="#34d399" />
+        {/* msapplication tile colour (Microsoft-specific, static is fine) */}
         <meta name="msapplication-TileColor" content="#09090b" />
 
         {configured && (

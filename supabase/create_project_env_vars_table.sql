@@ -10,11 +10,12 @@ create table public.project_env_vars (
   user_id           text not null,
   key               text not null,
   value_encrypted   text not null,
+  repo_path         text not null default '__global__',
   created_at        timestamp with time zone not null default now(),
   updated_at        timestamp with time zone not null default now(),
 
-  -- One value per key per user
-  constraint project_env_vars_user_key unique (user_id, key)
+  -- One value per key per user per repo
+  constraint project_env_vars_user_repo_key unique (user_id, repo_path, key)
 );
 
 -- Row Level Security

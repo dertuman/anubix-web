@@ -12,13 +12,13 @@ export default function CodeLayoutShell({ children }: CodeLayoutShellProps) {
 
   if (!isLoaded) {
     return (
-      <div className="flex h-[calc(100dvh-4.1rem)] items-center justify-center">
+      <div className="flex h-dvh items-center justify-center">
         <Loader variant="glowing" size="large" />
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100dvh-4.1rem)] w-full overflow-hidden">{children}</div>
+    <div className="h-dvh w-full overflow-hidden">{children}</div>
   );
 }

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { parseEnvString, type EnvVarEntry } from '@/lib/env-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,11 +51,6 @@ interface CloudProvisionProps {
 /** Key for persisting extra repos to clone after provisioning */
 const EXTRA_REPOS_KEY = 'anubix-extra-repos-to-clone';
 
-interface EnvVarEntry {
-  key: string;
-  value: string;
-}
-
 const TEMPLATES = [
   { value: 'talkartech', label: 'Talkartech Fullstack (Recommended)', gitUrl: 'https://github.com/dertuman/talkartech-fullstack-template-supabase.git' },
   { value: '', label: 'Empty workspace', gitUrl: '' },
@@ -69,30 +65,6 @@ const PROVISION_STEPS = [
   { key: 'starting', label: 'Starting machine' },
   { key: 'running', label: 'Verifying health' },
 ] as const;
-
-/** Parse a .env-style string into key-value pairs */
-function parseEnvString(text: string): EnvVarEntry[] {
-  const results: EnvVarEntry[] = [];
-  for (const raw of text.split('\n')) {
-    let line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    // Handle `export KEY=value`
-    if (line.startsWith('export ')) line = line.slice(7).trim();
-    const eqIdx = line.indexOf('=');
-    if (eqIdx === -1) continue;
-    const key = line.slice(0, eqIdx).trim();
-    let value = line.slice(eqIdx + 1).trim();
-    // Strip surrounding quotes
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith('\'') && value.endsWith('\''))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (key) results.push({ key, value });
-  }
-  return results;
-}
 
 // ── Component ────────────────────────────────────────────────
 
