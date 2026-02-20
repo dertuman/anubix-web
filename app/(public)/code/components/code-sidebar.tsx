@@ -3,7 +3,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useScopedI18n } from '@/locales/client';
 import {
+  Download,
   EllipsisVertical,
+  ExternalLink,
   FolderPlus,
   GitBranch,
   Github,
@@ -25,7 +27,8 @@ import type { BridgeSession } from '@/types/code';
 import { getRecentRepoPaths } from '@/lib/stores/bridge-store';
 import { parseEnvString, type EnvVarEntry } from '@/lib/env-utils';
 import { cn } from '@/lib/utils';
-import type { BridgeRepo, FetchReposResult } from '@/hooks/useClaudeCode';
+import type { BridgeRepo, FetchReposResult, PullResult } from '@/hooks/useClaudeCode';
+import { toast } from '@/components/ui/use-toast';
 import { useGitHubRepos, type GitHubRepo } from '@/hooks/useGitHubRepos';
 import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 import type { PoolSessionState } from '@/hooks/useSessionPool';
@@ -58,6 +61,10 @@ function EditSessionModal({
   onClose,
   onSave,
   t,
+  onPullSession,
+  onRefreshSessions,
+  previewUrl,
+  isBusy,
 }: {
   session: BridgeSession;
   onClose: () => void;
@@ -66,6 +73,10 @@ function EditSessionModal({
     _updates: { name?: string; repoPaths?: string[] }
   ) => Promise<void>;
   t: ReturnType<typeof useScopedI18n<'code.sessions'>>;
+  onPullSession?: (_id: string) => Promise<PullResult[] | null>;
+  onRefreshSessions?: () => Promise<void>;
+  previewUrl?: string;
+  isBusy?: boolean;
 }) {
   const [editName, setEditName] = useState(session.name);
   const [editPaths, setEditPaths] = useState<string[]>(
@@ -334,6 +345,71 @@ function EditSessionModal({
             </Button>
           </div>
 
+          {/* ── Quick Actions ─────────────────────────────── */}
+          {(onPullSession || previewUrl || onRefreshSessions) && (
+            <div className="border-border/20 mt-6 border-t pt-5">
+              <h3 className="text-sm font-semibold">Quick Actions</h3>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Session management actions.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {onPullSession && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const results = await onPullSession(session.id);
+                      if (results) {
+                        const summary = results
+                          .map((r) => {
+                            const name = r.path.split(/[\\/]/).pop();
+                            return r.error
+                              ? `${name}: error`
+                              : `${name}: ${r.output || 'up to date'}`;
+                          })
+                          .join('\n');
+                        toast({ title: 'Git Pull', description: summary });
+                      } else {
+                        toast({
+                          title: 'Git Pull',
+                          description: 'Failed to pull',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                    disabled={isBusy}
+                    className="gap-1.5"
+                  >
+                    <Download className="size-3.5" />
+                    Git Pull
+                  </Button>
+                )}
+                {previewUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(previewUrl, '_blank')}
+                    className="gap-1.5"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Open Preview
+                  </Button>
+                )}
+                {onRefreshSessions && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onRefreshSessions}
+                    className="gap-1.5"
+                  >
+                    <RefreshCw className="size-3.5" />
+                    Refresh Sessions
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── Environment Variables ──────────────────────── */}
           <div className="border-border/20 mt-6 border-t pt-5">
             <h3 className="text-sm font-semibold">Environment Variables</h3>
@@ -503,6 +579,10 @@ interface CodeSidebarProps {
   fetchRepos?: () => Promise<FetchReposResult>;
   newSessionOpen?: boolean;
   onNewSessionOpenChange?: (_open: boolean) => void;
+  onPullSession?: (_id: string) => Promise<PullResult[] | null>;
+  onRefreshSessions?: () => Promise<void>;
+  previewUrl?: string;
+  isBusy?: boolean;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -518,6 +598,10 @@ export const CodeSidebar = memo(function CodeSidebar({
   fetchRepos,
   newSessionOpen: externalNewOpen,
   onNewSessionOpenChange,
+  onPullSession,
+  onRefreshSessions,
+  previewUrl,
+  isBusy,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
@@ -1170,6 +1254,10 @@ export const CodeSidebar = memo(function CodeSidebar({
           onClose={() => setEditSession(null)}
           onSave={onEdit}
           t={t}
+          onPullSession={onPullSession}
+          onRefreshSessions={onRefreshSessions}
+          previewUrl={previewUrl}
+          isBusy={isBusy}
         />
       )}
     </>
@@ -1220,9 +1308,9 @@ export function MobileSidebarTrigger({ onClick }: { onClick: () => void }) {
       variant="ghost"
       size="icon"
       onClick={onClick}
-      className="text-muted-foreground size-8 md:hidden"
+      className="text-muted-foreground size-10 md:hidden"
     >
-      <Menu className="size-4" />
+      <Menu className="size-5" />
     </Button>
   );
 }

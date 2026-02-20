@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ClipboardCheck, ClipboardCopy, Download, ExternalLink, FolderPlus, Power, RefreshCw, RotateCw, Trash2, Upload } from 'lucide-react';
+import { FolderPlus, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
@@ -31,10 +31,10 @@ export function CodeView() {
   const t = useScopedI18n('code');
   const { isSignedIn } = useAuth();
   const {
-    status, connect, disconnect, connectionError, sessions, activeSessionId,
+    status, connect, connectionError, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
     pullSession, messages, sendMessage, approve, deny, answerQuestion, abort,
-    isBusy, slashCommands, clearConversation, connectionHealth, retry,
+    isBusy, slashCommands, connectionHealth,
     sessionLiveStates, fetchRepos,
   } = useClaudeCode();
   const cloudMachine = useCloudMachine();
@@ -42,7 +42,6 @@ export function CodeView() {
   const [showManualSetup, setShowManualSetup] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
-  const [pulling, setPulling] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounterRef = useRef(0);
@@ -85,35 +84,6 @@ export function CodeView() {
   }, [isBusy, queuedMessages, sendMessage]);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
-
-  // ── Copy markdown ──────────────────────────────────────────
-  const [mdCopied, setMdCopied] = useState(false);
-  const handleCopyMarkdown = useCallback(async () => {
-    const lines: string[] = [];
-    for (const msg of messages) {
-      if (msg.type === 'user') lines.push(`**You:**\n${msg.text}`);
-      else if (msg.type === 'assistant_text') lines.push(`**Assistant:**\n${msg.text}`);
-    }
-    await navigator.clipboard.writeText(lines.join('\n\n---\n\n'));
-    setMdCopied(true);
-    setTimeout(() => setMdCopied(false), 2000);
-  }, [messages]);
-
-  const handlePull = async () => {
-    if (!activeSessionId || pulling) return;
-    setPulling(true);
-    const results = await pullSession(activeSessionId);
-    setPulling(false);
-    if (results) {
-      const summary = results.map((r) => {
-        const name = r.path.split(/[\\/]/).pop();
-        return r.error ? `${name}: error` : `${name}: ${r.output || 'up to date'}`;
-      }).join('\n');
-      toast({ title: 'Git Pull', description: summary });
-    } else {
-      toast({ title: 'Git Pull', description: 'Failed to pull', variant: 'destructive' });
-    }
-  };
 
   useEffect(() => {
     if (activeSessionId) setTimeout(() => codeInputRef.current?.focus(), 80);
@@ -182,52 +152,22 @@ export function CodeView() {
   if (showManualSetup && status === 'connected') setShowManualSetup(false);
 
   // ── Preview URL (for cloud machines) ────────────────────────
-  const previewUrl = cloudMachine.machine?.previewUrl;
-
-  // ── Shared header actions ──────────────────────────────────
-  const headerActions = (
-    <div className="flex items-center gap-0.5 sm:gap-1">
-      {connectionHealth === 'failed' && (
-        <Button variant="ghost" size="icon" onClick={retry} title="Retry connection" className="size-7 sm:size-8 text-warning hover:text-warning/80"><RotateCw className="size-3.5" /></Button>
-      )}
-      {previewUrl && (
-        <Button variant="ghost" size="icon" onClick={() => window.open(previewUrl, '_blank')} title="Open preview" className="size-7 sm:size-8 text-muted-foreground">
-          <ExternalLink className="size-3.5" />
-        </Button>
-      )}
-      {activeSessionId && (
-        <>
-          <Button variant="ghost" size="icon" onClick={handlePull} title="Git pull" className="size-7 sm:size-8 text-muted-foreground" disabled={pulling || isBusy}>
-            <Download className={cn('size-3.5', pulling && 'animate-bounce')} />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleCopyMarkdown} title="Copy as Markdown" className={cn('hidden sm:inline-flex size-8 text-muted-foreground', mdCopied && 'text-primary')} disabled={messages.length === 0}>
-            {mdCopied ? <ClipboardCheck className="size-3.5" /> : <ClipboardCopy className="size-3.5" />}
-          </Button>
-        </>
-      )}
-      <Button variant="ghost" size="icon" onClick={clearConversation} title="Clear conversation" className="hidden sm:inline-flex size-8 text-muted-foreground hover:text-destructive" disabled={!activeSessionId || messages.length === 0 || isBusy}>
-        <Trash2 className="size-3.5" />
-      </Button>
-      <Button variant="ghost" size="icon" onClick={refreshSessions} className="size-7 sm:size-8 text-muted-foreground"><RefreshCw className="size-3.5" /></Button>
-      <Button variant="ghost" size="icon" onClick={disconnect} className="size-7 sm:size-8 text-muted-foreground hover:text-destructive"><Power className="size-3.5" /></Button>
-    </div>
-  );
+  const previewUrl = cloudMachine.machine?.previewUrl ?? undefined;
 
   // ── No session selected ────────────────────────────────────
   if (!activeSessionId) {
     return (
       <div className="relative flex h-full">
-        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} />
+        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
-          <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
-            <div className="flex items-center gap-1">
-              <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
-                <Image src="/logo.webp" alt="Anubix" width={24} height={24} />
-              </Link>
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
+            <div className="flex items-center gap-1.5">
               <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
             </div>
-            {headerActions}
+            <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
+              <Image src="/logo.webp" alt="Anubix" width={28} height={28} />
+            </Link>
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 sm:gap-4">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
@@ -252,16 +192,13 @@ export function CodeView() {
   // ── Active session ─────────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} />
+      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 
         {/* Header */}
-        <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
-              <Image src="/logo.webp" alt="Anubix" width={24} height={24} />
-            </Link>
             <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
             <span className="min-w-0 truncate text-sm font-medium">{activeSession?.name}</span>
             {activeSession && connectionHealth === 'connected' && (
@@ -280,7 +217,9 @@ export function CodeView() {
               </span>
             )}
           </div>
-          {headerActions}
+          <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
+            <Image src="/logo.webp" alt="Anubix" width={28} height={28} />
+          </Link>
         </div>
 
         <CodeMessageList messages={messages} isFree={activeSession?.mode === 'cli'} isBusy={isBusy} onApprove={approve} onDeny={deny} onAnswer={answerQuestion} questionSelectionsMap={questionSelectionsMap} onQuestionSelect={handleQuestionSelect} />
