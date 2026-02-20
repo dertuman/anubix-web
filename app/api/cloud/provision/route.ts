@@ -8,7 +8,6 @@ import {
   createFlyApp,
   createFlyVolume,
   createFlyMachine,
-  startFlyMachine,
   waitForMachineState,
   waitForBridgeHealth,
   teardownFlyResources,

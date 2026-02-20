@@ -6,13 +6,11 @@ import {
   AlertCircle,
   Check,
   Cloud,
-  ExternalLink,
   EyeIcon,
   EyeOffIcon,
   Key,
   Loader2,
   Play,
-  RotateCw,
   Terminal,
   Trash2,
 } from 'lucide-react';
@@ -31,7 +29,7 @@ import {
 // ── Types ────────────────────────────────────────────────────
 
 interface CloudProvisionProps {
-  onConnected: (bridgeUrl: string, bridgeApiKey: string) => void;
+  onConnected: (_bridgeUrl: string, _bridgeApiKey: string) => void;
   onManualSetup: () => void;
 }
 
@@ -61,7 +59,7 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
     error,
     provision,
     start,
-    stop,
+    // stop,
     destroy,
   } = useCloudMachine();
 
@@ -129,7 +127,7 @@ function SetupForm({
   isWorking,
   error,
 }: {
-  onProvision: (opts: ProvisionOptions) => Promise<void>;
+  onProvision: (_opts: ProvisionOptions) => Promise<void>;
   onManualSetup: () => void;
   isWorking: boolean;
   error: string | null;
