@@ -266,7 +266,7 @@ function EditSessionModal({
                   ))}
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Input
                   value={manualPath}
                   onChange={(e) => setManualPath(e.target.value)}
@@ -283,7 +283,7 @@ function EditSessionModal({
                   size="sm"
                   onClick={addPath}
                   disabled={!manualPath.trim()}
-                  className="shrink-0"
+                  className="h-9 shrink-0"
                 >
                   {t('add')}
                 </Button>
@@ -450,7 +450,7 @@ function EditSessionModal({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteEnvVar(i)}
-                          className="size-8 shrink-0 p-0"
+                          className="size-9 shrink-0 p-0"
                         >
                           <Minus className="size-3" />
                         </Button>
@@ -996,7 +996,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                     </button>
                   )
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <Input
                       value={cloneUrl}
                       onChange={(e) => { setCloneUrl(e.target.value); setCloneError(null); }}
@@ -1010,7 +1010,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                       size="sm"
                       onClick={() => handleClone()}
                       disabled={!cloneUrl.trim() || cloning}
-                      className="shrink-0"
+                      className="h-9 shrink-0"
                     >
                       {cloning ? <Loader2 className="size-3.5 animate-spin" /> : 'Clone'}
                     </Button>
@@ -1025,7 +1025,7 @@ export const CodeSidebar = memo(function CodeSidebar({
               {/* ── Manual path ── */}
               <div className="space-y-2">
                 <Label htmlFor="repo-path" className="text-xs font-medium">{t('repoPath')}</Label>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <Input
                     id="repo-path"
                     autoFocus={availableRepos.length === 0 && !loadingRepos}
@@ -1049,7 +1049,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                     size="sm"
                     onClick={addManualPath}
                     disabled={!manualPath.trim()}
-                    className="shrink-0"
+                    className="h-9 shrink-0"
                   >
                     {t('add')}
                   </Button>
