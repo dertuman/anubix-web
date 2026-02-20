@@ -68,6 +68,28 @@ const PROVISION_STEPS = [
   { key: 'running', label: 'Verifying health' },
 ] as const;
 
+/** Parse a .env-style string into key-value pairs */
+function parseEnvString(text: string): EnvVarEntry[] {
+  const results: EnvVarEntry[] = [];
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eqIdx = line.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = line.slice(0, eqIdx).trim();
+    let value = line.slice(eqIdx + 1).trim();
+    // Strip surrounding quotes
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith('\'') && value.endsWith('\''))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (key) results.push({ key, value });
+  }
+  return results;
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionProps) {
@@ -190,6 +212,31 @@ function SetupForm({
   const handleEnvVarChange = (index: number, field: 'key' | 'value', val: string) => {
     setEnvVars((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: val } : v)));
   };
+
+  const handleEnvVarPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const text = e.clipboardData.getData('text');
+    const parsed = parseEnvString(text);
+    if (parsed.length > 0) {
+      e.preventDefault();
+      setEnvVars((prev) => {
+        const existing = new Set(prev.map((v) => v.key));
+        const merged = [...prev];
+        for (const entry of parsed) {
+          if (existing.has(entry.key)) {
+            const idx = merged.findIndex((v) => v.key === entry.key);
+            if (idx !== -1) merged[idx] = entry;
+          } else {
+            merged.push(entry);
+            existing.add(entry.key);
+          }
+        }
+        return merged;
+      });
+      setPasteInput('');
+    }
+  };
+
+  const [pasteInput, setPasteInput] = useState('');
 
   const handleSelectRepo = (repo: GitHubRepo) => {
     setGitRepoUrl(repo.clone_url);
@@ -495,6 +542,20 @@ function SetupForm({
                 Add
               </Button>
             </div>
+
+            {/* Paste area — Vercel-style */}
+            {envVars.length === 0 && (
+              <Textarea
+                value={pasteInput}
+                onChange={(e) => setPasteInput(e.target.value)}
+                onPaste={handleEnvVarPaste}
+                placeholder={'Paste your .env contents here\ne.g.\nDATABASE_URL=postgres://...\nAPI_KEY=sk-...'}
+                rows={3}
+                className="font-mono text-xs"
+              />
+            )}
+
+            {/* Parsed key-value rows */}
             {envVars.length > 0 && (
               <div className="space-y-2">
                 {envVars.map((envVar, i) => (
@@ -524,11 +585,12 @@ function SetupForm({
                 ))}
               </div>
             )}
-            {envVars.length === 0 && (
-              <p className="text-[10px] text-muted-foreground/70">
-                Optional. These will be written to .env.local in your project.
-              </p>
-            )}
+
+            <p className="text-[10px] text-muted-foreground/70">
+              {envVars.length === 0
+                ? 'Paste your .env file or add variables one by one. Written to .env.local.'
+                : `${envVars.length} variable${envVars.length === 1 ? '' : 's'} — written to .env.local`}
+            </p>
           </div>
 
           {/* Launch button */}

@@ -25,7 +25,8 @@
  */
 
 import { useState } from 'react';
-import { Sparkles, Lock, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { Lock, EyeIcon, EyeOffIcon } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CodeView } from './components/code-view';
 
@@ -55,9 +56,7 @@ export default function CodePage() {
   return (
     <div className="flex h-[calc(100dvh-4.1rem)] w-full items-center justify-center">
       <div className="flex max-w-md flex-col items-center gap-6 px-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-          <Sparkles className="h-8 w-8 text-primary" />
-        </div>
+        <Image src="/logo.webp" alt="Anubix logo" width={100} height={100} />
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold tracking-tight">
             Something amazing is coming

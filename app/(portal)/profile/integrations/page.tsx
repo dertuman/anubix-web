@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 
 // ── Types ────────────────────────────────────────────────────
@@ -19,6 +20,27 @@ import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 interface EnvVarEntry {
   key: string;
   value: string;
+}
+
+/** Parse a .env-style string into key-value pairs */
+function parseEnvString(text: string): EnvVarEntry[] {
+  const results: EnvVarEntry[] = [];
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eqIdx = line.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = line.slice(0, eqIdx).trim();
+    let value = line.slice(eqIdx + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith('\'') && value.endsWith('\''))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (key) results.push({ key, value });
+  }
+  return results;
 }
 
 // ── Page ─────────────────────────────────────────────────────
@@ -104,6 +126,30 @@ function EnvVarsCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pasteInput, setPasteInput] = useState('');
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const text = e.clipboardData.getData('text');
+    const parsed = parseEnvString(text);
+    if (parsed.length > 0) {
+      e.preventDefault();
+      setEnvVars((prev) => {
+        const existing = new Set(prev.map((v) => v.key));
+        const merged = [...prev];
+        for (const entry of parsed) {
+          if (existing.has(entry.key)) {
+            const idx = merged.findIndex((v) => v.key === entry.key);
+            if (idx !== -1) merged[idx] = entry;
+          } else {
+            merged.push(entry);
+            existing.add(entry.key);
+          }
+        }
+        return merged;
+      });
+      setPasteInput('');
+    }
+  };
 
   const fetchVars = useCallback(async () => {
     try {
@@ -208,36 +254,57 @@ function EnvVarsCard() {
           <Loader2 className="size-4 animate-spin" />
           Loading...
         </div>
-      ) : envVars.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No environment variables configured.</p>
       ) : (
-        <div className="space-y-2">
-          {envVars.map((v, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Input
-                value={v.key}
-                onChange={(e) => handleChange(i, 'key', e.target.value)}
-                placeholder="KEY"
-                className="flex-1 font-mono text-xs"
-              />
-              <Input
-                value={v.value}
-                onChange={(e) => handleChange(i, 'value', e.target.value)}
-                placeholder="value"
-                type="password"
-                className="flex-1 text-xs"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRemove(i)}
-                className="h-8 w-8 shrink-0 p-0"
-              >
-                <Minus className="size-3" />
-              </Button>
+        <>
+          {/* Paste area — shown when no vars exist */}
+          {envVars.length === 0 && (
+            <Textarea
+              value={pasteInput}
+              onChange={(e) => setPasteInput(e.target.value)}
+              onPaste={handlePaste}
+              placeholder={'Paste your .env contents here\ne.g.\nDATABASE_URL=postgres://...\nAPI_KEY=sk-...'}
+              rows={4}
+              className="font-mono text-xs"
+            />
+          )}
+
+          {/* Parsed key-value rows */}
+          {envVars.length > 0 && (
+            <div className="space-y-2">
+              {envVars.map((v, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    value={v.key}
+                    onChange={(e) => handleChange(i, 'key', e.target.value)}
+                    placeholder="KEY"
+                    className="flex-1 font-mono text-xs"
+                  />
+                  <Input
+                    value={v.value}
+                    onChange={(e) => handleChange(i, 'value', e.target.value)}
+                    placeholder="value"
+                    type="password"
+                    className="flex-1 text-xs"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemove(i)}
+                    className="h-8 w-8 shrink-0 p-0"
+                  >
+                    <Minus className="size-3" />
+                  </Button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+
+          <p className="text-[10px] text-muted-foreground/70">
+            {envVars.length === 0
+              ? 'Paste your .env file or add variables one by one.'
+              : `${envVars.length} variable${envVars.length === 1 ? '' : 's'} configured`}
+          </p>
+        </>
       )}
 
       {message && (
