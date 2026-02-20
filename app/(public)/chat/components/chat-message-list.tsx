@@ -15,7 +15,33 @@ import { ChatMessage } from './chat-message';
 
 // Breathing room between the top of the user's message and the top of the
 // visible scroll area (px). Keeps it consistent regardless of message length.
-const BREATHING_PX = 24;
+const BREATHING_PX = 10;
+
+// ── Streaming word animation ─────────────────────────────────
+// Splits streaming content into "old" (plain text) and "new" (animated spans).
+// Only the latest chunk's words get the fade-in class for performance.
+function StreamingWords({ content, prevLength }: { content: string; prevLength: number }) {
+  const oldPart = content.slice(0, prevLength);
+  const newPart = content.slice(prevLength);
+
+  if (!newPart) return <>{oldPart}</>;
+
+  const newTokens = newPart.match(/(\S+|\s+)/g) || [];
+
+  return (
+    <>
+      {oldPart}
+      {newTokens.map((token, i) => {
+        if (/^\s+$/.test(token)) return <span key={`new-${i}`}>{token}</span>;
+        return (
+          <span key={`new-${i}`} className="animate-fade-in-word">
+            {token}
+          </span>
+        );
+      })}
+    </>
+  );
+}
 
 interface ChatMessageListProps {
   messages: ChatMessageType[];
@@ -43,6 +69,20 @@ export const ChatMessageList = memo(function ChatMessageList({
 
   const isActive = isStreaming || showThinkingIndicator;
 
+  // Track isActive transitions for one-time scroll on send
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const prevIsActiveRef = useRef(false);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const justSentRef = useRef(false);
+
+  // Track previous streaming content length for word fade-in
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const prevStreamLenRef = useRef(0);
+
+  // Track previous isActive state for scroll-to-bottom on stream end
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const wasActiveRef = useRef(false);
+
   // ── Scroll helpers ─────────────────────────────────────────
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const scrollToBottom = useCallback((smooth = false) => {
@@ -64,14 +104,14 @@ export const ChatMessageList = memo(function ChatMessageList({
   }, []);
 
   // ── Calculate spacer height ────────────────────────────────
-  // When streaming/thinking starts, measure the last user message and
-  // compute exactly how much bottom padding we need so the user's
+  // When streaming/thinking starts, compute spacer so the user's
   // message sits at the top of the viewport with BREATHING_PX gap.
   // When streaming ends, spacer collapses to 0.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (!isActive) {
       setSpacerHeight(0);
+      prevIsActiveRef.current = false;
       return;
     }
 
@@ -80,31 +120,74 @@ export const ChatMessageList = memo(function ChatMessageList({
     if (!container || !userMsg) {
       // Fallback: generous padding if we can't measure
       setSpacerHeight(container?.clientHeight ?? 0);
+      prevIsActiveRef.current = true;
       return;
     }
 
     // The visible height of the scroll container
     const viewportH = container.clientHeight;
-    // We want: when scrolled so user msg top is at BREATHING_PX from container top,
-    // the total scrollHeight should equal scrollTop + viewportH.
-    // scrollTop would be: msgOffsetTop - BREATHING_PX
-    // Total content below msgOffsetTop - BREATHING_PX should fill viewportH.
-    // So spacer = viewportH - (naturalContentBelowUserMsg)
-    // Simplest: spacer = viewportH - BREATHING_PX (to always fill the view below the msg)
     const spacer = viewportH - BREATHING_PX;
     setSpacerHeight(Math.max(0, spacer));
+
+    // On the transition to active (message just sent), flag for one-time scroll
+    if (!prevIsActiveRef.current) {
+      justSentRef.current = true;
+      prevStreamLenRef.current = 0;
+      prevIsActiveRef.current = true;
+    }
   }, [isActive, messages.length]);
 
+  // ── One-time scroll: position user message at top after spacer renders ──
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!justSentRef.current || spacerHeight === 0) return;
+    justSentRef.current = false;
+
+    const container = scrollRef.current;
+    const userMsg = lastUserMsgRef.current;
+    if (!container || !userMsg) return;
+
+    // Scroll so user message top is at BREATHING_PX from container top
+    container.scrollTop = userMsg.offsetTop - BREATHING_PX;
+
+    // Disable auto-scroll so streaming content doesn't pull the view down
+    autoScrollRef.current = false;
+  }, [spacerHeight]);
+
+  // ── Scroll to bottom when streaming ends ───────────────────
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (wasActiveRef.current && !isActive) {
+      // Streaming just ended — smooth-scroll to show the complete response
+      requestAnimationFrame(() => scrollToBottom(true));
+    }
+    wasActiveRef.current = isActive;
+  }, [isActive, scrollToBottom]);
+
+  // ── Update prevStreamLen after each render (for word fade-in) ──
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (streamingContent) {
+      requestAnimationFrame(() => {
+        prevStreamLenRef.current = streamingContent.length;
+      });
+    }
+  }, [streamingContent]);
+
   // ── Callback ref for auto-scroll ───────────────────────────
+  // Only auto-scrolls when NOT actively streaming/thinking.
+  // During streaming the user reads at their own pace.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const bottomAnchorRef = useCallback(
     (el: HTMLDivElement | null) => {
+      // Do NOT auto-scroll during streaming — user reads at their own pace
+      if (isActive) return;
       if (el && autoScrollRef.current) {
         el.scrollIntoView({ block: 'end', behavior: 'auto' });
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [messages, isStreaming, streamingContent, showThinkingIndicator, spacerHeight],
+    [messages, isStreaming, streamingContent, showThinkingIndicator, spacerHeight, isActive],
   );
 
   // ── Find the index of the last user message for the ref ────
@@ -151,7 +234,7 @@ export const ChatMessageList = memo(function ChatMessageList({
             >
               {streamingContent ? (
                 <div className="min-w-0 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
-                  {streamingContent}
+                  <StreamingWords content={streamingContent} prevLength={prevStreamLenRef.current} />
                   <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-foreground/60" />
                 </div>
               ) : (

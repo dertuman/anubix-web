@@ -61,6 +61,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { conversationId } = await params;
 
+  let resolvedModelKey = ''; // hoisted so catch block can reference it
+
   try {
     const conversation = await getConversation(sb, conversationId);
     if (!conversation || conversation.clerk_user_id !== userId) {
@@ -101,8 +103,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     // ── Build context from recent messages ─────────────────────
     const recentMessages = await fetchMessages(sb, conversationId, 50);
     const modelKey = requestModel || conversation.model;
+    resolvedModelKey = modelKey;
     const modelConfig = AI_MODELS_MAP[modelKey];
     const provider = modelConfig?.provider ?? 'openai';
+
+    // ── Only include images from the last 5 messages ────────────
+    // Prevents enormous payloads when history has many images.
+    const imageInclusionCutoff = Math.max(0, recentMessages.length - 5);
 
     // ── Resolve API key ────────────────────────────────────────
     let apiKey: string;
@@ -123,12 +130,18 @@ export async function POST(req: NextRequest, { params }: Params) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const googleContents: { role: string; parts: any[] }[] = [];
 
-      for (const msg of recentMessages) {
+      for (let i = 0; i < recentMessages.length; i++) {
+        const msg = recentMessages[i];
         if (msg.role === 'system') {
           systemParts.push(msg.content);
           continue;
         }
-        const parts = buildGoogleParts(msg.content, msg.images, msg.files as StoredFileAttachment[] | null);
+        const includeMedia = i >= imageInclusionCutoff;
+        const parts = buildGoogleParts(
+          msg.content,
+          includeMedia ? msg.images : null,
+          includeMedia ? (msg.files as StoredFileAttachment[] | null) : null,
+        );
         googleContents.push({
           role: msg.role === 'assistant' ? 'model' : 'user',
           parts,
@@ -199,12 +212,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       const systemMessages: string[] = [];
       const anthropicMessages: { role: 'user' | 'assistant'; content: Anthropic.Messages.ContentBlockParam[] | string }[] = [];
 
-      for (const msg of recentMessages) {
+      for (let i = 0; i < recentMessages.length; i++) {
+        const msg = recentMessages[i];
         if (msg.role === 'system') {
           systemMessages.push(msg.content);
           continue;
         }
-        const hasMedia = (msg.images && msg.images.length > 0) || (msg.files && (msg.files as StoredFileAttachment[]).length > 0);
+        const includeMedia = i >= imageInclusionCutoff;
+        const hasMedia = includeMedia && ((msg.images && msg.images.length > 0) || (msg.files && (msg.files as StoredFileAttachment[]).length > 0));
         if (hasMedia) {
           anthropicMessages.push({
             role: msg.role as 'user' | 'assistant',
@@ -259,8 +274,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
-    for (const msg of recentMessages) {
-      const hasMedia = (msg.images && msg.images.length > 0) || (msg.files && (msg.files as StoredFileAttachment[]).length > 0);
+    for (let i = 0; i < recentMessages.length; i++) {
+      const msg = recentMessages[i];
+      const includeMedia = i >= imageInclusionCutoff;
+      const hasMedia = includeMedia && ((msg.images && msg.images.length > 0) || (msg.files && (msg.files as StoredFileAttachment[]).length > 0));
       if (msg.role === 'user' && hasMedia) {
         openaiMessages.push({
           role: 'user',
@@ -321,6 +338,30 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
     if (message.includes('encryption') || message.includes('configured')) {
       return NextResponse.json({ error: message }, { status: 503 });
+    }
+
+    // Model not found / invalid model
+    if (err.status === 404 || message.includes('does not exist') || message.includes('model_not_found') || (message.toLowerCase().includes('model') && (message.includes('not found') || message.includes('invalid')))) {
+      return NextResponse.json(
+        { error: `Model "${resolvedModelKey || 'unknown'}" is not available. It may not exist or your API key may not have access. Please try a different model.` },
+        { status: 400 },
+      );
+    }
+
+    // Payload / content too large
+    if (err.status === 413 || message.includes('too large') || message.includes('payload') || message.includes('maximum context length') || message.includes('token')) {
+      return NextResponse.json(
+        { error: 'The message is too large (possibly due to images). Please try with fewer or smaller attachments.' },
+        { status: 413 },
+      );
+    }
+
+    // Content policy / moderation
+    if (err.status === 400 && (message.includes('safety') || message.includes('policy') || message.includes('moderation'))) {
+      return NextResponse.json(
+        { error: 'The request was rejected by the content policy. Please try different content.' },
+        { status: 400 },
+      );
     }
 
     // Don't leak internal error details to the client

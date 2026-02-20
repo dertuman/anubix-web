@@ -353,18 +353,20 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
 
     if (isRecording) {
       return (
-        <div className="shrink-0 border-t border-border/20 px-4 pb-4 pt-3">
+        <div className="shrink-0 border-t border-border/20 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
           {queueBar}
           {filePreview}
           {hiddenFileInput}
-          <div className="relative mx-auto flex items-center gap-2 rounded-xl border border-border/30 bg-muted/50 px-3 py-3">
-            <Button variant="ghost" size="icon" onClick={cancelRecording} className="size-8 shrink-0 rounded-lg text-muted-foreground hover:text-destructive">
-              <X className="size-4" />
-            </Button>
-            <AudioWaveform stream={streamRef.current} className="h-6 flex-1" />
-            <button type="button" onClick={() => stopAndTranscribe(false)} className="shrink-0 cursor-pointer text-xs text-primary hover:underline">See text</button>
-            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="size-8 shrink-0 rounded-lg">
-              <ArrowUp className="size-4" />
+          <div className="flex items-center gap-2">
+            <div className="relative flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-border/30 bg-muted/50 px-3 py-2.5">
+              <Button variant="ghost" size="icon" onClick={cancelRecording} className="size-8 shrink-0 rounded-lg text-muted-foreground hover:text-destructive">
+                <X className="size-4" />
+              </Button>
+              <AudioWaveform stream={streamRef.current} className="h-6 flex-1" />
+              <button type="button" onClick={() => stopAndTranscribe(false)} className="shrink-0 cursor-pointer text-xs font-medium text-primary hover:underline">See text</button>
+            </div>
+            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="size-10 shrink-0 rounded-xl sm:size-11">
+              <ArrowUp className="size-5" />
             </Button>
           </div>
         </div>
@@ -385,11 +387,6 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
       );
     }
 
-    // ── Right padding calc ──────────────────────────────────────
-
-    const rightButtonCount = (isBusy ? 1 : 0) + 1 + (canSend ? 1 : 0);
-    const rightPadding = rightButtonCount === 3 ? 'pr-40' : rightButtonCount === 2 ? 'pr-32' : 'pr-20';
-
     // ── Default UI ──────────────────────────────────────────────
 
     return (
@@ -401,39 +398,43 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
 
           <SlashCommandMenu ref={slashMenuRef} commands={slashCommands} inputValue={value} onSelect={handleSlashSelect} />
 
-          <Textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onInput={handleInput}
-            onPaste={handlePaste}
-            placeholder={isBusy ? 'Type to queue a message...' : 'Message Claude Code...'}
-            className={cn('max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 text-base md:text-sm [scrollbar-gutter:stable] focus-visible:ring-1', rightPadding)}
-            rows={1}
-            disabled={disabled}
-          />
+          <div className="flex items-end gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Textarea
+                ref={textareaRef}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onInput={handleInput}
+                onPaste={handlePaste}
+                placeholder={isBusy ? 'Type to queue a message...' : 'Message Claude Code...'}
+                className="max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 pr-3 text-base md:text-sm [scrollbar-gutter:stable] focus-visible:ring-1"
+                rows={1}
+                disabled={disabled}
+              />
+              <div className="absolute bottom-2 left-2">
+                <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={disabled} className="size-8 rounded-lg text-muted-foreground hover:text-primary">
+                  <Paperclip className="size-4" />
+                </Button>
+              </div>
+            </div>
 
-          <div className="absolute bottom-2 left-2">
-            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={disabled} className="size-8 rounded-lg text-muted-foreground hover:text-primary">
-              <Paperclip className="size-4" />
-            </Button>
-          </div>
-
-          <div className="absolute bottom-2 right-3 flex items-center gap-1 sm:right-5">
-            <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-8 rounded-lg text-muted-foreground hover:text-primary" title="Record voice">
-              <Mic className={cn('size-4', canSend && 'size-3.5')} />
-            </Button>
-            {canSend && (
-              <Button size="icon" onClick={handleSend} disabled={disabled} className="size-8 rounded-lg" title={isBusy ? 'Queue message' : 'Send message'}>
-                <ArrowUp className="size-4" />
+            {/* Action buttons — outside the textarea for proper sizing */}
+            <div className="flex shrink-0 items-center gap-1.5 pb-0.5">
+              {isBusy && (
+                <Button variant="destructive" size="icon" onClick={onStop} className="size-9 rounded-xl sm:size-10" title="Stop (Esc)">
+                  <Square className="size-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className={cn('rounded-xl text-muted-foreground hover:text-primary', canSend || isBusy ? 'size-9 sm:size-10' : 'size-10 sm:size-11')} title="Record voice">
+                <Mic className={cn(canSend || isBusy ? 'size-4 sm:size-[18px]' : 'size-5 sm:size-[22px]')} />
               </Button>
-            )}
-            {isBusy && (
-              <Button variant="destructive" size="icon" onClick={onStop} className="size-8 rounded-lg" title="Stop (Esc)">
-                <Square className="size-3.5" />
-              </Button>
-            )}
+              {canSend && (
+                <Button size="icon" onClick={handleSend} disabled={disabled} className="size-10 rounded-xl sm:size-11" title={isBusy ? 'Queue message' : 'Send message'}>
+                  <ArrowUp className="size-5" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
