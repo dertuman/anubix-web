@@ -23,6 +23,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
   useCloudMachine,
@@ -158,9 +165,10 @@ function SetupForm({
   const isGitTemplate = templateValue === 'git';
   const githubRepos = useGitHubRepos(isGitTemplate && github.isConnected);
 
-  const selectedTemplate = TEMPLATES.find(t => t.value === templateValue);
+  const realTemplateValue = templateValue === '__empty' ? '' : templateValue;
+  const selectedTemplate = TEMPLATES.find(t => t.value === realTemplateValue);
   const isPresetGit = !!(selectedTemplate?.gitUrl);  // e.g. talkartech
-  const templateName = (isGitTemplate || isPresetGit) ? '' : templateValue;
+  const templateName = (isGitTemplate || isPresetGit) ? '' : realTemplateValue;
   const resolvedGitUrl = isPresetGit ? selectedTemplate!.gitUrl : (isGitTemplate ? gitRepoUrl.trim() : '');
 
   const canSubmit =
@@ -220,12 +228,12 @@ function SetupForm({
   };
 
   return (
-    <div className="flex h-full items-center justify-center p-4">
+    <div className="flex h-full items-start justify-center overflow-y-auto p-4 pt-8">
       <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
         {/* Header */}
         <div className="space-y-1 text-center">
           <div className="mx-auto mb-3 flex items-center justify-center">
-            <Image src="/logo.webp" alt="Anubix logo" width={120} height={120} />
+            <Image src="/logo.webp" alt="Anubix logo" width={100} height={100} />
           </div>
           <h2 className="text-xl font-bold">Launch Cloud Environment</h2>
           <p className="text-sm text-muted-foreground">
@@ -340,23 +348,26 @@ function SetupForm({
 
           {/* Template selector */}
           <div className="space-y-2">
-            <Label htmlFor="template">Project Template</Label>
-            <select
-              id="template"
+            <Label>Project Template</Label>
+            <Select
               value={templateValue}
-              onChange={(e) => {
-                setTemplateValue(e.target.value);
+              onValueChange={(val) => {
+                setTemplateValue(val);
                 setGitRepoUrl('');
                 setManualGitUrl(false);
               }}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              {TEMPLATES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TEMPLATES.map((t) => (
+                  <SelectItem key={t.value || '__empty'} value={t.value || '__empty'}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Git URL / Repo picker (shown when git template selected) */}

@@ -5,6 +5,8 @@ import { useScopedI18n } from '@/locales/client';
 import {
   EllipsisVertical,
   FolderPlus,
+  GitBranch,
+  Loader2,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -236,6 +238,9 @@ export const CodeSidebar = memo(function CodeSidebar({
   const [repoSearch, setRepoSearch] = useState('');
   const [basePath, setBasePath] = useState<string | null>(null);
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const [cloneUrl, setCloneUrl] = useState('');
+  const [cloning, setCloning] = useState(false);
+  const [cloneError, setCloneError] = useState<string | null>(null);
   const nameManuallyEdited = useRef(false);
 
   /** Turn a folder name like "anubix-web" into "Anubix Web" */
@@ -305,6 +310,39 @@ export const CodeSidebar = memo(function CodeSidebar({
     if (trimmed && !selectedPaths.includes(trimmed)) {
       setSelectedPaths((p) => [...p, trimmed]);
       setManualPath('');
+    }
+  };
+
+  const handleClone = async () => {
+    const url = cloneUrl.trim();
+    if (!url) return;
+    setCloning(true);
+    setCloneError(null);
+    try {
+      const res = await fetch('/api/cloud/repos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCloneError(data.error || 'Clone failed');
+        return;
+      }
+      // Add the cloned repo to available repos and select it
+      const repoName = data.name as string;
+      const repoPath = data.path as string;
+      if (!availableRepos.some((r) => r.name === repoName)) {
+        setAvailableRepos((prev) => [...prev, { name: repoName, path: repoPath }]);
+      }
+      if (!selectedPaths.includes(repoName)) {
+        setSelectedPaths((prev) => [...prev, repoName]);
+      }
+      setCloneUrl('');
+    } catch {
+      setCloneError('Failed to clone repository');
+    } finally {
+      setCloning(false);
     }
   };
 
@@ -489,6 +527,41 @@ export const CodeSidebar = memo(function CodeSidebar({
                       </p>
                     )}
                   </div>
+                )}
+              </div>
+
+              {/* Clone from Git */}
+              <div className="space-y-1.5">
+                <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                  <GitBranch className="size-3" />
+                  Clone a repository
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    value={cloneUrl}
+                    onChange={(e) => { setCloneUrl(e.target.value); setCloneError(null); }}
+                    placeholder="https://github.com/user/repo.git"
+                    className="text-xs"
+                    onKeyDown={(e) => e.key === 'Enter' && handleClone()}
+                    disabled={cloning}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClone}
+                    disabled={!cloneUrl.trim() || cloning}
+                    className="shrink-0"
+                  >
+                    {cloning ? <Loader2 className="size-3 animate-spin" /> : 'Clone'}
+                  </Button>
+                </div>
+                {cloneError && (
+                  <p className="text-xs text-destructive">{cloneError}</p>
+                )}
+                {cloning && (
+                  <p className="text-muted-foreground text-[10px]">
+                    Cloning and installing dependencies...
+                  </p>
                 )}
               </div>
 

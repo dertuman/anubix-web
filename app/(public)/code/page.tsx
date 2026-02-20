@@ -25,7 +25,7 @@
  */
 
 import { useState } from 'react';
-import { Sparkles, Lock } from 'lucide-react';
+import { Sparkles, Lock, EyeIcon, EyeOffIcon } from 'lucide-react';
 import Link from 'next/link';
 import { CodeView } from './components/code-view';
 
@@ -35,6 +35,7 @@ export default function CodePage() {
   const [password, setPassword] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [error, setError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   if (unlocked) {
     return <CodeView />;
@@ -71,12 +72,19 @@ export default function CodePage() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(false); }}
               placeholder="Enter access code"
-              className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-10 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((p) => !p)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
+            </button>
           </div>
           {error && (
             <p className="text-sm text-destructive">Wrong password</p>
