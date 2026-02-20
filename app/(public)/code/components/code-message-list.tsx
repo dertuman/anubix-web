@@ -180,7 +180,7 @@ export const CodeMessageList = memo(function CodeMessageList({
       className="custom-scrollbar relative flex-1 overflow-y-auto"
       onScroll={handleScroll}
     >
-      <div className="mx-auto space-y-4 px-4 pt-6 pb-6">
+      <div className="mx-auto space-y-2 px-4 pt-6 pb-6">
         {groupedItems.map((item) => {
           if (item.kind === 'single') {
             return (

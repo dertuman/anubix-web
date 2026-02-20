@@ -132,7 +132,7 @@ export const ChatMessageList = memo(function ChatMessageList({
       className="custom-scrollbar relative flex-1 overflow-y-auto"
       onScroll={handleScroll}
     >
-      <div ref={innerRef} className="mx-auto space-y-4 px-4 pt-6 pb-6">
+      <div ref={innerRef} className="mx-auto space-y-2 px-4 pt-6 pb-6">
         {/* ── Persisted + optimistic messages ──────────────── */}
         {messages.map((msg, i) => (
           <div key={msg.id} ref={i === lastUserIdx ? lastUserMsgRef : undefined}>

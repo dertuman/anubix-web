@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { FolderPlus, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, FolderPlus, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
@@ -20,6 +20,7 @@ import { CloudProvision } from './cloud-provision';
 import { CodeInput, type CodeInputHandle, type QueuedMessage } from './code-input';
 import { CodeMessageList } from './code-message-list';
 import { CodeSidebar, MobileSidebarTrigger } from './code-sidebar';
+import { ContextGauge } from './context-gauge';
 
 const statusBadgeClass = (status: string) =>
   cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -122,6 +123,19 @@ export function CodeView() {
     await sendMessage(text, files);
   }, [activeSessionId, sendMessage]);
 
+  // ── Cumulative token usage across all result messages ──────
+  const tokenUsage = useMemo(() => {
+    let input = 0;
+    let output = 0;
+    for (const m of messages) {
+      if (m.type === 'result') {
+        input += m.inputTokens ?? 0;
+        output += m.outputTokens ?? 0;
+      }
+    }
+    return { input, output, total: input + output };
+  }, [messages]);
+
   // ── Drag overlay ───────────────────────────────────────────
   const dragOverlay = isDragging && (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -165,9 +179,21 @@ export function CodeView() {
             <div className="flex items-center gap-1.5">
               <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
             </div>
-            <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
-              <Image src="/logo.webp" alt="Anubix" width={28} height={28} />
-            </Link>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {previewUrl && (
+                <button
+                  onClick={() => window.open(previewUrl, '_blank')}
+                  className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Open live preview"
+                >
+                  <Eye className="size-3.5" />
+                  <span className="hidden sm:inline">Preview</span>
+                </button>
+              )}
+              <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
+                <Image src="/logo.webp" alt="Anubix" width={28} height={28} />
+              </Link>
+            </div>
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 sm:gap-4">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
@@ -200,26 +226,52 @@ export function CodeView() {
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
+            {/* Connection status dot with glow */}
+            <span
+              className={cn(
+                'relative flex size-2 shrink-0 rounded-full',
+                connectionHealth === 'connected' && 'bg-emerald-500',
+                (connectionHealth === 'connecting' || connectionHealth === 'reconnecting') && 'bg-amber-400 animate-pulse',
+                connectionHealth === 'failed' && 'bg-destructive',
+                connectionHealth === 'disconnected' && 'bg-muted-foreground/40',
+              )}
+              title={
+                connectionHealth === 'connected' ? 'Connected'
+                : connectionHealth === 'connecting' ? 'Connecting…'
+                : connectionHealth === 'reconnecting' ? 'Reconnecting…'
+                : connectionHealth === 'failed' ? 'Connection lost'
+                : 'Disconnected'
+              }
+            >
+              {connectionHealth === 'connected' && (
+                <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-60 blur-[3px]" />
+              )}
+              {(connectionHealth === 'connecting' || connectionHealth === 'reconnecting') && (
+                <span className="absolute inset-0 rounded-full bg-amber-400 opacity-60 blur-[3px]" />
+              )}
+            </span>
             <span className="min-w-0 truncate text-sm font-medium">{activeSession?.name}</span>
             {activeSession && connectionHealth === 'connected' && (
               <span className={cn(statusBadgeClass(activeSession.status), 'hidden sm:inline-flex')}>{t(`status.${activeSession.status}`)}</span>
             )}
-            {connectionHealth === 'reconnecting' && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning sm:px-2">
-                <span className="size-1.5 animate-pulse rounded-full bg-warning" />
-                <span className="hidden sm:inline">Reconnecting...</span>
-              </span>
-            )}
-            {connectionHealth === 'failed' && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive sm:px-2">
-                <span className="size-1.5 rounded-full bg-destructive" />
-                <span className="hidden sm:inline">Connection lost</span>
-              </span>
-            )}
           </div>
-          <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
-            <Image src="/logo.webp" alt="Anubix" width={28} height={28} />
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Context usage gauge */}
+            <ContextGauge input={tokenUsage.input} output={tokenUsage.output} total={tokenUsage.total} />
+            {previewUrl && (
+              <button
+                onClick={() => window.open(previewUrl, '_blank')}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="Open live preview"
+              >
+                <Eye className="size-3.5" />
+                <span className="hidden sm:inline">Preview</span>
+              </button>
+            )}
+            <Link href="/" className="shrink-0 rounded-md p-1 transition-opacity hover:opacity-80">
+              <Image src="/logo.webp" alt="Anubix" width={28} height={28} />
+            </Link>
+          </div>
         </div>
 
         <CodeMessageList messages={messages} isFree={activeSession?.mode === 'cli'} isBusy={isBusy} onApprove={approve} onDeny={deny} onAnswer={answerQuestion} questionSelectionsMap={questionSelectionsMap} onQuestionSelect={handleQuestionSelect} />
