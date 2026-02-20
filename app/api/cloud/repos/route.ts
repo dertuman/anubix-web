@@ -45,20 +45,25 @@ export async function POST(req: NextRequest) {
 
   const bridgeApiKey = decrypt(machine.bridge_api_key_encrypted);
 
-  // If it's a GitHub URL and user has a GitHub connection, inject token into the URL
+  // If it's a GitHub URL and user has a GitHub connection, inject token via URL parsing
   let cloneUrl = url;
-  if (url.includes('github.com')) {
-    const { data: ghConn } = await supabase
-      .from('github_connections')
-      .select()
-      .eq('user_id', userId)
-      .single();
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'github.com' && parsed.protocol === 'https:') {
+      const { data: ghConn } = await supabase
+        .from('github_connections')
+        .select()
+        .eq('user_id', userId)
+        .single();
 
-    if (ghConn) {
-      const token = decrypt(ghConn.access_token_encrypted);
-      // Replace https://github.com/ with https://TOKEN@github.com/
-      cloneUrl = url.replace('https://github.com/', `https://${token}@github.com/`);
+      if (ghConn) {
+        const token = decrypt(ghConn.access_token_encrypted);
+        parsed.username = token;
+        cloneUrl = parsed.toString();
+      }
     }
+  } catch {
+    // Invalid URL — use as-is; the bridge will reject it if needed
   }
 
   // Forward to bridge

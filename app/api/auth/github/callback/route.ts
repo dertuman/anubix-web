@@ -115,7 +115,9 @@ export async function GET(req: NextRequest) {
   }
 
   // Clear state cookie and redirect
-  const returnTo = statePayload.returnTo || '/profile/integrations';
+  // Validate returnTo is a safe relative path to prevent open redirect attacks
+  const rawReturnTo = statePayload.returnTo || '/profile/integrations';
+  const returnTo = rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : '/profile/integrations';
   const response = NextResponse.redirect(new URL(returnTo, req.nextUrl.origin));
   response.cookies.delete('github_oauth_state');
   return response;
