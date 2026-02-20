@@ -431,6 +431,23 @@
 
 /* End Word Fade-in Animation */
 
+/* Recording send button pulse */
+@keyframes recording-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px hsl(var(--primary) / 0.3);
+    transform: scale(1.06);
+  }
+}
+
+.animate-recording-pulse {
+  animation: recording-pulse 1.8s ease-in-out infinite;
+}
+
 /* Indeterminate progress bar */
 @keyframes indeterminate {
   0% {

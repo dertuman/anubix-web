@@ -64,9 +64,10 @@ export function AudioWaveform({
 
     ctx.clearRect(0, 0, w, h);
 
-    // Use primary color from CSS custom property
-    const primaryHsl = getComputedStyle(canvas).getPropertyValue('--primary').trim();
-    ctx.fillStyle = primaryHsl ? `hsl(${primaryHsl})` : 'hsl(160 60% 45%)';
+    // Light gray / white bars that stand out on the muted background
+    ctx.fillStyle = 'hsl(0 0% 78%)';
+    ctx.strokeStyle = 'hsl(0 0% 58%)';
+    ctx.lineWidth = 0.5;
 
     const history = historyRef.current;
     const gap = 2;
@@ -93,6 +94,7 @@ export function AudioWaveform({
       ctx.beginPath();
       ctx.roundRect(x, cy - barH / 2, barW, barH, barW / 2);
       ctx.fill();
+      ctx.stroke();
     }
 
     animFrameRef.current = requestAnimationFrame(draw);
