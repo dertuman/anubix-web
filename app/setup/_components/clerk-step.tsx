@@ -92,9 +92,9 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-foreground sm:text-lg">
           {t('heading')}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -102,7 +102,7 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-muted/50 p-4">
+      <div className="rounded-lg border border-border bg-muted/50 p-3 sm:p-4">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t('instructions')}
         </p>
@@ -158,15 +158,15 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
       {/* Parsed keys preview */}
       {parsed && (
         <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex flex-col gap-0.5 text-xs xs:flex-row xs:items-center xs:justify-between">
             <span className="text-muted-foreground">{t('publishableKey')}</span>
-            <span className="font-mono text-muted-foreground">
+            <span className="truncate font-mono text-muted-foreground">
               {data.clerkPublishableKey.slice(0, 20)}...
             </span>
           </div>
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex flex-col gap-0.5 text-xs xs:flex-row xs:items-center xs:justify-between">
             <span className="text-muted-foreground">{t('secretKey')}</span>
-            <span className="font-mono text-muted-foreground">
+            <span className="truncate font-mono text-muted-foreground">
               {data.clerkSecretKey.slice(0, 12)}...
             </span>
           </div>
@@ -175,7 +175,7 @@ export function ClerkStep({ data, updateData, onNext }: ClerkStepProps) {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center justify-between border-t border-border pt-4">
+      <div className="flex flex-col gap-3 border-t border-border pt-4 xs:flex-row xs:items-center xs:justify-between">
         <Button
           onClick={testConnection}
           disabled={!canTest || testing}

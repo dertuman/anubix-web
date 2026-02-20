@@ -65,13 +65,13 @@ export function SetupWizard() {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="text-center">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           {t('title')}
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           {t('configureYourSite')}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -86,14 +86,14 @@ export function SetupWizard() {
       </div>
 
       {/* Step indicators */}
-      <div className="flex items-center justify-center gap-1">
+      <div className="flex items-center justify-center gap-0.5 sm:gap-1">
         {STEPS.map((step, i) => (
           <div key={step.title} className="flex items-center">
             <button
               onClick={() => {
                 if (i < currentStep) setCurrentStep(i);
               }}
-              className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:gap-2 sm:px-3 ${
                 i === currentStep
                   ? 'bg-primary text-primary-foreground'
                   : i < currentStep
@@ -110,11 +110,11 @@ export function SetupWizard() {
                   {i + 1}
                 </span>
               )}
-              {step.title}
+              <span className="hidden xs:inline">{step.title}</span>
             </button>
             {i < STEPS.length - 1 && (
               <div
-                className={`mx-1 h-px w-6 ${
+                className={`mx-0.5 h-px w-3 sm:mx-1 sm:w-6 ${
                   i < currentStep ? 'bg-primary/30' : 'bg-border'
                 }`}
               />
@@ -124,7 +124,7 @@ export function SetupWizard() {
       </div>
 
       {/* Step Content */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
         {currentStep === 0 && (
           <ClerkStep data={data} updateData={updateData} onNext={nextStep} />
         )}

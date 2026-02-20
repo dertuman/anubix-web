@@ -69,9 +69,9 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
   const supabaseAuthUrl = `https://supabase.com/dashboard/project/${supabaseProjectRef}/auth/providers`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-foreground sm:text-lg">
           {t('heading')}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -84,7 +84,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
         <h3 className="text-sm font-medium text-foreground">
           {t('enableClerk')}
         </h3>
-        <div className="rounded-lg border border-border bg-muted/50 p-4">
+        <div className="rounded-lg border border-border bg-muted/50 p-3 sm:p-4">
           <ol className="list-inside list-decimal space-y-2 text-sm text-muted-foreground">
             <li>
               Open{' '}
@@ -152,7 +152,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
         <h3 className="text-sm font-medium text-foreground">
           {t('databaseTable')}
         </h3>
-        <div className="rounded-lg border border-border bg-muted/50 p-4">
+        <div className="rounded-lg border border-border bg-muted/50 p-3 sm:p-4">
           <ol className="list-inside list-decimal space-y-2 text-sm text-muted-foreground">
             <li>
               Open the{' '}
@@ -195,7 +195,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
         <div className="relative">
           <button
             onClick={copySql}
-            className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:right-2 sm:top-2 sm:px-2.5"
           >
             {copied ? (
               <>
@@ -207,7 +207,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
               </>
             )}
           </button>
-          <pre className="max-h-48 overflow-auto rounded-lg border border-border bg-code p-4 text-xs leading-relaxed text-code-foreground">
+          <pre className="max-h-36 overflow-auto rounded-lg border border-border bg-code p-3 text-xs leading-relaxed text-code-foreground sm:max-h-48 sm:p-4">
             <code>{PROFILES_TABLE_SQL}</code>
           </pre>
         </div>
@@ -215,7 +215,7 @@ export function JwtStep({ data, updateData, onNext, onBack }: JwtStepProps) {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center justify-between border-t border-border pt-4">
+      <div className="flex flex-col gap-3 border-t border-border pt-4 xs:flex-row xs:items-center xs:justify-between">
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={onBack}>
             <ArrowLeft className="mr-1.5 size-3.5" /> {tCommon('back')}

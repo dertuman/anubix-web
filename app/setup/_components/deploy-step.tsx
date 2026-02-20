@@ -450,12 +450,12 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
   // ─── Success screen ───
   if (allDone) {
     return (
-      <div className="space-y-6 py-8 text-center">
+      <div className="space-y-5 py-6 text-center sm:space-y-6 sm:py-8">
         <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-primary/50 bg-primary/10">
           <Check className="size-6 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t('youAreLive')}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -465,7 +465,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
         <div className="pt-2">
           <a
             href="/"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/80 hover:shadow-xl hover:shadow-primary/30 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/80 hover:shadow-xl hover:shadow-primary/30 cursor-pointer sm:px-8 sm:py-3 sm:text-base"
           >
             {t('goToYourSite')}
             <ArrowRight className="size-4" />
@@ -501,16 +501,16 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
 
   // ─── Main form ───
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">{t('heading')}</h2>
+        <h2 className="text-base font-semibold text-foreground sm:text-lg">{t('heading')}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {t('description')}
         </p>
       </div>
 
       {/* Summary */}
-      <div className="rounded-lg border border-border bg-muted/50 p-4">
+      <div className="rounded-lg border border-border bg-muted/50 p-3 sm:p-4">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t('ready')}
         </p>
@@ -574,7 +574,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
             <p className="text-xs text-muted-foreground">
               {t('newRepoDescription')}
             </p>
-            <div className="rounded-lg border border-border bg-muted/50 p-4">
+            <div className="rounded-lg border border-border bg-muted/50 p-3 sm:p-4">
               <ol className="list-inside list-decimal space-y-2.5 text-sm text-muted-foreground">
                 <li>
                   Create a free account at{' '}
@@ -630,21 +630,21 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
                   <span className="text-highlight font-medium">Permissions</span>. You need to add
                   two permissions &mdash; make sure you add{' '}
                   <span className="text-highlight font-medium">both</span>:
-                  <ul className="ml-5 mt-2 list-none space-y-2 text-muted-foreground">
-                    <li className="rounded border border-border bg-muted/50 px-3 py-2">
+                  <ul className="ml-2 mt-2 list-none space-y-2 text-muted-foreground sm:ml-5">
+                    <li className="rounded border border-border bg-muted/50 px-2 py-1.5 sm:px-3 sm:py-2">
                       <span className="text-muted-foreground">①</span> Click{' '}
                       <span className="text-highlight font-medium">+ Add permissions</span>, find{' '}
                       <span className="text-highlight font-medium">Administration</span>, set it
                       to <span className="text-highlight font-medium">Read and write</span>
                     </li>
-                    <li className="rounded border border-border bg-muted/50 px-3 py-2">
+                    <li className="rounded border border-border bg-muted/50 px-2 py-1.5 sm:px-3 sm:py-2">
                       <span className="text-muted-foreground">②</span> Click{' '}
                       <span className="text-highlight font-medium">+ Add permissions</span> again,
                       find <span className="text-highlight font-medium">Contents</span>, set it to{' '}
                       <span className="text-highlight font-medium">Read and write</span>
                     </li>
                   </ul>
-                  <p className="ml-5 mt-1.5 text-xs text-warning">
+                  <p className="ml-2 mt-1.5 text-xs text-warning sm:ml-5">
                     You should see both Administration and Contents listed under
                     Repositories before continuing.
                   </p>
@@ -788,7 +788,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
         <p className="text-xs text-muted-foreground">
           {t('vercelDescription')}
         </p>
-        <div className="rounded border border-border bg-muted p-4">
+        <div className="rounded border border-border bg-muted p-3 sm:p-4">
           <ol className="list-inside list-decimal space-y-2.5 text-sm text-muted-foreground">
             <li>
               Create a free account at{' '}
@@ -864,7 +864,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
 
       {/* ───── Progress ───── */}
       {(githubStatus !== 'idle' || vercelStatus !== 'idle') && (
-        <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
+        <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-3 sm:p-4">
           {/* GitHub progress (new repo mode only) */}
           {repoMode === 'new' && (
             <div className="space-y-2">
@@ -907,7 +907,7 @@ export function DeployStep({ data, onBack }: DeployStepProps) {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center justify-between border-t border-border pt-4">
+      <div className="flex flex-col gap-3 border-t border-border pt-4 xs:flex-row xs:items-center xs:justify-between">
         <Button variant="ghost" onClick={onBack} disabled={isRunning}>
           <ArrowLeft className="mr-1.5 size-3.5" /> {tCommon('back')}
         </Button>

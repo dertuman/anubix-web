@@ -811,26 +811,53 @@ export const CodeSidebar = memo(function CodeSidebar({
               {t('newSession')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{t('newSession')}</DialogTitle>
+              <DialogTitle className="text-lg">{t('newSession')}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+
+            {/* ── Cloning overlay ── */}
+            {cloning ? (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="relative flex size-14 items-center justify-center">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                  <span className="absolute inset-1 animate-pulse rounded-full bg-primary/10" />
+                  <GitBranch className="relative size-6 text-primary" />
+                </div>
+                <div className="space-y-1 text-center">
+                  <p className="text-sm font-medium text-foreground">Cloning repository…</p>
+                  <p className="text-xs text-muted-foreground">Installing dependencies &amp; setting up the project</p>
+                </div>
+                <div className="flex w-full max-w-[200px] justify-center">
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full animate-[indeterminate_1.5s_ease-in-out_infinite] rounded-full bg-primary" />
+                  </div>
+                </div>
+                <p className="mt-2 rounded-lg bg-muted/60 px-3 py-2 text-center text-xs text-muted-foreground">
+                  You can leave this screen — cloning continues in the background
+                </p>
+                {cloneError && (
+                  <p className="text-sm text-destructive">{cloneError}</p>
+                )}
+              </div>
+            ) : (
+            <div className="space-y-4">
+              {/* ── Selected paths ── */}
               {selectedPaths.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-xs">
+                <div className="space-y-1.5">
+                  <p className="text-muted-foreground text-xs font-medium">
                     {t('selected')} ({selectedPaths.length})
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {selectedPaths.map((p) => (
                       <span
                         key={p}
-                        className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs"
+                        className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium"
                       >
                         {p.split(/[\\/]/).pop()}
                         <button
                           onClick={() => removeSelectedPath(p)}
-                          className="ml-0.5 rounded-sm transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          className="ml-0.5 rounded-sm p-0.5 transition-colors hover:bg-destructive/10 hover:text-destructive"
                         >
                           <X className="size-3" />
                         </button>
@@ -840,19 +867,22 @@ export const CodeSidebar = memo(function CodeSidebar({
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                {basePath && (
-                  <p className="text-muted-foreground/60 truncate text-[10px]">
-                    {t('scanning')}: {basePath}
+              {/* ── Available repos ── */}
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-xs font-medium text-foreground">
+                    {t('availableRepos')}
                   </p>
-                )}
-                <p className="text-muted-foreground text-xs">
-                  {t('availableRepos')}
-                </p>
+                  {basePath && (
+                    <p className="text-muted-foreground/60 truncate text-[10px]">
+                      {basePath}
+                    </p>
+                  )}
+                </div>
                 {loadingRepos && (
-                  <div className="border-border/20 flex items-center gap-3 rounded-md border px-3 py-4">
+                  <div className="border-border/20 flex items-center gap-3 rounded-lg border px-4 py-5">
                     <Loader variant="glowing" size={20} />
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-muted-foreground text-sm">
                       {t('loadingRepos')}
                     </span>
                   </div>
@@ -861,18 +891,18 @@ export const CodeSidebar = memo(function CodeSidebar({
                   <>
                     {availableRepos.length > 5 && (
                       <div className="relative">
-                        <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+                        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                         <Input
                           value={repoSearch}
                           onChange={(e) => setRepoSearch(e.target.value)}
                           placeholder={t('searchRepos')}
-                          className="h-8 pl-8 text-xs"
+                          className="h-9 pl-9 text-sm"
                         />
                       </div>
                     )}
-                    <div className="custom-scrollbar border-border/20 max-h-52 overflow-y-auto rounded-md border">
+                    <div className="custom-scrollbar border-border/20 max-h-48 overflow-y-auto rounded-lg border">
                       {filteredRepos.length === 0 ? (
-                        <div className="text-muted-foreground px-3 py-3 text-center text-xs">
+                        <div className="text-muted-foreground px-4 py-4 text-center text-sm">
                           {t('noMatchingRepos')}
                         </div>
                       ) : (
@@ -883,13 +913,13 @@ export const CodeSidebar = memo(function CodeSidebar({
                               key={r.path}
                               onClick={() => toggleRepoSelection(r.name)}
                               className={cn(
-                                'hover:bg-muted/50 flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors',
+                                'hover:bg-muted/50 flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors',
                                 isSelected && 'bg-primary/10 text-foreground'
                               )}
                             >
                               <div
                                 className={cn(
-                                  'flex size-4 shrink-0 items-center justify-center rounded border',
+                                  'flex size-5 shrink-0 items-center justify-center rounded border',
                                   isSelected
                                     ? 'border-primary bg-primary text-primary-foreground'
                                     : 'border-muted-foreground/30'
@@ -911,7 +941,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                                   </svg>
                                 )}
                               </div>
-                              {r.name}
+                              <span className="font-medium">{r.name}</span>
                             </button>
                           );
                         })
@@ -920,12 +950,12 @@ export const CodeSidebar = memo(function CodeSidebar({
                   </>
                 )}
                 {!loadingRepos && availableRepos.length === 0 && (
-                  <div className="border-border/20 rounded-md border px-3 py-4 text-center">
-                    <p className="text-muted-foreground text-xs">
+                  <div className="border-border/20 rounded-lg border px-4 py-5 text-center">
+                    <p className="text-muted-foreground text-sm">
                       {t('noReposFound')}
                     </p>
                     {basePath && (
-                      <p className="text-muted-foreground/60 mt-1 text-[10px]">
+                      <p className="text-muted-foreground/60 mt-1 text-xs">
                         {t('noReposHint')}
                       </p>
                     )}
@@ -933,30 +963,30 @@ export const CodeSidebar = memo(function CodeSidebar({
                 )}
               </div>
 
-              {/* Clone from Git */}
-              <div className="space-y-1.5">
+              {/* ── Clone from Git ── */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                    <GitBranch className="size-3" />
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <GitBranch className="size-3.5" />
                     Clone a repository
                   </p>
                   <div className="flex rounded-md border border-border/30 p-0.5">
                     <button
                       onClick={() => setCloneMode('github')}
                       className={cn(
-                        'flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors',
+                        'flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors',
                         cloneMode === 'github'
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
-                      <Github className="size-2.5" />
+                      <Github className="size-3" />
                       GitHub
                     </button>
                     <button
                       onClick={() => setCloneMode('url')}
                       className={cn(
-                        'flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors',
+                        'flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors',
                         cloneMode === 'url'
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:text-foreground',
@@ -969,25 +999,25 @@ export const CodeSidebar = memo(function CodeSidebar({
 
                 {cloneMode === 'github' ? (
                   github.isConnected ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <div className="relative">
-                        <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+                        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                         <Input
                           value={ghCloneSearch}
                           onChange={(e) => setGhCloneSearch(e.target.value)}
                           placeholder="Search your GitHub repos..."
-                          className="h-8 pl-8 text-xs"
+                          className="h-9 pl-9 text-sm"
                           disabled={cloning}
                         />
                       </div>
                       {githubRepos.isLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="text-muted-foreground size-4 animate-spin" />
+                        <div className="flex items-center justify-center py-5">
+                          <Loader2 className="text-muted-foreground size-5 animate-spin" />
                         </div>
                       ) : (
-                        <div className="custom-scrollbar border-border/20 max-h-36 overflow-y-auto rounded-md border">
+                        <div className="custom-scrollbar border-border/20 max-h-40 overflow-y-auto rounded-lg border">
                           {filteredGhCloneRepos.length === 0 ? (
-                            <p className="text-muted-foreground p-3 text-center text-xs">
+                            <p className="text-muted-foreground p-4 text-center text-sm">
                               No repos found
                             </p>
                           ) : (
@@ -996,11 +1026,11 @@ export const CodeSidebar = memo(function CodeSidebar({
                                 key={repo.full_name}
                                 onClick={() => handleCloneGitHubRepo(repo)}
                                 disabled={cloning}
-                                className="hover:bg-muted/50 flex w-full items-center gap-2 border-b border-border/10 px-3 py-1.5 text-left text-xs last:border-0 disabled:opacity-50"
+                                className="hover:bg-muted/50 flex w-full items-center gap-2 border-b border-border/10 px-3 py-2.5 text-left text-sm last:border-0 disabled:opacity-50"
                               >
                                 <span className="min-w-0 flex-1 truncate">{repo.full_name}</span>
                                 {repo.private && (
-                                  <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-1.5 py-0.5 text-[9px]">
+                                  <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium">
                                     private
                                   </span>
                                 )}
@@ -1013,9 +1043,9 @@ export const CodeSidebar = memo(function CodeSidebar({
                   ) : (
                     <button
                       onClick={() => github.connect('/code')}
-                      className="border-border/30 text-muted-foreground hover:border-foreground/20 hover:text-foreground flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-xs"
+                      className="border-border/30 text-muted-foreground hover:border-foreground/20 hover:text-foreground flex w-full items-center gap-2.5 rounded-lg border px-4 py-3 text-sm"
                     >
-                      <Github className="size-3.5 shrink-0" />
+                      <Github className="size-4 shrink-0" />
                       <span className="flex-1 text-left">Connect GitHub to browse repos</span>
                     </button>
                   )
@@ -1025,7 +1055,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                       value={cloneUrl}
                       onChange={(e) => { setCloneUrl(e.target.value); setCloneError(null); }}
                       placeholder="https://github.com/user/repo.git"
-                      className="text-xs"
+                      className="text-sm"
                       onKeyDown={(e) => e.key === 'Enter' && handleClone()}
                       disabled={cloning}
                     />
@@ -1036,23 +1066,19 @@ export const CodeSidebar = memo(function CodeSidebar({
                       disabled={!cloneUrl.trim() || cloning}
                       className="shrink-0"
                     >
-                      {cloning ? <Loader2 className="size-3 animate-spin" /> : 'Clone'}
+                      {cloning ? <Loader2 className="size-3.5 animate-spin" /> : 'Clone'}
                     </Button>
                   </div>
                 )}
 
-                {cloneError && (
+                {cloneError && !cloning && (
                   <p className="text-xs text-destructive">{cloneError}</p>
-                )}
-                {cloning && (
-                  <p className="text-muted-foreground text-[10px]">
-                    Cloning and installing dependencies...
-                  </p>
                 )}
               </div>
 
+              {/* ── Manual path ── */}
               <div className="space-y-2">
-                <Label htmlFor="repo-path">{t('repoPath')}</Label>
+                <Label htmlFor="repo-path" className="text-xs font-medium">{t('repoPath')}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="repo-path"
@@ -1064,6 +1090,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                         ? t('orTypePath')
                         : t('repoPathPlaceholder')
                     }
+                    className="text-sm"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         if (manualPath.trim()) addManualPath();
@@ -1083,10 +1110,11 @@ export const CodeSidebar = memo(function CodeSidebar({
                 </div>
               </div>
 
+              {/* ── Recent repos ── */}
               {recentPaths.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-xs">{t('recent')}</p>
-                  <div className="flex flex-wrap gap-1">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">{t('recent')}</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {recentPaths.slice(0, 5).map((p) => (
                       <button
                         key={p}
@@ -1095,7 +1123,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                             setSelectedPaths((prev) => [...prev, p]);
                         }}
                         className={cn(
-                          'bg-muted/50 hover:bg-muted rounded-md px-2 py-1 text-xs',
+                          'bg-muted/50 hover:bg-muted rounded-md px-2.5 py-1.5 text-xs font-medium',
                           selectedPaths.includes(p) &&
                             'bg-primary/10 text-primary'
                         )}
@@ -1107,8 +1135,9 @@ export const CodeSidebar = memo(function CodeSidebar({
                 </div>
               )}
 
+              {/* ── Session name ── */}
               <div className="space-y-2">
-                <Label htmlFor="session-name">{t('name')}</Label>
+                <Label htmlFor="session-name" className="text-xs font-medium">{t('name')}</Label>
                 <Input
                   id="session-name"
                   value={name}
@@ -1117,13 +1146,16 @@ export const CodeSidebar = memo(function CodeSidebar({
                     setName(e.target.value);
                   }}
                   placeholder={t('namePlaceholder')}
+                  className="text-sm"
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 />
               </div>
+
+              {/* ── Create button ── */}
               <Button
                 onClick={handleCreate}
                 disabled={selectedPaths.length === 0 || creating}
-                className="w-full"
+                className="w-full py-2.5 text-sm font-semibold"
               >
                 {creating ? (
                   <Loader variant="glowing" size={20} />
@@ -1134,6 +1166,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                 )}
               </Button>
             </div>
+            )}
           </DialogContent>
         </Dialog>
 
