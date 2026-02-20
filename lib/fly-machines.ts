@@ -218,6 +218,7 @@ export async function createFlyMachine(
       env,
       services: [
         {
+          // Bridge API + WebSocket
           ports: [
             { port: 443, handlers: ['tls', 'http'] },
             { port: 80, handlers: ['http'] },
@@ -225,10 +226,20 @@ export async function createFlyMachine(
           protocol: 'tcp',
           internal_port: 8080,
           force_instance_key: null,
-          // Auto-stop when idle (no HTTP/WS traffic for ~5 min) to save cost.
-          // Auto-start when traffic arrives again — seamless to the user.
           autostart: true,
           autostop: 'stop',
+          min_machines_running: 0,
+        },
+        {
+          // Dev server preview — direct access, no proxy
+          ports: [
+            { port: 3000, handlers: ['tls', 'http'] },
+          ],
+          protocol: 'tcp',
+          internal_port: 3000,
+          force_instance_key: null,
+          autostart: true,
+          autostop: 'off',
           min_machines_running: 0,
         },
       ],

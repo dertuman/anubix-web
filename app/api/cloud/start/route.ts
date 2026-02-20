@@ -44,7 +44,7 @@ export async function POST() {
     return NextResponse.json({
       bridgeUrl: machine.bridge_url,
       bridgeApiKey,
-      previewUrl: `${machine.bridge_url}/`,
+      previewUrl: `${machine.bridge_url!.replace(/\/$/, '')}:3000/`,
       status: 'running',
     });
   }
@@ -79,7 +79,7 @@ export async function POST() {
     return NextResponse.json({
       bridgeUrl: machine.bridge_url,
       bridgeApiKey,
-      previewUrl: `${machine.bridge_url}/`,
+      previewUrl: `${machine.bridge_url!.replace(/\/$/, '')}:3000/`,
       status: 'running',
     });
   } catch (err) {
