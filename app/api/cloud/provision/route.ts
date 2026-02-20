@@ -132,12 +132,14 @@ export async function POST(req: NextRequest) {
   let machineId: string | undefined;
 
   try {
-    // 1. Create app + allocate IPs (needed for .fly.dev DNS)
+    // 1. Create app
     await createFlyApp(appName);
-    await allocateFlyIps(appName);
 
-    // 2. Create volume
-    const volume = await createFlyVolume(appName, region, 3); // 3GB: template + node_modules + workspace
+    // 2. Allocate IPs + create volume in parallel (both need app, not each other)
+    const [, volume] = await Promise.all([
+      allocateFlyIps(appName),
+      createFlyVolume(appName, region, 3),
+    ]);
     volumeId = volume.id;
 
     // 3. Create machine
@@ -150,7 +152,7 @@ export async function POST(req: NextRequest) {
       region,
       templateName: templateName || undefined,
       gitRepoUrl: gitRepoUrl || undefined,
-      memoryMb: 1024, // 1GB RAM: needed for npm install of heavy templates + Claude Code
+      memoryMb: 2048, // 2GB RAM: Claude SDK + dev server + build tools
     });
     machineId = machine.id;
 

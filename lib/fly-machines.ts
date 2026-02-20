@@ -188,7 +188,7 @@ export async function createFlyMachine(
     templateName,
     gitRepoUrl,
     region,
-    memoryMb = 1024,
+    memoryMb = 2048,
   } = options;
 
   const env: Record<string, string> = {
@@ -227,7 +227,7 @@ export async function createFlyMachine(
           internal_port: 8080,
           force_instance_key: null,
           autostart: true,
-          autostop: 'stop',
+          autostop: 'off',
           min_machines_running: 0,
         },
         {
@@ -251,16 +251,9 @@ export async function createFlyMachine(
       ],
       guest: {
         cpu_kind: 'shared',
-        cpus: 1,
+        cpus: 2,
         memory_mb: memoryMb,
       },
-      // NOTE: We intentionally do NOT define Fly.io-level health checks here.
-      // The init-workspace.sh script can take 3-5+ minutes to clone a repo and
-      // run npm install before the bridge server starts listening.
-      // If Fly.io's health check fails during that time, it will restart or
-      // destroy the machine — which is why machines were "disappearing".
-      // Instead, our own waitForBridgeHealth() polls from the API route, which
-      // is safe because it doesn't affect the machine lifecycle.
     },
   };
 
