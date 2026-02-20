@@ -418,8 +418,8 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
               </div>
             </div>
 
-            {/* Action buttons — outside the textarea, all same height */}
-            <div className="flex shrink-0 items-end gap-1.5">
+            {/* Action buttons — outside the textarea, pinned to bottom */}
+            <div className="flex shrink-0 self-end items-center gap-1.5">
               {isBusy && (
                 <Button variant="destructive" size="icon" onClick={onStop} className="size-12 rounded-xl" title="Stop (Esc)">
                   <Square className="size-4" />
