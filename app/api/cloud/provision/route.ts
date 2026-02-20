@@ -14,6 +14,24 @@ import {
   teardownFlyResources,
 } from '@/lib/fly-machines';
 
+/**
+ * ============================================================
+ * TEMPORARILY PASSWORD-PROTECTED
+ * ============================================================
+ * Provisioning requires the X-Access-Password header to match.
+ * This prevents unauthorized deployments while we test.
+ *
+ * TO RE-ENABLE (remove password gate):
+ * 1. Delete the ACCESS_PASSWORD constant and the password
+ *    check block at the top of POST.
+ * 2. Also remove the password gate from the code page at:
+ *      app/(public)/code/page.tsx
+ *
+ * PASSWORD: anubix2026
+ * ============================================================
+ */
+const ACCESS_PASSWORD = 'anubix2026';
+
 // Allow up to 300s for Fly.io provisioning (app + volume + machine + template install + health check)
 // Heavy templates like talkartech-fullstack need 3-5 min for git clone + npm install before the server starts.
 export const maxDuration = 300;
@@ -26,18 +44,14 @@ export const maxDuration = 300;
  * and API key so the client can auto-connect.
  */
 export async function POST(req: NextRequest) {
-  /**
-   * ============================================================
-   * TEMPORARILY DISABLED — Provisioning suspended
-   * ============================================================
-   * TO RE-ENABLE: Remove this early return block (the 503 response below).
-   * Also restore the code page at: app/(public)/code/page.tsx
-   * ============================================================
-   */
-  return NextResponse.json(
-    { error: 'Provisioning is temporarily disabled. Something amazing is coming soon.' },
-    { status: 503 },
-  );
+  // ── Password gate (temporary) ─────────────────────────────
+  const accessPassword = req.headers.get('x-access-password');
+  if (accessPassword !== ACCESS_PASSWORD) {
+    return NextResponse.json(
+      { error: 'Provisioning is temporarily disabled. Something amazing is coming soon.' },
+      { status: 503 },
+    );
+  }
 
   const { userId } = await auth();
   if (!userId) {
