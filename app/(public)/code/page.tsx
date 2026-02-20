@@ -62,7 +62,7 @@ export default function CodePage() {
   };
 
   return (
-    <div className="flex h-dvh w-full items-center justify-center">
+    <div className="flex h-full w-full items-center justify-center">
       <div className="flex max-w-md flex-col items-center gap-6 px-6 text-center">
         <Image src="/logo.webp" alt="Anubix logo" width={100} height={100} />
         <div className="flex flex-col gap-2">
