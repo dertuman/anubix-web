@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import {
   AlertCircle,
@@ -11,6 +11,7 @@ import {
   Github,
   Key,
   Loader2,
+  LogIn,
   Minus,
   Play,
   Plus,
@@ -182,12 +183,27 @@ function SetupForm({
 
   // Inline Claude auth form state
   const [showClaudeForm, setShowClaudeForm] = useState(false);
+  const [showManualAuth, setShowManualAuth] = useState(false);
   const [claudeAuthTab, setClaudeAuthTab] = useState<'cli' | 'sdk'>('cli');
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [claudeSaving, setClaudeSaving] = useState(false);
   const [claudeError, setClaudeError] = useState<string | null>(null);
+
+  // Detect OAuth error from redirect (e.g. /code?error=token_exchange_failed)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get('error');
+    if (oauthError) {
+      setShowClaudeForm(true);
+      setClaudeError(`Claude login failed: ${oauthError.replace(/_/g, ' ')}`);
+      // Clean up the URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.pathname);
+    }
+  }, []);
 
   const canSaveClaude =
     (claudeAuthTab === 'cli' && claudeAuthJson.trim().length > 0) ||
@@ -360,92 +376,120 @@ function SetupForm({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Connect Claude</span>
                 <button
-                  onClick={() => { setShowClaudeForm(false); setClaudeError(null); }}
+                  onClick={() => { setShowClaudeForm(false); setClaudeError(null); setShowManualAuth(false); }}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
               </div>
 
-              {/* Mode tabs */}
-              <div className="flex rounded-lg border border-border/30 p-0.5">
-                <button
-                  onClick={() => setClaudeAuthTab('cli')}
-                  className={cn(
-                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                    claudeAuthTab === 'cli'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  <Terminal className="size-3" />
-                  Pro/Max
-                </button>
-                <button
-                  onClick={() => setClaudeAuthTab('sdk')}
-                  className={cn(
-                    'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                    claudeAuthTab === 'sdk'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  <Key className="size-3" />
-                  API Key
-                </button>
-              </div>
-
-              {claudeAuthTab === 'cli' ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Run <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">claude /login</code> in
-                    your terminal, then paste the contents of{' '}
-                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.claude/.credentials.json</code>
-                  </p>
-                  <Textarea
-                    value={claudeAuthJson}
-                    onChange={(e) => setClaudeAuthJson(e.target.value)}
-                    placeholder={'{"claudeAiOauth":{"accessToken":"...","refreshToken":"..."}}'}
-                    rows={3}
-                    className="font-mono text-xs"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Input
-                      type={showApiKey ? 'text' : 'password'}
-                      value={anthropicApiKey}
-                      onChange={(e) => setAnthropicApiKey(e.target.value)}
-                      placeholder="sk-ant-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowApiKey((p) => !p)}
-                    >
-                      {showApiKey ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {/* Primary: OAuth login button */}
+              <Button
+                onClick={() => claude.connect('/code')}
+                className="w-full gap-2"
+              >
+                <LogIn className="size-4" />
+                Login with Claude
+              </Button>
 
               {claudeError && (
                 <p className="text-xs text-destructive">{claudeError}</p>
               )}
 
-              <Button
-                size="sm"
-                onClick={handleClaudeSave}
-                disabled={claudeSaving || !canSaveClaude}
-                className="w-full gap-1"
+              {/* Divider */}
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border/30" />
+                <span className="text-[11px] text-muted-foreground">or</span>
+                <div className="h-px flex-1 bg-border/30" />
+              </div>
+
+              {/* Manual credentials toggle */}
+              <button
+                onClick={() => setShowManualAuth(!showManualAuth)}
+                className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
-                {claudeSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
-                Save
-              </Button>
+                {showManualAuth ? 'Hide manual options' : 'Enter credentials manually'}
+              </button>
+
+              {showManualAuth && (
+                <>
+                  {/* Mode tabs */}
+                  <div className="flex rounded-lg border border-border/30 p-0.5">
+                    <button
+                      onClick={() => setClaudeAuthTab('cli')}
+                      className={cn(
+                        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                        claudeAuthTab === 'cli'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <Terminal className="size-3" />
+                      Pro/Max
+                    </button>
+                    <button
+                      onClick={() => setClaudeAuthTab('sdk')}
+                      className={cn(
+                        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                        claudeAuthTab === 'sdk'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <Key className="size-3" />
+                      API Key
+                    </button>
+                  </div>
+
+                  {claudeAuthTab === 'cli' ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Run <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">claude /login</code> in
+                        your terminal, then paste the contents of{' '}
+                        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">~/.claude/.credentials.json</code>
+                      </p>
+                      <Textarea
+                        value={claudeAuthJson}
+                        onChange={(e) => setClaudeAuthJson(e.target.value)}
+                        placeholder={'{"claudeAiOauth":{"accessToken":"...","refreshToken":"..."}}'}
+                        rows={3}
+                        className="font-mono text-xs"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Input
+                          type={showApiKey ? 'text' : 'password'}
+                          value={anthropicApiKey}
+                          onChange={(e) => setAnthropicApiKey(e.target.value)}
+                          placeholder="sk-ant-..."
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowApiKey((p) => !p)}
+                        >
+                          {showApiKey ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    size="sm"
+                    onClick={handleClaudeSave}
+                    disabled={claudeSaving || !canSaveClaude}
+                    className="w-full gap-1"
+                  >
+                    {claudeSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                    Save
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
