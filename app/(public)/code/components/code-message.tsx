@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { DiffDrawer } from './diff-drawer';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -149,12 +150,20 @@ interface CodeMessageProps {
 
 export const CodeMessage = memo(function CodeMessage({ message, isFree, onApprove, onDeny, onAnswer, questionSelections, onQuestionSelect }: CodeMessageProps) {
   const t = useScopedI18n('code.messages');
+  const [diffData, setDiffData] = useState<{ filePath: string; oldString: string; newString: string } | null>(null);
+
+  const handleTapDiff = useCallback((toolInput: Record<string, unknown>) => {
+    const filePath = (toolInput.file_path as string) ?? '';
+    const oldString = (toolInput.old_string as string) ?? '';
+    const newString = (toolInput.new_string as string) ?? '';
+    setDiffData({ filePath, oldString, newString });
+  }, []);
 
   const content = useMemo(() => {
     switch (message.type) {
       case 'user': return <UserMessage text={message.text} images={message.images} files={message.files} />;
       case 'assistant_text': return <AssistantTextMessage text={message.text} isComplete={message.isComplete} />;
-      case 'tool_use': return <ToolUseMessage toolName={message.toolName} isComplete={message.isComplete} ts={message.ts} durationMs={message.durationMs} t={t} />;
+      case 'tool_use': return <ToolUseMessage toolName={message.toolName} isComplete={message.isComplete} ts={message.ts} durationMs={message.durationMs} toolInput={message.toolInput} onTapDiff={handleTapDiff} t={t} />;
       case 'approval_request': return <ApprovalRequestMessage toolName={message.toolName} toolInput={message.toolInput} onApprove={() => onApprove?.()} onDeny={() => onDeny?.()} t={t} />;
       case 'question': return <QuestionMessage questions={message.questions} onAnswer={(a) => onAnswer?.(a)} initialSelections={questionSelections} onPartialSelect={(s) => onQuestionSelect?.(message.id, s)} />;
       case 'result': return <ResultMessage message={message} isFree={isFree} t={t} />;
@@ -162,7 +171,7 @@ export const CodeMessage = memo(function CodeMessage({ message, isFree, onApprov
       case 'system': return <SystemMessage text={message.text} />;
       default: return null;
     }
-  }, [message, isFree, onApprove, onDeny, onAnswer, questionSelections, onQuestionSelect, t]);
+  }, [message, isFree, onApprove, onDeny, onAnswer, questionSelections, onQuestionSelect, handleTapDiff, t]);
 
   const showTimestamp = message.type !== 'tool_use' && message.type !== 'system';
 
@@ -174,6 +183,15 @@ export const CodeMessage = memo(function CodeMessage({ message, isFree, onApprov
         </p>
       )}
       {content}
+      {diffData && (
+        <DiffDrawer
+          open={!!diffData}
+          onOpenChange={(open) => { if (!open) setDiffData(null); }}
+          filePath={diffData.filePath}
+          oldString={diffData.oldString}
+          newString={diffData.newString}
+        />
+      )}
     </motion.div>
   );
 });
@@ -233,10 +251,26 @@ function AssistantTextMessage({ text, isComplete }: { text: string; isComplete: 
   );
 }
 
-function ToolUseMessage({ toolName, isComplete, ts, durationMs, t }: { toolName: string; isComplete: boolean; ts: number; durationMs?: number; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
+function isEditWithDiff(toolName: string, isComplete: boolean, toolInput?: Record<string, unknown>): boolean {
+  if (!isComplete || !toolInput) return false;
+  const name = toolName.toLowerCase();
+  if (name !== 'edit' && name !== 'write') return false;
+  return typeof toolInput.file_path === 'string' && (typeof toolInput.old_string === 'string' || typeof toolInput.new_string === 'string');
+}
+
+function ToolUseMessage({ toolName, isComplete, ts, durationMs, toolInput, onTapDiff, t }: { toolName: string; isComplete: boolean; ts: number; durationMs?: number; toolInput?: Record<string, unknown>; onTapDiff?: (_input: Record<string, unknown>) => void; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
+  const canShowDiff = isEditWithDiff(toolName, isComplete, toolInput);
+  const Wrapper = canShowDiff ? 'button' : 'div';
+
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-2.5 rounded-lg bg-muted/60 px-3 py-2">
+      <Wrapper
+        {...(canShowDiff ? { onClick: () => onTapDiff?.(toolInput!) } : {})}
+        className={cn(
+          'flex items-center gap-2.5 rounded-lg bg-muted/60 px-3 py-2',
+          canShowDiff && 'cursor-pointer transition-colors hover:bg-muted/90 active:scale-[0.98]',
+        )}
+      >
         <Terminal className="size-3.5 text-muted-foreground" />
         <span className="text-xs font-medium text-foreground/80">{toolName}</span>
         {isComplete ? (
@@ -252,7 +286,8 @@ function ToolUseMessage({ toolName, isComplete, ts, durationMs, t }: { toolName:
             <ElapsedTimer startTs={ts} />
           </>
         )}
-      </div>
+        {canShowDiff && <ChevronRight className="size-3 text-muted-foreground/60" />}
+      </Wrapper>
     </div>
   );
 }
@@ -271,7 +306,16 @@ export interface ToolUseGroupData {
 
 export const ToolUseGroup = memo(function ToolUseGroup({ group, t }: { group: ToolUseGroupData; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
   const [expanded, setExpanded] = useState(false);
+  const [diffData, setDiffData] = useState<{ filePath: string; oldString: string; newString: string } | null>(null);
   const { toolName, messages, allComplete, firstTs, totalDurationMs, activeMessage } = group;
+
+  const handleTapDiff = useCallback((toolInput: Record<string, unknown>) => {
+    setDiffData({
+      filePath: (toolInput.file_path as string) ?? '',
+      oldString: (toolInput.old_string as string) ?? '',
+      newString: (toolInput.new_string as string) ?? '',
+    });
+  }, []);
 
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
@@ -293,7 +337,7 @@ export const ToolUseGroup = memo(function ToolUseGroup({ group, t }: { group: To
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="ml-4 mt-1 space-y-1 overflow-hidden border-l-2 border-border/20 pl-3">
             {messages.map((msg) => (
               <motion.div key={msg.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.1 }}>
-                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} durationMs={msg.durationMs} t={t} />
+                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} durationMs={msg.durationMs} toolInput={msg.toolInput} onTapDiff={handleTapDiff} t={t} />
               </motion.div>
             ))}
           </motion.div>
@@ -301,8 +345,17 @@ export const ToolUseGroup = memo(function ToolUseGroup({ group, t }: { group: To
       </AnimatePresence>
       {!expanded && activeMessage && (
         <div className="ml-4 mt-1 border-l-2 border-primary/30 pl-3">
-          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} durationMs={activeMessage.durationMs} t={t} />
+          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} durationMs={activeMessage.durationMs} toolInput={activeMessage.toolInput} onTapDiff={handleTapDiff} t={t} />
         </div>
+      )}
+      {diffData && (
+        <DiffDrawer
+          open={!!diffData}
+          onOpenChange={(open) => { if (!open) setDiffData(null); }}
+          filePath={diffData.filePath}
+          oldString={diffData.oldString}
+          newString={diffData.newString}
+        />
       )}
     </motion.div>
   );
@@ -320,7 +373,16 @@ export interface ToolUseSuperGroupData {
 
 export const ToolUseSuperGroup = memo(function ToolUseSuperGroup({ group, t }: { group: ToolUseSuperGroupData; t: ReturnType<typeof useScopedI18n<'code.messages'>> }) {
   const [expanded, setExpanded] = useState(false);
+  const [diffData, setDiffData] = useState<{ filePath: string; oldString: string; newString: string } | null>(null);
   const { messages, allComplete, firstTs, totalDurationMs, activeMessage, toolBreakdown } = group;
+
+  const handleTapDiff = useCallback((toolInput: Record<string, unknown>) => {
+    setDiffData({
+      filePath: (toolInput.file_path as string) ?? '',
+      oldString: (toolInput.old_string as string) ?? '',
+      newString: (toolInput.new_string as string) ?? '',
+    });
+  }, []);
 
   const breakdownStr = Object.entries(toolBreakdown).sort(([, a], [, b]) => b - a).map(([name, n]) => `${name} x${n}`).join(' · ');
 
@@ -345,7 +407,7 @@ export const ToolUseSuperGroup = memo(function ToolUseSuperGroup({ group, t }: {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="ml-4 mt-1 space-y-1 overflow-hidden border-l-2 border-border/20 pl-3">
             {messages.map((msg) => (
               <motion.div key={msg.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.1 }}>
-                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} durationMs={msg.durationMs} t={t} />
+                <ToolUseMessage toolName={msg.toolName} isComplete={msg.isComplete} ts={msg.ts} durationMs={msg.durationMs} toolInput={msg.toolInput} onTapDiff={handleTapDiff} t={t} />
               </motion.div>
             ))}
           </motion.div>
@@ -353,8 +415,17 @@ export const ToolUseSuperGroup = memo(function ToolUseSuperGroup({ group, t }: {
       </AnimatePresence>
       {!expanded && activeMessage && (
         <div className="ml-4 mt-1 border-l-2 border-primary/30 pl-3">
-          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} durationMs={activeMessage.durationMs} t={t} />
+          <ToolUseMessage toolName={activeMessage.toolName} isComplete={activeMessage.isComplete} ts={activeMessage.ts} durationMs={activeMessage.durationMs} toolInput={activeMessage.toolInput} onTapDiff={handleTapDiff} t={t} />
         </div>
+      )}
+      {diffData && (
+        <DiffDrawer
+          open={!!diffData}
+          onOpenChange={(open) => { if (!open) setDiffData(null); }}
+          filePath={diffData.filePath}
+          oldString={diffData.oldString}
+          newString={diffData.newString}
+        />
       )}
     </motion.div>
   );
