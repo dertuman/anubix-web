@@ -356,15 +356,15 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
           {queueBar}
           {filePreview}
           {hiddenFileInput}
-          <div className="flex items-end gap-2">
-            <div className="relative flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-xl border border-border/30 bg-muted/50 px-3">
-              <Button variant="ghost" size="icon" onClick={cancelRecording} className="size-8 shrink-0 rounded-lg text-muted-foreground hover:text-destructive">
+          <div className="flex items-center gap-2">
+            <div className="relative flex h-12 min-w-0 flex-1 items-center gap-1.5 rounded-xl border border-border/30 bg-muted/50 px-2 sm:gap-2 sm:px-3">
+              <Button variant="ghost" size="icon" onClick={cancelRecording} className="size-7 shrink-0 rounded-lg text-muted-foreground hover:text-destructive sm:size-8">
                 <X className="size-4" />
               </Button>
-              <AudioWaveform stream={streamRef.current} className="h-6 flex-1" />
-              <button type="button" onClick={() => stopAndTranscribe(false)} className="shrink-0 cursor-pointer text-xs font-medium text-primary hover:underline">See text</button>
+              <AudioWaveform stream={streamRef.current} className="h-6 min-w-0 flex-1" />
+              <button type="button" onClick={() => stopAndTranscribe(false)} className="shrink-0 cursor-pointer whitespace-nowrap text-xs font-medium text-primary hover:underline">See text</button>
             </div>
-            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="animate-recording-pulse size-12 shrink-0 rounded-xl ring-2 ring-primary/30 ring-offset-1 ring-offset-background">
+            <Button size="icon" onClick={() => stopAndTranscribe(true)} className="animate-recording-pulse size-10 shrink-0 rounded-xl ring-2 ring-primary/30 ring-offset-1 ring-offset-background sm:size-12">
               <ArrowUp className="size-5" />
             </Button>
           </div>
@@ -407,7 +407,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
                 onInput={handleInput}
                 onPaste={handlePaste}
                 placeholder={isBusy ? 'Type to queue a message...' : 'Message Claude Code...'}
-                className="max-h-[200px] min-h-12 resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-11 pr-3 text-base md:text-sm [scrollbar-gutter:stable] focus-visible:ring-1"
+                className="max-h-[200px] min-h-12 resize-none overflow-y-auto rounded-xl border-border/30 bg-muted/50 py-3 pl-11 pr-3 text-base scrollbar-none md:text-sm focus-visible:ring-1"
                 rows={1}
                 disabled={disabled}
               />
@@ -419,17 +419,17 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
             </div>
 
             {/* Action buttons — outside the textarea, pinned to bottom */}
-            <div className="flex shrink-0 self-end items-center gap-1.5">
+            <div className="flex shrink-0 self-end items-center gap-1">
               {isBusy && (
-                <Button variant="destructive" size="icon" onClick={onStop} className="size-12 rounded-xl" title="Stop (Esc)">
+                <Button variant="destructive" size="icon" onClick={onStop} className="size-10 rounded-xl sm:size-12" title="Stop (Esc)">
                   <Square className="size-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-12 rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary" title="Record voice">
+              <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-10 rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary sm:size-12" title="Record voice">
                 <Mic className="size-5" />
               </Button>
               {canSend && (
-                <Button size="icon" onClick={handleSend} disabled={disabled} className="size-12 rounded-xl ring-1 ring-primary/20" title={isBusy ? 'Queue message' : 'Send message'}>
+                <Button size="icon" onClick={handleSend} disabled={disabled} className="size-10 rounded-xl ring-1 ring-primary/20 sm:size-12" title={isBusy ? 'Queue message' : 'Send message'}>
                   <ArrowUp className="size-5" />
                 </Button>
               )}
