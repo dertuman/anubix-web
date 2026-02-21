@@ -22,6 +22,9 @@ export async function POST() {
   const codeVerifier = randomBytes(32).toString('base64url');
   const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 
+  // State required by Anthropic for CSRF protection (avoids "Missing state parameter" error)
+  const state = randomBytes(24).toString('base64url');
+
   // Build the authorization URL
   const claudeUrl = new URL(CLAUDE_AUTHORIZE_URL);
   claudeUrl.searchParams.set('response_type', 'code');
@@ -30,6 +33,7 @@ export async function POST() {
   claudeUrl.searchParams.set('scope', 'user:inference user:profile');
   claudeUrl.searchParams.set('code_challenge', codeChallenge);
   claudeUrl.searchParams.set('code_challenge_method', 'S256');
+  claudeUrl.searchParams.set('state', state);
 
   // Store the PKCE verifier in an httpOnly cookie so the exchange endpoint can use it
   const response = NextResponse.json({ authorizeUrl: claudeUrl.toString() });
