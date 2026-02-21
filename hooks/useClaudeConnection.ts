@@ -55,11 +55,42 @@ export function useClaudeConnection() {
     });
   }, []);
 
-  const connect = useCallback((returnTo?: string) => {
-    const url = returnTo
-      ? `/api/auth/claude?returnTo=${encodeURIComponent(returnTo)}`
-      : '/api/auth/claude';
-    window.location.href = url;
+  /**
+   * Start the Claude OAuth flow:
+   * 1. Calls backend to generate a PKCE challenge and get the authorize URL
+   * 2. Opens the URL in a new tab — user authorizes on claude.ai
+   * 3. Anthropic's console page displays the authorization code
+   * Returns the authorize URL so the UI can open it.
+   */
+  const startOAuth = useCallback(async (): Promise<string> => {
+    const res = await fetch('/api/auth/claude', { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to start OAuth');
+    }
+    const { authorizeUrl } = await res.json();
+    return authorizeUrl;
+  }, []);
+
+  /**
+   * Exchange the authorization code (pasted by the user) for tokens.
+   * The PKCE verifier is stored in an httpOnly cookie from startOAuth().
+   */
+  const exchangeCode = useCallback(async (code: string) => {
+    const res = await fetch('/api/auth/claude/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code.trim() }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to exchange code');
+    }
+    setState({
+      isConnected: true,
+      mode: 'cli',
+      isLoading: false,
+    });
   }, []);
 
   const disconnect = useCallback(async () => {
@@ -75,7 +106,8 @@ export function useClaudeConnection() {
 
   return {
     ...state,
-    connect,
+    startOAuth,
+    exchangeCode,
     save,
     disconnect,
     refresh: fetchStatus,

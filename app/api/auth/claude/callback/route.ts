@@ -4,59 +4,42 @@ import { auth } from '@clerk/nextjs/server';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
 
+const CLAUDE_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
+const CLAUDE_TOKEN_URL = 'https://console.anthropic.com/v1/oauth/token';
+const CLAUDE_REDIRECT_URI = 'https://console.anthropic.com/oauth/code/callback';
+
 /**
- * GET /api/auth/claude/callback
- * Handles the OAuth callback from Claude — exchanges code for tokens via PKCE.
+ * POST /api/auth/claude/callback
+ * Exchanges an authorization code (pasted by the user) for OAuth tokens.
+ * Reads the PKCE verifier from the httpOnly cookie set during /api/auth/claude.
  */
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.redirect(new URL('/sign-in', req.nextUrl.origin));
+    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const code = req.nextUrl.searchParams.get('code');
-  const state = req.nextUrl.searchParams.get('state');
-  const errorParam = req.nextUrl.searchParams.get('error');
+  const body = await req.json();
+  const { code } = body as { code?: string };
 
-  // Handle OAuth provider errors (e.g. user denied access)
-  if (errorParam) {
-    return redirectWithError(req, '/code', errorParam);
+  if (!code || typeof code !== 'string' || code.trim().length === 0) {
+    return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
   }
 
-  if (!code || !state) {
-    return redirectWithError(req, '/code', 'missing_params');
+  // Read PKCE verifier from cookie
+  const codeVerifier = req.cookies.get('claude_oauth_pkce')?.value;
+  if (!codeVerifier) {
+    return NextResponse.json(
+      { error: 'OAuth session expired. Please click "Login with Claude" again to start a new session.' },
+      { status: 400 },
+    );
   }
 
-  // Validate state against cookie
-  const stateCookie = req.cookies.get('claude_oauth_state')?.value;
-  if (!stateCookie) {
-    return redirectWithError(req, '/code', 'missing_state');
-  }
+  // The code from Anthropic's console page may come as "code#state" — extract just the code
+  const authCode = code.trim().split('#')[0];
 
-  let statePayload: { state: string; returnTo: string; codeVerifier: string };
-  try {
-    statePayload = JSON.parse(stateCookie);
-  } catch {
-    return redirectWithError(req, '/code', 'invalid_state');
-  }
-
-  if (statePayload.state !== state) {
-    return redirectWithError(req, '/code', 'state_mismatch');
-  }
-
-  // Validate returnTo is a safe relative path
-  const rawReturnTo = statePayload.returnTo || '/code';
-  const returnTo = rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : '/code';
-
-  // Exchange authorization code for tokens using PKCE (no client_secret needed)
-  const clientId = process.env.CLAUDE_OAUTH_CLIENT_ID;
-  if (!clientId) {
-    return redirectWithError(req, returnTo, 'oauth_not_configured');
-  }
-
-  const callbackUrl = `${req.nextUrl.origin}/api/auth/claude/callback`;
-
-  const tokenRes = await fetch('https://claude.ai/oauth/token', {
+  // Exchange authorization code for tokens using PKCE
+  const tokenRes = await fetch(CLAUDE_TOKEN_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -64,23 +47,29 @@ export async function GET(req: NextRequest) {
     },
     body: new URLSearchParams({
       grant_type: 'authorization_code',
-      code,
-      redirect_uri: callbackUrl,
-      client_id: clientId,
-      code_verifier: statePayload.codeVerifier,
+      code: authCode,
+      redirect_uri: CLAUDE_REDIRECT_URI,
+      client_id: CLAUDE_OAUTH_CLIENT_ID,
+      code_verifier: codeVerifier,
     }).toString(),
   });
 
   if (!tokenRes.ok) {
     const errorBody = await tokenRes.text().catch(() => '');
     console.error('Claude token exchange failed:', tokenRes.status, errorBody);
-    return redirectWithError(req, returnTo, 'token_exchange_failed');
+    return NextResponse.json(
+      { error: 'Token exchange failed. The authorization code may have expired — please try again.' },
+      { status: 502 },
+    );
   }
 
   const tokenData = await tokenRes.json();
   if (tokenData.error || !tokenData.access_token) {
     console.error('Claude token response error:', tokenData.error);
-    return redirectWithError(req, returnTo, tokenData.error || 'token_exchange_failed');
+    return NextResponse.json(
+      { error: tokenData.error_description || tokenData.error || 'Token exchange failed' },
+      { status: 502 },
+    );
   }
 
   // Build credentials JSON in the format that init-workspace.sh and Claude Code CLI expect
@@ -94,7 +83,7 @@ export async function GET(req: NextRequest) {
   // Save to database
   const supabase = await createClerkSupabaseClient();
   if (!supabase) {
-    return redirectWithError(req, returnTo, 'db_not_configured');
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
   const { error: upsertErr } = await supabase.from('claude_connections').upsert(
@@ -110,20 +99,11 @@ export async function GET(req: NextRequest) {
 
   if (upsertErr) {
     console.error('Claude connection upsert error:', upsertErr);
-    return redirectWithError(req, returnTo, 'db_save_failed');
+    return NextResponse.json({ error: 'Failed to save credentials' }, { status: 500 });
   }
 
-  // Clear state cookie and redirect to the return URL
-  const response = NextResponse.redirect(new URL(returnTo, req.nextUrl.origin));
-  response.cookies.delete('claude_oauth_state');
-  return response;
-}
-
-/** Helper to redirect with an error query parameter */
-function redirectWithError(req: NextRequest, path: string, error: string): NextResponse {
-  const url = new URL(path, req.nextUrl.origin);
-  url.searchParams.set('error', error);
-  const response = NextResponse.redirect(url);
-  response.cookies.delete('claude_oauth_state');
+  // Clear PKCE cookie
+  const response = NextResponse.json({ ok: true });
+  response.cookies.delete('claude_oauth_pkce');
   return response;
 }

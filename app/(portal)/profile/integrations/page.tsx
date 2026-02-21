@@ -8,7 +8,7 @@ import {
   Github,
   Key,
   Loader2,
-  LogIn,
+  ExternalLink,
   Minus,
   Plus,
   RefreshCw,
@@ -50,9 +50,11 @@ export default function IntegrationsPage() {
 // ── Claude Card ─────────────────────────────────────────────
 
 function ClaudeCard() {
-  const { isConnected, mode, isLoading, connect, save, disconnect } = useClaudeConnection();
+  const { isConnected, mode, isLoading, startOAuth, exchangeCode, save, disconnect } = useClaudeConnection();
   const [editing, setEditing] = useState(false);
   const [showManualAuth, setShowManualAuth] = useState(false);
+  const [oauthStep, setOauthStep] = useState<'idle' | 'waiting_for_code'>('idle');
+  const [oauthCode, setOauthCode] = useState('');
   const [authTab, setAuthTab] = useState<'cli' | 'sdk'>('cli');
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
@@ -84,6 +86,8 @@ function ClaudeCard() {
     await disconnect();
     setEditing(false);
     setShowManualAuth(false);
+    setOauthStep('idle');
+    setOauthCode('');
   };
 
   const canSave =
@@ -135,14 +139,65 @@ function ClaudeCard() {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Primary: OAuth login button */}
-          <Button
-            onClick={() => connect('/profile/integrations')}
-            className="w-full gap-2"
-          >
-            <LogIn className="size-4" />
-            Login with Claude
-          </Button>
+          {oauthStep === 'idle' ? (
+            <Button
+              onClick={async () => {
+                setError(null);
+                try {
+                  const url = await startOAuth();
+                  window.open(url, '_blank', 'noopener');
+                  setOauthStep('waiting_for_code');
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Failed to start login');
+                }
+              }}
+              className="w-full gap-2"
+            >
+              <ExternalLink className="size-4" />
+              Login with Claude
+            </Button>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Authorize in the tab that opened, then paste the code shown on the Anthropic page below.
+              </p>
+              <Input
+                value={oauthCode}
+                onChange={(e) => setOauthCode(e.target.value)}
+                placeholder="Paste authorization code here..."
+                className="font-mono text-xs"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                onClick={async () => {
+                  setSaving(true);
+                  setError(null);
+                  try {
+                    await exchangeCode(oauthCode);
+                    setEditing(false);
+                    setOauthStep('idle');
+                    setOauthCode('');
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Failed to exchange code');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                disabled={saving || oauthCode.trim().length === 0}
+                className="w-full gap-1"
+              >
+                {saving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                Connect
+              </Button>
+              <button
+                onClick={() => { setOauthStep('idle'); setOauthCode(''); setError(null); }}
+                className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Start over
+              </button>
+            </>
+          )}
 
           {error && (
             <p className="text-xs text-destructive">{error}</p>
@@ -249,7 +304,7 @@ function ClaudeCard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => { setEditing(false); setShowManualAuth(false); }}
+                    onClick={() => { setEditing(false); setShowManualAuth(false); setOauthStep('idle'); setOauthCode(''); }}
                   >
                     Cancel
                   </Button>

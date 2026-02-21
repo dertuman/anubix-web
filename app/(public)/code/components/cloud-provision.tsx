@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import {
   AlertCircle,
@@ -11,7 +11,7 @@ import {
   Github,
   Key,
   Loader2,
-  LogIn,
+  ExternalLink,
   Minus,
   Play,
   Plus,
@@ -184,26 +184,14 @@ function SetupForm({
   // Inline Claude auth form state
   const [showClaudeForm, setShowClaudeForm] = useState(false);
   const [showManualAuth, setShowManualAuth] = useState(false);
+  const [oauthStep, setOauthStep] = useState<'idle' | 'waiting_for_code'>('idle');
+  const [oauthCode, setOauthCode] = useState('');
   const [claudeAuthTab, setClaudeAuthTab] = useState<'cli' | 'sdk'>('cli');
   const [claudeAuthJson, setClaudeAuthJson] = useState('');
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [claudeSaving, setClaudeSaving] = useState(false);
   const [claudeError, setClaudeError] = useState<string | null>(null);
-
-  // Detect OAuth error from redirect (e.g. /code?error=token_exchange_failed)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const oauthError = params.get('error');
-    if (oauthError) {
-      setShowClaudeForm(true);
-      setClaudeError(`Claude login failed: ${oauthError.replace(/_/g, ' ')}`);
-      // Clean up the URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('error');
-      window.history.replaceState({}, '', url.pathname);
-    }
-  }, []);
 
   const canSaveClaude =
     (claudeAuthTab === 'cli' && claudeAuthJson.trim().length > 0) ||
@@ -376,21 +364,76 @@ function SetupForm({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Connect Claude</span>
                 <button
-                  onClick={() => { setShowClaudeForm(false); setClaudeError(null); setShowManualAuth(false); }}
+                  onClick={() => { setShowClaudeForm(false); setClaudeError(null); setShowManualAuth(false); setOauthStep('idle'); setOauthCode(''); }}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </button>
               </div>
 
-              {/* Primary: OAuth login button */}
-              <Button
-                onClick={() => claude.connect('/code')}
-                className="w-full gap-2"
-              >
-                <LogIn className="size-4" />
-                Login with Claude
-              </Button>
+              {oauthStep === 'idle' ? (
+                <>
+                  {/* Step 1: Open Claude authorization in new tab */}
+                  <Button
+                    onClick={async () => {
+                      setClaudeError(null);
+                      try {
+                        const url = await claude.startOAuth();
+                        window.open(url, '_blank', 'noopener');
+                        setOauthStep('waiting_for_code');
+                      } catch (err) {
+                        setClaudeError(err instanceof Error ? err.message : 'Failed to start login');
+                      }
+                    }}
+                    className="w-full gap-2"
+                  >
+                    <ExternalLink className="size-4" />
+                    Login with Claude
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Step 2: User pastes the authorization code */}
+                  <p className="text-xs text-muted-foreground">
+                    Authorize in the tab that opened, then paste the code shown on the Anthropic page below.
+                  </p>
+                  <Input
+                    value={oauthCode}
+                    onChange={(e) => setOauthCode(e.target.value)}
+                    placeholder="Paste authorization code here..."
+                    className="font-mono text-xs"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      setClaudeSaving(true);
+                      setClaudeError(null);
+                      try {
+                        await claude.exchangeCode(oauthCode);
+                        setShowClaudeForm(false);
+                        setOauthStep('idle');
+                        setOauthCode('');
+                      } catch (err) {
+                        setClaudeError(err instanceof Error ? err.message : 'Failed to exchange code');
+                      } finally {
+                        setClaudeSaving(false);
+                      }
+                    }}
+                    disabled={claudeSaving || oauthCode.trim().length === 0}
+                    className="w-full gap-1"
+                  >
+                    {claudeSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                    Connect
+                  </Button>
+                  <button
+                    onClick={() => { setOauthStep('idle'); setOauthCode(''); setClaudeError(null); }}
+                    className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    Start over
+                  </button>
+                </>
+              )}
 
               {claudeError && (
                 <p className="text-xs text-destructive">{claudeError}</p>
