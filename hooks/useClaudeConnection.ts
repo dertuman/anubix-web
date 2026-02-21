@@ -55,6 +55,13 @@ export function useClaudeConnection() {
     });
   }, []);
 
+  const connect = useCallback((returnTo?: string) => {
+    const url = returnTo
+      ? `/api/auth/claude?returnTo=${encodeURIComponent(returnTo)}`
+      : '/api/auth/claude';
+    window.location.href = url;
+  }, []);
+
   const disconnect = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/claude/disconnect', { method: 'POST' });
@@ -68,6 +75,7 @@ export function useClaudeConnection() {
 
   return {
     ...state,
+    connect,
     save,
     disconnect,
     refresh: fetchStatus,
