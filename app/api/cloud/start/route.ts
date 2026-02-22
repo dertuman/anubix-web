@@ -18,6 +18,14 @@ import {
  * Resume a stopped Fly.io machine.
  */
 export async function POST() {
+  try { return await handleStart(); } catch (err) {
+    console.error('Unhandled start error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handleStart() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });

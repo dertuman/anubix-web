@@ -52,6 +52,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  try { return await handleProvision(req); } catch (err) {
+    console.error('Unhandled provision error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handleProvision(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });

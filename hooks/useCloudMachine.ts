@@ -57,6 +57,17 @@ export interface UseCloudMachineReturn {
   refresh: () => Promise<void>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text || `Request failed (${res.status})` };
+  }
+}
+
 // ── Hook ─────────────────────────────────────────────────────
 
 export function useCloudMachine(): UseCloudMachineReturn {
@@ -72,7 +83,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
     try {
       const res = await fetch('/api/cloud/status');
       if (!res.ok) return;
-      const data = await res.json();
+      const data = await safeJson(res);
       setMachine(data.machine ?? null);
       return data.machine as CloudMachine | null;
     } catch {
@@ -152,7 +163,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
           body: JSON.stringify(opts),
         });
 
-        const data = await res.json();
+        const data = await safeJson(res);
 
         if (!res.ok) {
           throw new Error(data.error || 'Provisioning failed');
@@ -197,7 +208,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
 
     try {
       const res = await fetch('/api/cloud/start', { method: 'POST' });
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) throw new Error(data.error || 'Failed to start');
 
@@ -233,7 +244,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
 
     try {
       const res = await fetch('/api/cloud/stop', { method: 'POST' });
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) throw new Error(data.error || 'Failed to stop');
 
@@ -261,7 +272,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
 
     try {
       const res = await fetch('/api/cloud/destroy', { method: 'POST' });
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) throw new Error(data.error || 'Failed to destroy');
 

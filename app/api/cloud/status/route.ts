@@ -11,6 +11,13 @@ import { decrypt } from '@/lib/encryption';
  * If the DB says "starting" but the bridge is actually healthy, auto-fixes to "running".
  */
 export async function GET() {
+  try { return await handleStatus(); } catch (err) {
+    console.error('Unhandled status error:', err);
+    return NextResponse.json({ machine: null }, { status: 200 });
+  }
+}
+
+async function handleStatus() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });

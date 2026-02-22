@@ -11,6 +11,14 @@ import { teardownFlyResources } from '@/lib/fly-machines';
  * and delete the database rows. User can provision fresh afterwards.
  */
 export async function POST() {
+  try { return await handleDestroy(); } catch (err) {
+    console.error('Unhandled destroy error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handleDestroy() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
