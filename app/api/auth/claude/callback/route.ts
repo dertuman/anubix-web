@@ -5,7 +5,7 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
 
 const CLAUDE_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
-const CLAUDE_TOKEN_URL = 'https://console.anthropic.com/v1/oauth/token';
+const CLAUDE_TOKEN_URL = 'https://claude.ai/api/oauth/token';
 const CLAUDE_REDIRECT_URI = 'https://console.anthropic.com/oauth/code/callback';
 
 /**
