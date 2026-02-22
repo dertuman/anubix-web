@@ -39,6 +39,8 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
+          name: string;
+          email: string;
           bio: string;
           dob: string | null;
           profile_picture: string;
@@ -53,6 +55,8 @@ export interface Database {
         };
         Insert: {
           id: string;
+          name?: string;
+          email?: string;
           bio?: string;
           dob?: string | null;
           profile_picture?: string;
@@ -67,6 +71,8 @@ export interface Database {
         };
         Update: {
           id?: string;
+          name?: string;
+          email?: string;
           bio?: string;
           dob?: string | null;
           profile_picture?: string;

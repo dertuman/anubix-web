@@ -4,12 +4,28 @@ import { Webhook } from 'svix';
 
 import { createSupabaseAdmin } from '@/lib/supabase/server';
 
+interface ClerkEmailAddress {
+  id: string;
+  email_address: string;
+}
+
 interface WebhookEvent {
   type: string;
   data: {
     id: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    email_addresses?: ClerkEmailAddress[];
+    primary_email_address_id?: string | null;
     [key: string]: unknown;
   };
+}
+
+function extractNameAndEmail(data: WebhookEvent['data']): { name: string; email: string } {
+  const name = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+  const primary = data.email_addresses?.find((e) => e.id === data.primary_email_address_id);
+  const email = primary?.email_address ?? data.email_addresses?.[0]?.email_address ?? '';
+  return { name, email };
 }
 
 export async function POST(req: Request) {
@@ -65,9 +81,12 @@ export async function POST(req: Request) {
 
   if (evt.type === 'user.created') {
     const { id } = evt.data;
+    const { name, email } = extractNameAndEmail(evt.data);
 
     const { error } = await supabase.from('profiles').insert({
       id,
+      name,
+      email,
       bio: '',
       profile_picture: '',
       font: 'inter',
@@ -83,6 +102,20 @@ export async function POST(req: Request) {
         { error: 'Failed to create profile' },
         { status: 500 }
       );
+    }
+  }
+
+  if (evt.type === 'user.updated') {
+    const { id } = evt.data;
+    const { name, email } = extractNameAndEmail(evt.data);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ name, email })
+      .eq('id', id);
+
+    if (error) {
+      console.error('[webhook] Failed to sync name/email on user.updated:', error);
     }
   }
 

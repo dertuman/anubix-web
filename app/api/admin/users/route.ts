@@ -34,7 +34,7 @@ export async function GET() {
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, is_admin, is_deleted, created_at')
+      .select('id, name, email, is_admin, is_deleted, created_at')
       .order('created_at', { ascending: false });
 
     if (profilesError) {
@@ -64,6 +64,8 @@ export async function GET() {
       const machine = machineByUser[p.id];
       return {
         id: p.id,
+        name: p.name,
+        email: p.email,
         is_admin: p.is_admin,
         is_deleted: p.is_deleted,
         created_at: p.created_at,

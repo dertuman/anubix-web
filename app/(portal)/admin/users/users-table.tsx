@@ -36,6 +36,8 @@ import {
 
 interface AdminUser {
   id: string;
+  name: string;
+  email: string;
   is_admin: boolean;
   is_deleted: boolean;
   created_at: string;
@@ -174,9 +176,12 @@ export function UsersTable() {
     fetchUsers();
   }, [fetchUsers]);
 
+  const q = search.toLowerCase();
   const filtered = users.filter((u) =>
-    u.id.toLowerCase().includes(search.toLowerCase()) ||
-    (u.fly_app_name ?? '').toLowerCase().includes(search.toLowerCase()),
+    u.id.toLowerCase().includes(q) ||
+    u.name.toLowerCase().includes(q) ||
+    u.email.toLowerCase().includes(q) ||
+    (u.fly_app_name ?? '').toLowerCase().includes(q),
   );
 
   // ── Actions ──
@@ -265,7 +270,7 @@ export function UsersTable() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by user ID or app name…"
+              placeholder="Search by name, email, user ID…"
               className="h-8 w-64 pl-8 text-xs"
             />
           </div>
@@ -287,7 +292,8 @@ export function UsersTable() {
         <Table>
           <TableHeader>
             <TableRow className="border-border/50">
-              <TableHead className="w-[200px] text-xs">User ID</TableHead>
+              <TableHead className="w-[220px] text-xs">User</TableHead>
+              <TableHead className="w-[180px] text-xs">Clerk ID</TableHead>
               <TableHead className="text-xs">Machine</TableHead>
               <TableHead className="text-xs">Claude</TableHead>
               <TableHead className="text-xs">GitHub</TableHead>
@@ -312,13 +318,25 @@ export function UsersTable() {
             ) : (
               filtered.map((user) => (
                 <TableRow key={user.id} className="border-border/50">
-                  {/* User ID */}
+                  {/* Name + email */}
+                  <TableCell>
+                    <span className="block max-w-[200px] truncate text-sm font-medium" title={user.name || user.id}>
+                      {user.name || <span className="text-muted-foreground italic">No name</span>}
+                    </span>
+                    {user.email && (
+                      <span className="block max-w-[200px] truncate text-[11px] text-muted-foreground" title={user.email}>
+                        {user.email}
+                      </span>
+                    )}
+                  </TableCell>
+
+                  {/* Clerk ID + fly app */}
                   <TableCell className="font-mono text-xs">
-                    <span title={user.id} className="block max-w-[180px] truncate">
+                    <span title={user.id} className="block max-w-[160px] truncate text-muted-foreground">
                       {user.id}
                     </span>
                     {user.fly_app_name && (
-                      <span className="block truncate text-[10px] text-muted-foreground" title={user.fly_app_name}>
+                      <span className="block truncate text-[10px] text-muted-foreground/60" title={user.fly_app_name}>
                         {user.fly_app_name}
                       </span>
                     )}
