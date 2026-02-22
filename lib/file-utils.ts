@@ -1,6 +1,26 @@
+import imageCompression from 'browser-image-compression';
+
 import type { FileAttachment, FileCategory } from '@/types/code';
 
 export const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
+
+/**
+ * Compresses an image File for AI analysis.
+ * Targets ~1 MB / 1920 px max — good quality for vision models, fast to upload,
+ * and stays manageable when sending 5-10 images in a single message.
+ * Returns the original file unchanged if it is already small enough.
+ */
+export async function compressImageForUpload(file: File): Promise<File> {
+  const TARGET_MB = 1;
+  if (file.size <= TARGET_MB * 1024 * 1024) return file;
+
+  return imageCompression(file, {
+    maxSizeMB: TARGET_MB,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    initialQuality: 0.85,
+  });
+}
 
 const TEXT_EXTENSIONS: Record<string, string> = {
   '.txt': 'Text', '.md': 'Markdown', '.csv': 'CSV', '.json': 'JSON',

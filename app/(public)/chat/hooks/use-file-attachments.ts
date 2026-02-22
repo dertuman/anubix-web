@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 import type { FileAttachment } from '@/types/code';
-import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
+import { MAX_FILE_SIZE, compressImageForUpload, readFileAsAttachment, formatFileSize, getFileCategory } from '@/lib/file-utils';
 import { toast } from '@/components/ui/use-toast';
 
 /**
@@ -14,7 +14,18 @@ export function useFileAttachments() {
 
   const addFiles = useCallback(async (rawFiles: File[]) => {
     for (const file of rawFiles) {
-      if (file.size > MAX_FILE_SIZE) {
+      let processedFile = file;
+
+      if (getFileCategory(file) === 'image') {
+        try {
+          processedFile = await compressImageForUpload(file);
+        } catch {
+          // Compression failed — proceed with original; size check below will catch truly huge files
+          processedFile = file;
+        }
+      }
+
+      if (processedFile.size > MAX_FILE_SIZE) {
         toast({
           title: 'File too large',
           description: `"${file.name}" exceeds the ${formatFileSize(MAX_FILE_SIZE)} limit.`,
@@ -23,7 +34,7 @@ export function useFileAttachments() {
         continue;
       }
       try {
-        const attachment = await readFileAsAttachment(file);
+        const attachment = await readFileAsAttachment(processedFile);
         setAttachedFiles((prev) => [...prev, attachment]);
       } catch {
         toast({
