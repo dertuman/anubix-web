@@ -418,7 +418,7 @@ export function UsersTable() {
         description={
           resetDialog.flyApp
             ? `This will destroy the Fly.io app "${resetDialog.flyApp}" and delete all machine-related data (credentials, env vars, bridge config) for this user. The user account itself will be kept. This cannot be undone.`
-            : `This will delete all machine-related data for this user. The user account itself will be kept. This cannot be undone.`
+            : 'This will delete all machine-related data for this user. The user account itself will be kept. This cannot be undone.'
         }
         destructive
         loading={resetting}
