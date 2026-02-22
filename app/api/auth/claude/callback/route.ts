@@ -5,7 +5,7 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
 
 const CLAUDE_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
-const CLAUDE_TOKEN_URL = 'https://claude.ai/api/oauth/token';
+const CLAUDE_TOKEN_URL = 'https://console.anthropic.com/v1/oauth/token';
 const CLAUDE_REDIRECT_URI = 'https://console.anthropic.com/oauth/code/callback';
 
 /**
@@ -43,27 +43,29 @@ async function handleCallback(req: NextRequest) {
     );
   }
 
-  // Clean the pasted code: strip whitespace, trailing backslashes, and #state suffix
-  const authCode = code.trim().replace(/\\+$/, '').split('#')[0];
+  // The pasted code from Anthropic's page is formatted as "code#state"
+  const cleaned = code.trim().replace(/\\+$/, '');
+  const hashIdx = cleaned.indexOf('#');
+  const authCode = hashIdx >= 0 ? cleaned.slice(0, hashIdx) : cleaned;
+  const state = hashIdx >= 0 ? cleaned.slice(hashIdx + 1) : undefined;
 
-  console.log('[claude-callback] Exchanging code (length=%d, verifier length=%d)', authCode.length, codeVerifier.length);
-
-  // Exchange authorization code for tokens using PKCE
+  // Exchange authorization code for tokens using PKCE (JSON body, matching Claude Code CLI)
   let tokenRes: Response;
   try {
     tokenRes = await fetch(CLAUDE_TOKEN_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: new URLSearchParams({
+      body: JSON.stringify({
         grant_type: 'authorization_code',
         code: authCode,
+        ...(state ? { state } : {}),
         redirect_uri: CLAUDE_REDIRECT_URI,
         client_id: CLAUDE_OAUTH_CLIENT_ID,
         code_verifier: codeVerifier,
-      }).toString(),
+      }),
     });
   } catch (fetchErr) {
     console.error('Failed to reach Anthropic token endpoint:', fetchErr);

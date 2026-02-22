@@ -31,7 +31,7 @@ export async function POST() {
     claudeUrl.searchParams.set('response_type', 'code');
     claudeUrl.searchParams.set('client_id', CLAUDE_OAUTH_CLIENT_ID);
     claudeUrl.searchParams.set('redirect_uri', CLAUDE_REDIRECT_URI);
-    claudeUrl.searchParams.set('scope', 'user:inference user:profile');
+    claudeUrl.searchParams.set('scope', 'org:create_api_key user:profile user:inference');
     claudeUrl.searchParams.set('code_challenge', codeChallenge);
     claudeUrl.searchParams.set('code_challenge_method', 'S256');
     claudeUrl.searchParams.set('state', state);
