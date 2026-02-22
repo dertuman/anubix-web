@@ -13,7 +13,6 @@ export function CtaSection() {
     <section className="border-t border-border">
       <div className="container mx-auto px-4 py-20 md:py-28">
         <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-border bg-card p-8 text-center sm:p-12 md:p-16">
-          {/* Subtle gradient accent */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary-muted),transparent_70%)]" />
 
           <div className="relative">
@@ -34,7 +33,6 @@ export function CtaSection() {
                 </Button>
               </Link>
             </div>
-            {/* Trust line */}
             <p className="text-muted-foreground/70 mt-4 text-xs sm:text-sm">
               {t('trustLine')}
             </p>

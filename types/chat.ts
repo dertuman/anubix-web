@@ -37,10 +37,10 @@ export const AI_MODELS_MAP: Record<string, AIModel> = Object.fromEntries(
   AI_MODELS.map((m) => [m.id, m]),
 );
 
-export const DEFAULT_MODEL: ModelId = 'gpt-4o';
+export const DEFAULT_MODEL: ModelId = 'gemini-3-flash-preview';
 
 /** Provider precedence for auto-selecting the best available model. */
-export const PROVIDER_PRECEDENCE: AIProvider[] = ['openai', 'google', 'anthropic'];
+export const PROVIDER_PRECEDENCE: AIProvider[] = ['google', 'openai', 'anthropic'];
 
 // ── File support per provider ──────────────────────────────────
 

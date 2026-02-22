@@ -132,8 +132,9 @@ function UserMessage({ message }: { message: ChatMessageType }) {
   const nonImageFiles = useMemo(() => files.filter((f) => f.category !== 'image'), [files]);
   const imageFiles = useMemo(() => files.filter((f) => f.category === 'image' && f.data), [files]);
 
-  // Legacy images from native app
-  const legacyImages = message.images ?? [];
+  // Legacy images only when no web-format images exist (avoids duplicates
+  // for messages that were saved with both `images` and `files` columns)
+  const legacyImages = imageFiles.length > 0 ? [] : (message.images ?? []);
 
   return (
     <div className="flex justify-end">
@@ -160,7 +161,7 @@ function UserMessage({ message }: { message: ChatMessageType }) {
             <MessageActions text={message.content} />
           </div>
         )}
-        {/* Legacy images from native app */}
+        {/* Legacy images from native app (only when no web-format images) */}
         {legacyImages.length > 0 && (
           <div className="flex flex-wrap justify-end gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}

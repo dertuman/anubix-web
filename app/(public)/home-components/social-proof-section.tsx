@@ -1,20 +1,22 @@
 'use client';
 
 import { useScopedI18n } from '@/locales/client';
-import { Quote, Sparkles } from 'lucide-react';
+import { Sparkles, Play } from 'lucide-react';
 
 export function SocialProofSection() {
   const t = useScopedI18n('home.socialProof');
 
   return (
-    <section className="relative border-t border-border bg-muted/30">
-      <div className="container mx-auto px-4 py-20 md:py-28">
-        {/* Header */}
+    <section className="relative border-t border-border">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary-muted),transparent_60%)] opacity-30" />
+
+      <div className="relative container mx-auto px-4 py-20 md:py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-medium uppercase tracking-widest text-primary">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-medium text-primary">
+            <Sparkles className="size-4" />
             {t('label')}
-          </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             {t('title')}
           </h2>
           <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -22,25 +24,19 @@ export function SocialProofSection() {
           </p>
         </div>
 
-        {/* Built with Anubix badge */}
-        <div className="mx-auto mt-8 flex justify-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-medium text-primary">
-            <Sparkles className="size-4" />
-            Built with Anubix
-          </div>
-        </div>
-
-        {/* Quote */}
-        <div className="mx-auto mt-12 max-w-xl">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 text-center sm:p-10">
+        {/* Demo video placeholder */}
+        <div className="mx-auto mt-12 max-w-2xl">
+          <div className="group relative flex aspect-video cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 transition-colors hover:border-primary/50 hover:bg-primary/8">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary-muted),transparent_70%)]" />
-            <div className="relative">
-              <Quote className="mx-auto mb-4 size-8 text-primary/30" />
-              <blockquote className="text-lg font-medium leading-relaxed text-foreground sm:text-xl">
-                &ldquo;{t('quote')}&rdquo;
-              </blockquote>
-              <p className="mt-4 text-sm text-muted-foreground">
-                &mdash; {t('quoteAuthor')}
+            <div className="relative text-center">
+              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-colors group-hover:bg-primary/20">
+                <Play className="size-6 text-primary" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
+                {t('videoPlaceholder')}
+              </p>
+              <p className="mt-2 max-w-xs text-xs text-muted-foreground">
+                {t('videoSubtext')}
               </p>
             </div>
           </div>

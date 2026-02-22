@@ -1,10 +1,18 @@
 'use client';
 
 import { useScopedI18n } from '@/locales/client';
-import { Cloud, Terminal, Smartphone, ShieldCheck } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 export function DifferentiatorSection() {
   const t = useScopedI18n('home.differentiator');
+
+  const rows = [
+    { others: t('row1Others'), anubix: t('row1Anubix') },
+    { others: t('row2Others'), anubix: t('row2Anubix') },
+    { others: t('row3Others'), anubix: t('row3Anubix') },
+    { others: t('row4Others'), anubix: t('row4Anubix') },
+    { others: t('row5Others'), anubix: t('row5Anubix') },
+  ];
 
   return (
     <section className="relative border-t border-border">
@@ -21,71 +29,43 @@ export function DifferentiatorSection() {
           </h2>
         </div>
 
-        {/* Body content with visual accents */}
-        <div className="mx-auto mt-12 max-w-3xl">
-          <div className="grid gap-8 md:grid-cols-[1fr_auto]">
-            <div className="space-y-6">
-              <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {t('body')}
-              </p>
-              <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {t('body2')}
-              </p>
-              <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {t('body3')}
-              </p>
+        <div className="mx-auto mt-10 max-w-3xl space-y-4 text-center">
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+            {t('body')}
+          </p>
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+            {t('body2')}
+          </p>
+        </div>
+
+        {/* Two-column comparison table */}
+        <div className="mx-auto mt-12 max-w-3xl overflow-hidden rounded-xl border border-border">
+          {/* Table header */}
+          <div className="grid grid-cols-2 border-b border-border bg-muted/50">
+            <div className="p-4 text-sm font-semibold text-muted-foreground">
+              {t('othersLabel')}
+            </div>
+            <div className="border-l border-border bg-primary/5 p-4 text-sm font-semibold text-primary">
+              {t('anubixLabel')}
             </div>
           </div>
 
-          {/* Security callout */}
-          <div className="mt-8 overflow-hidden rounded-xl border border-primary/20 bg-primary/5 p-6 sm:p-8">
-            <div className="flex items-start gap-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <ShieldCheck className="size-5 text-primary" />
+          {/* Table rows */}
+          {rows.map((row, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-2 border-b border-border last:border-0"
+            >
+              <div className="flex items-start gap-2 p-4 text-sm text-muted-foreground">
+                <X className="mt-0.5 size-4 shrink-0 text-destructive/50" />
+                {row.others}
               </div>
-              <p className="text-base font-semibold leading-relaxed text-foreground sm:text-lg">
-                {t('securityCallout')}
-              </p>
+              <div className="flex items-start gap-2 border-l border-border bg-primary/5 p-4 text-sm text-foreground">
+                <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                {row.anubix}
+              </div>
             </div>
-          </div>
-
-          {/* Visual feature indicators */}
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                icon: Terminal,
-                label: 'Real terminal access',
-                description: 'Not API calls',
-              },
-              {
-                icon: Cloud,
-                label: 'Cloud workspace',
-                description: 'Not local-only',
-              },
-              {
-                icon: Smartphone,
-                label: 'Any device',
-                description: 'Phone, tablet, laptop',
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-primary-muted"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-                  <item.icon className="size-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {item.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
     </section>

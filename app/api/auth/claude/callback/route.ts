@@ -14,6 +14,14 @@ const CLAUDE_REDIRECT_URI = 'https://console.anthropic.com/oauth/code/callback';
  * Reads the PKCE verifier from the httpOnly cookie set during /api/auth/claude.
  */
 export async function POST(req: NextRequest) {
+  try { return await handleCallback(req); } catch (err) {
+    console.error('Unhandled error in claude callback:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function handleCallback(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
@@ -30,7 +38,7 @@ export async function POST(req: NextRequest) {
   const codeVerifier = req.cookies.get('claude_oauth_pkce')?.value;
   if (!codeVerifier) {
     return NextResponse.json(
-      { error: 'OAuth session expired. Please click "Login with Claude" again to start a new session.' },
+      { error: 'OAuth session expired — the PKCE cookie was not found. Please click "Start over" and try again.' },
       { status: 400 },
     );
   }
@@ -39,31 +47,58 @@ export async function POST(req: NextRequest) {
   const authCode = code.trim().split('#')[0];
 
   // Exchange authorization code for tokens using PKCE
-  const tokenRes = await fetch(CLAUDE_TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Accept: 'application/json',
-    },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code: authCode,
-      redirect_uri: CLAUDE_REDIRECT_URI,
-      client_id: CLAUDE_OAUTH_CLIENT_ID,
-      code_verifier: codeVerifier,
-    }).toString(),
-  });
-
-  if (!tokenRes.ok) {
-    const errorBody = await tokenRes.text().catch(() => '');
-    console.error('Claude token exchange failed:', tokenRes.status, errorBody);
+  let tokenRes: Response;
+  try {
+    tokenRes = await fetch(CLAUDE_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: authCode,
+        redirect_uri: CLAUDE_REDIRECT_URI,
+        client_id: CLAUDE_OAUTH_CLIENT_ID,
+        code_verifier: codeVerifier,
+      }).toString(),
+    });
+  } catch (fetchErr) {
+    console.error('Failed to reach Anthropic token endpoint:', fetchErr);
     return NextResponse.json(
-      { error: 'Token exchange failed. The authorization code may have expired — please try again.' },
+      { error: 'Could not reach Anthropic servers. Please check your network and try again.' },
       { status: 502 },
     );
   }
 
-  const tokenData = await tokenRes.json();
+  if (!tokenRes.ok) {
+    const errorBody = await tokenRes.text().catch(() => '');
+    console.error('Claude token exchange failed:', tokenRes.status, errorBody);
+
+    let detail = '';
+    try {
+      const parsed = JSON.parse(errorBody);
+      detail = parsed.error_description || parsed.error || '';
+    } catch {
+      detail = errorBody.slice(0, 200);
+    }
+
+    return NextResponse.json(
+      { error: `Token exchange failed (${tokenRes.status}): ${detail || 'The authorization code may have expired — please try again.'}` },
+      { status: 502 },
+    );
+  }
+
+  let tokenData: Record<string, string>;
+  try {
+    tokenData = await tokenRes.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Anthropic returned an invalid response during token exchange.' },
+      { status: 502 },
+    );
+  }
+
   if (tokenData.error || !tokenData.access_token) {
     console.error('Claude token response error:', tokenData.error);
     return NextResponse.json(

@@ -26,7 +26,7 @@ export function useChatStreaming() {
 
   const sendMessage = useCallback(
     async (convId: string, text: string, model: ModelId, files?: FileAttachment[]) => {
-      // Build stored files for API
+      // Build stored files for API (web app format only — no legacy `images` duplication)
       const storedFiles: StoredFileAttachment[] | undefined = files?.map((f) => ({
         name: f.name,
         mimeType: f.mimeType,
@@ -35,18 +35,13 @@ export function useChatStreaming() {
         ...(f.category === 'image' && f.data ? { data: f.data } : {}),
       }));
 
-      // Build images for native compat
-      const imageDataUrls = files
-        ?.filter((f) => f.category === 'image' && f.data)
-        .map((f) => ({ uri: f.name, base64: f.data! }));
-
       // Optimistic user message
       const userMsg: ChatMessageType = {
         id: `optimistic-user-${Date.now()}`,
         conversation_id: convId,
         role: 'user',
         content: text,
-        images: imageDataUrls?.length ? imageDataUrls : null,
+        images: null,
         files: storedFiles?.length ? storedFiles : null,
         model: null,
         created_at: new Date().toISOString(),
@@ -65,7 +60,6 @@ export function useChatStreaming() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               content: text,
-              images: imageDataUrls?.length ? imageDataUrls : undefined,
               files: storedFiles?.length ? storedFiles : undefined,
               model,
             }),

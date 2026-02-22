@@ -2,6 +2,17 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function safeJsonResponse(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text || `Request failed (${res.status})` };
+  }
+}
+
 interface ClaudeConnectionState {
   isConnected: boolean;
   mode: 'cli' | 'sdk' | null;
@@ -45,7 +56,7 @@ export function useClaudeConnection() {
       body: JSON.stringify(opts),
     });
     if (!res.ok) {
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       throw new Error(data.error || 'Failed to save');
     }
     setState({
@@ -64,12 +75,11 @@ export function useClaudeConnection() {
    */
   const startOAuth = useCallback(async (): Promise<string> => {
     const res = await fetch('/api/auth/claude', { method: 'POST' });
+    const data = await safeJsonResponse(res);
     if (!res.ok) {
-      const data = await res.json();
       throw new Error(data.error || 'Failed to start OAuth');
     }
-    const { authorizeUrl } = await res.json();
-    return authorizeUrl;
+    return data.authorizeUrl;
   }, []);
 
   /**
@@ -83,7 +93,7 @@ export function useClaudeConnection() {
       body: JSON.stringify({ code: code.trim() }),
     });
     if (!res.ok) {
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
       throw new Error(data.error || 'Failed to exchange code');
     }
     setState({

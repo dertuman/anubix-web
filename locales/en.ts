@@ -191,181 +191,141 @@ export default {
   home: {
     hero: {
       badge: 'Now in early access',
-      title: 'Production at the speed of thought.',
-      titleHighlight: 'Terminal power. Beautiful interface.',
+      title: 'Build and deploy apps',
+      titleHighlight: 'from your phone.',
       subtitle:
-        "Claude Code, GPT, and Gemini in one app. Build real software from your browser or your phone. Your keys, your code, your hosting. You're in control.",
-      cta: 'Start building',
-      ctaSecondary: 'See how it works',
-      trustLine:
-        'Free to start. Keys encrypted end-to-end. You own everything you build.',
-    },
-    logos: {
-      title: 'Built on tools developers already trust',
-    },
-    problem: {
-      label: 'The problem',
-      title: 'Claude Code is powerful. The CLI is not.',
-      body: 'Claude Code is the best coding agent out there. But it runs in a terminal. No visual feedback, no live preview, no easy way to manage projects. It works, but it could work so much better.',
-      body2:
-        'Then there are tools like Bolt and Lovable. They look nice, but they just make API calls. They send prompts and get text back. That works for a landing page. It breaks the moment your project gets real.',
-      body3:
-        'And if you want Claude for coding, Gemini for research, and GPT for a quick answer? Three apps, three histories, zero continuity.',
-      callout:
-        'You need an actual coding agent with a proper interface. Not a CLI. Not a chatbot with a deploy button.',
-    },
-    howItWorks: {
-      label: 'How it works',
-      title: 'One app. Three superpowers.',
-      step1: {
-        title: 'Claude Code with a real interface',
-        description:
-          'The same powerful coding agent, but with live preview, file management, and a beautiful UI. No terminal required. Runs in the cloud so you can use it from any device.',
-      },
-      step2: {
-        title: 'Every AI model in one chat',
-        description:
-          'Claude, GPT, and Gemini in a single conversation. Switch models mid-thread without losing context. Bring your own keys, one interface, one history.',
-      },
-      step3: {
-        title: 'Works from anywhere',
-        description:
-          'Browser, phone, tablet. Start a build at your desk, check progress on the bus, deploy from the couch. Your workspace lives in the cloud, always ready.',
-      },
+        'Anubix is a full coding agent in the cloud. Describe what you want, watch it build in real time, and deploy in one click — from any device. Switch between Claude, GPT, Gemini, and hundreds of other models mid-build.',
+      cta: 'Start building free',
+      ctaSecondary: 'Explore the multi-model chat',
+      trustLine: 'No credit card. No lock-in. You own your code.',
+      stat1: '300+ AI models',
+      stat2: 'Phone, tablet, or laptop',
+      stat3: 'One-click deploy',
     },
     screenshots: {
       label: 'See it in action',
-      title: 'See It in Action',
-      subtitle: 'A quick look at what building with Anubix looks like.',
+      title: 'Describe it. Watch it build. Ship it.',
+      subtitle: 'A real coding agent, in real time, on any device.',
+    },
+    mobileHook: {
+      label: 'Build from anywhere',
+      title: 'Your phone is a dev environment.',
+      body: "Every other coding tool assumes you're at a desk. Cursor needs a desktop. Claude Code needs a terminal. Bolt is browser-only and not built for mobile.",
+      body2:
+        'Anubix runs your entire workspace in the cloud. The agent, the file system, the terminal, the preview — all of it accessible from your phone, tablet, or laptop. Start a project on the train. Review it at lunch. Deploy from your couch.',
+      body3:
+        "This isn't a scaled-down mobile view. The mobile experience is the primary experience.",
+      cta: 'Try it on your phone',
+    },
+    multiModel: {
+      label: 'Every AI, one conversation',
+      title: 'Use the right model for each job.',
+      body: 'Most tools lock you into one AI. Anubix gives you all of them.',
+      claude: {
+        title: 'Claude',
+        description: 'Reasoning and complex logic',
+      },
+      gpt: {
+        title: 'GPT',
+        description: 'Quick tasks and generation',
+      },
+      gemini: {
+        title: 'Gemini',
+        description: 'Video, images, multimodal',
+      },
+      perplexity: {
+        title: 'Perplexity',
+        description: 'Research with live sources',
+      },
+      dalle: {
+        title: 'DALL-E & Flux',
+        description: 'Image generation',
+      },
+      switchNote: 'Switch models mid-conversation with one tap. Or let Anubix route automatically — it picks the best model for each task.',
+      oneliner: 'Stop paying for ChatGPT AND Claude AND Gemini separately. One app. All of them.',
     },
     differentiator: {
       label: 'Under the hood',
-      title: 'Not another AI toy. A real dev environment.',
-      body: 'Most AI builders are wrappers around an API call. They send your prompt, get text back, and paste it into a preview. That is not building software.',
+      title: 'A real coding agent. Not an API wrapper.',
+      body: "Most AI builders send your prompt to an API and paste the response into a file. That's fine for a landing page. It breaks the moment you need real complexity.",
       body2:
-        'Anubix runs Claude Code in a full cloud workspace. The same coding agent professional developers use, but with a proper UI on top. Real terminal access. Multi-file awareness. Actual debugging. And it runs from any device, not just your laptop.',
-      body3:
-        'Combine that with multi-model chat and you get the most capable AI development environment that works from anywhere.',
-      securityCallout:
-        'Your API keys are encrypted end-to-end. We never see them, never log them, never store them in plain text. Used only to call models on your behalf. Delete them anytime.',
+        'Anubix runs a full coding agent in a cloud VPS. Real file system. Multi-file awareness. Terminal access. Dependency management. Debugging. The same environment a developer uses locally — except you can access it from anywhere.',
+      othersLabel: 'API-based builders (Bolt, Lovable)',
+      anubixLabel: 'Anubix',
+      row1Others: 'Prompt in → text out → paste into file',
+      row1Anubix: 'Full agent with file system access',
+      row2Others: 'Single-file focus',
+      row2Anubix: 'Multi-file awareness',
+      row3Others: 'Limited debugging',
+      row3Anubix: 'Real terminal + error handling',
+      row4Others: 'Browser-based sandbox',
+      row4Anubix: 'Cloud VPS with full capabilities',
+      row5Others: 'Desktop-first',
+      row5Anubix: 'Any device',
     },
-    features: {
-      label: 'Features',
-      title: "Everything you need, nothing you don't.",
-      subtitle: '',
-      mobile: {
-        title: 'Works on every device',
-        description:
-          'Browser, phone, tablet. Not a shrunken desktop app. Built to work beautifully on every screen size from day one.',
-      },
-      multiModel: {
-        title: 'Multi-model chat',
-        description:
-          'Claude, GPT, and Gemini in one interface. Switch mid-conversation, keep your full history. One place for all your AI thinking.',
-      },
-      livePreview: {
-        title: 'Live preview',
-        description:
-          'Watch your app update in real time as Claude Code writes the code. No waiting, no refreshing.',
-      },
-      oneClickDeploy: {
-        title: 'One-click deploy',
-        description:
-          'Vercel, GitHub, Supabase connected and deployed with one tap. Your accounts, your infrastructure, zero config.',
-      },
-      encrypted: {
-        title: 'Encrypted by default',
-        description:
-          'API keys encrypted end-to-end. We never see them, never log them. You control everything.',
-      },
-      youOwnEverything: {
-        title: 'Zero lock-in',
-        description:
-          'Your code lives on your GitHub. Your database runs on your Supabase. Walk away anytime with everything you built.',
-      },
-      patterns: {
-        title: 'Patterns library',
-        description:
-          'Drop in production-ready features like auth flows, payments, infinite scroll, and vector search. Ship in seconds instead of hours.',
-      },
+    comparison: {
+      label: 'Comparison',
+      title: 'Honest comparison. Pick what fits.',
+      note: 'Competitor features and pricing verified at time of writing. Always check current pricing before deciding.',
     },
     socialProof: {
-      label: 'Built different',
-      title: 'This app built itself.',
-      body: "You're looking at the proof. Anubix was built, tested, and deployed using Anubix. Every feature on this page was coded by the same tool you're about to use.",
-      quote: 'Turned a web app into a phone app in 2 prompts.',
-      quoteAuthor: 'Fionn, Co-founder',
-    },
-    patterns: {
-      label: 'Coming soon',
-      title: 'Patterns. Drop in. Ship faster.',
-      subtitle:
-        'Stop rebuilding the same features from scratch. Patterns are production-ready code blocks you drop into any project. Auth, payments, search, real-time. One tap to add.',
-      item1: {
-        title: 'Infinite scroll + filtering',
-        description:
-          'Paginated lists with search, sort, and real-time filtering baked in.',
-      },
-      item2: {
-        title: 'Vector search',
-        description:
-          'Semantic search powered by embeddings. Add AI-powered search to any dataset.',
-      },
-      item3: {
-        title: 'Auth + roles',
-        description:
-          'Full authentication with role-based access control. Clerk + Supabase RLS, ready to go.',
-      },
-      item4: {
-        title: 'Payments',
-        description:
-          'Stripe integration with subscriptions, one-time payments, and customer portal.',
-      },
-      item5: {
-        title: 'File uploads',
-        description:
-          'Drag-and-drop uploads with preview, compression, and cloud storage.',
-      },
-      item6: {
-        title: 'Real-time updates',
-        description:
-          'Live data sync across all connected clients. No polling, no refresh.',
-      },
-      cta: 'Explore patterns',
-      badge: 'New',
+      label: 'Built with Anubix',
+      title: 'This site was built with Anubix.',
+      body: 'Not as a gimmick. Because it was the fastest way to ship.',
+      videoPlaceholder: 'Demo video coming soon',
+      videoSubtext: 'Timelapse of the app building itself — from first prompt to deployed URL',
     },
     pricing: {
       label: 'Pricing',
-      title: 'Your keys. Our cloud. Start free.',
-      description:
-        'Bring your own API keys for Claude, GPT, and Gemini. We provide the cloud workspace, the multi-model chat, and a real coding agent. Accessible from any device.',
-      callout:
-        'One app instead of three. Your keys, encrypted and secure. The code is always yours.',
-      cta: 'Get started for free',
+      title: 'Pay for what you use.',
+      subtitle: "Cancel never, because there's nothing to cancel.",
+      free: {
+        name: 'Free',
+        tagline: 'Get started instantly.',
+        feature1: 'Free messages across any model',
+        feature2: 'Free build minutes',
+        feature3: 'All features included',
+        feature4: 'No credit card required',
+        cta: 'Start free',
+      },
+      payg: {
+        name: 'Pay as you go',
+        tagline: 'Add credits. Use any model.',
+        feature1: 'Each model priced at API cost — no markup',
+        feature2: 'Credits never expire',
+        feature3: 'Auto top-up available',
+        feature4: 'Most messages cost $0.01–$0.10',
+        cta: 'Add credits',
+      },
+      byok: {
+        name: 'Bring your own key',
+        tagline: 'Already paying for Claude Max or GPT?',
+        feature1: 'Connect your existing API keys',
+        feature2: 'We provide the cloud infrastructure',
+        feature3: 'Full control over your costs',
+        feature4: 'Use your subscriptions through Anubix',
+        cta: 'Connect your keys',
+      },
     },
-    founders: {
-      label: 'Meet the founders',
-      title: 'The people behind Anubix.',
-      subtitle:
-        'Two builders who think software creation should be as natural as having a conversation.',
-      alex: {
-        name: 'Alex',
-        role: 'Co-Founder & Engineering',
-        bio: 'The architect behind Anubix. Alex designed and built the platform from the ground up, from infrastructure to the AI pipeline. Happiest when solving hard problems in code.',
-      },
-      fionn: {
-        name: 'Fionn',
-        role: 'Co-Founder & Growth',
-        bio: 'The voice of Anubix. Fionn drives product strategy, partnerships, and getting Anubix into the hands of builders everywhere. Focused on turning a great product into a great business.',
-      },
+    faq: {
+      label: 'FAQ',
+      title: 'Common questions.',
+      q1: 'Is this just a ChatGPT wrapper?',
+      a1: 'No. The chat uses real model APIs with full context windows. The builder runs a genuine coding agent in a cloud VPS — it has file system access, terminal commands, and multi-file awareness.',
+      q2: 'How is this different from Bolt or Lovable?',
+      a2: "Bolt and Lovable are great for simple projects. Anubix runs a real cloud dev environment that handles complex, multi-file applications. Plus: you can build from your phone, switch between hundreds of AI models, and bring your own API keys.",
+      q3: 'Can I actually code from my phone?',
+      a3: "Yes. The coding agent runs in the cloud. Your device is just the interface. Phone, tablet, laptop — the experience is the same because the compute isn't on your machine.",
+      q4: 'Do I own my code?',
+      a4: "100%. Push to GitHub, deploy to Vercel, download the files. It's yours.",
+      q5: 'What if I already pay for Claude or GPT?',
+      a5: 'Bring your own API keys. You pay your model provider directly. We just give you the cloud infrastructure to use them.',
     },
     cta: {
       title: 'Your next app is one conversation away.',
-      subtitle:
-        'Real coding agent. Best AI models. Any device. Fully encrypted. Zero lock-in.',
-      button: 'Start building for free',
-      trustLine:
-        'No credit card. No lock-in. Keys encrypted end-to-end. You own your code.',
+      subtitle: 'Build from any device. Use any model. Deploy in one click.',
+      button: 'Start building free',
+      trustLine: 'No credit card. No lock-in. You own your code.',
     },
   },
   about: {

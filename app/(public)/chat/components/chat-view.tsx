@@ -10,7 +10,6 @@ import {
   ClipboardCheck,
   ClipboardCopy,
   Loader2,
-  MessageSquarePlus,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -23,7 +22,6 @@ import type { FileAttachment } from '@/types/code';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -178,10 +176,12 @@ export function ChatView() {
     }
   }, [bestAvailableModel, selectedConversation]);
 
-  // ── Focus input on conversation switch ──────────────────────
+  // ── Focus input on conversation switch or initial load ──────
   useEffect(() => {
-    if (selectedId) setTimeout(() => chatInputRef.current?.focus(), 80);
-  }, [selectedId]);
+    if (selectedId || hasProviders) {
+      setTimeout(() => chatInputRef.current?.focus(), 80);
+    }
+  }, [selectedId, hasProviders]);
 
   // ── Model change ────────────────────────────────────────────
   const handleModelChange = useCallback(async (model: ModelId) => {
@@ -360,24 +360,29 @@ export function ChatView() {
             </div>
             {headerActions}
           </div>
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
+          <div className="flex flex-1 flex-col items-center justify-center px-4">
             {!hasProviders ? (
               <ApiKeySetupPrompt onKeySaved={() => refetchProviders()} />
             ) : (
-              <>
-                <Image src="/logo.webp" alt="Anubix logo" width={120} height={120} />
-                <p className="text-lg font-medium text-foreground">{t('sidebar.selectOrCreate')}</p>
-                <p className="text-sm text-muted-foreground">Select a conversation or start a new one</p>
-                <Button onClick={handleNewChat} className="mt-2 gap-2">
-                  <MessageSquarePlus className="size-4" />{t('sidebar.newChat')}
-                </Button>
-              </>
+              <div className="flex w-full max-w-2xl flex-col items-center gap-5">
+                <Image src="/logo.webp" alt="Anubix logo" width={80} height={80} className="opacity-80" />
+                <p className="text-lg font-medium text-muted-foreground">{t('sidebar.selectOrCreate')}</p>
+                <div className="w-full">
+                  <ChatInput
+                    ref={chatInputRef}
+                    onSend={handleSend}
+                    onStop={abortStream}
+                    isStreaming={isStreaming}
+                    disabled={false}
+                    files={attachedFiles}
+                    onAddFiles={addFiles}
+                    onRemoveFile={removeFile}
+                    hasProviders={hasProviders}
+                    noBorder
+                  />
+                </div>
+              </div>
             )}
-          </div>
-          <div className="shrink-0 border-t border-border/20 px-4 pb-4 pt-3">
-            <div className="relative mx-auto">
-              <Textarea placeholder={t('messages.inputPlaceholder')} className="max-h-[200px] min-h-[48px] resize-none rounded-xl border-border/30 bg-muted/50 py-3 pl-4 pr-20 text-sm focus-visible:ring-1" rows={1} disabled />
-            </div>
           </div>
         </div>
       </div>

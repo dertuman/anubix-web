@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import type { FileAttachment } from '@/types/code';
+import { cn } from '@/lib/utils';
 import { formatFileSize } from '@/lib/file-utils';
 import { getCategoryIcon } from '@/lib/ui-utils';
 import { AudioWaveform } from '@/components/ui/audio-waveform';
@@ -48,12 +49,13 @@ interface ChatInputProps {
   onAddFiles: (_files: File[]) => void;
   onRemoveFile: (_id: string) => void;
   hasProviders?: boolean;
+  noBorder?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────
 
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
-  ({ onSend, onStop, isStreaming, disabled, files, onAddFiles, onRemoveFile, hasProviders = true }, ref) => {
+  ({ onSend, onStop, isStreaming, disabled, files, onAddFiles, onRemoveFile, hasProviders = true, noBorder }, ref) => {
     const [value, setValue] = useState('');
     const [isRecording, setIsRecording] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
@@ -287,7 +289,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     if (isRecording) {
       return (
-        <div className="shrink-0 border-t border-border/20 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+        <div className={cn('shrink-0 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3', !noBorder && 'border-t border-border/20')}>
           {filePreview}
           {hiddenFileInput}
           <div className="flex items-center gap-2">
@@ -311,7 +313,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     if (isTranscribing) {
       return (
-        <div className="shrink-0 border-t border-border/20 px-4 pb-4 pt-3">
+        <div className={cn('shrink-0 px-4 pb-4 pt-3', !noBorder && 'border-t border-border/20')}>
           <div className="relative mx-auto flex items-center justify-center gap-2 rounded-xl border border-border/30 bg-muted/50 px-3 py-4">
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Transcribing...</span>
@@ -324,7 +326,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // ── Default UI ──────────────────────────────────────────────
 
     return (
-      <div className="shrink-0 border-t border-border/20 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
+      <div className={cn('shrink-0 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3', !noBorder && 'border-t border-border/20')}>
         <div className="relative mx-auto">
           {filePreview}
           {hiddenFileInput}
