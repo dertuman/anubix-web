@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { JsonLd } from '@/components/json-ld';
+import { Analytics } from '@/components/analytics';
 
 export async function generateMetadata() {
   return generateDefaultMetadata({
@@ -152,6 +153,7 @@ export default async function RootLayout({
         ) : (
           <UnconfiguredBody>{children}</UnconfiguredBody>
         )}
+        <Analytics />
       </body>
     </html>
   );

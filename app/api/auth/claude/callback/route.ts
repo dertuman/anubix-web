@@ -43,8 +43,10 @@ async function handleCallback(req: NextRequest) {
     );
   }
 
-  // The code from Anthropic's console page may come as "code#state" — extract just the code
-  const authCode = code.trim().split('#')[0];
+  // Clean the pasted code: strip whitespace, trailing backslashes, and #state suffix
+  const authCode = code.trim().replace(/\\+$/, '').split('#')[0];
+
+  console.log('[claude-callback] Exchanging code (length=%d, verifier length=%d)', authCode.length, codeVerifier.length);
 
   // Exchange authorization code for tokens using PKCE
   let tokenRes: Response;
@@ -71,38 +73,31 @@ async function handleCallback(req: NextRequest) {
     );
   }
 
-  if (!tokenRes.ok) {
-    const errorBody = await tokenRes.text().catch(() => '');
-    console.error('Claude token exchange failed:', tokenRes.status, errorBody);
+  const tokenBody = await tokenRes.text().catch(() => '');
 
-    let detail = '';
-    try {
-      const parsed = JSON.parse(errorBody);
-      detail = parsed.error_description || parsed.error || '';
-    } catch {
-      detail = errorBody.slice(0, 200);
-    }
-
-    return NextResponse.json(
-      { error: `Token exchange failed (${tokenRes.status}): ${detail || 'The authorization code may have expired — please try again.'}` },
-      { status: 502 },
-    );
-  }
-
-  let tokenData: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let tokenData: any;
   try {
-    tokenData = await tokenRes.json();
+    tokenData = JSON.parse(tokenBody);
   } catch {
+    console.error('Claude token response not JSON:', tokenRes.status, tokenBody);
     return NextResponse.json(
-      { error: 'Anthropic returned an invalid response during token exchange.' },
+      { error: 'Anthropic returned an unexpected response. Please try again.' },
       { status: 502 },
     );
   }
 
-  if (tokenData.error || !tokenData.access_token) {
-    console.error('Claude token response error:', tokenData.error);
+  if (!tokenRes.ok || tokenData.error || !tokenData.access_token) {
+    console.error('Claude token exchange failed:', tokenRes.status, tokenBody);
+
+    const errObj = tokenData.error;
+    const detail =
+      tokenData.error_description ||
+      (typeof errObj === 'string' ? errObj : errObj?.message || errObj?.type) ||
+      'Unknown error';
+
     return NextResponse.json(
-      { error: tokenData.error_description || tokenData.error || 'Token exchange failed' },
+      { error: `Claude login failed: ${detail}. Please click "Start over" and try again.` },
       { status: 502 },
     );
   }
