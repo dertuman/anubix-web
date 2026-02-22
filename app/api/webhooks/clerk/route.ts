@@ -110,7 +110,6 @@ export async function POST(req: Request) {
       'github_connections',
       'project_env_vars',
       'chat_api_keys',
-      'subscriptions',
     ] as const;
 
     for (const table of tables) {
@@ -118,6 +117,10 @@ export async function POST(req: Request) {
       const { error: delErr } = await supabase.from(table).delete().eq(col, id);
       if (delErr) console.warn(`[webhook] Failed to delete from ${table}:`, delErr.message);
     }
+
+    // subscriptions is not in the generated types yet — use admin client directly
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('subscriptions').delete().eq('user_id', id);
 
     // Hard-delete the profile row (not soft-delete — the Clerk user is gone)
     const { error } = await supabase.from('profiles').delete().eq('id', id);

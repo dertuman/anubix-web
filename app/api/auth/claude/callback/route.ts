@@ -47,25 +47,24 @@ async function handleCallback(req: NextRequest) {
   const cleaned = code.trim().replace(/\\+$/, '');
   const hashIdx = cleaned.indexOf('#');
   const authCode = hashIdx >= 0 ? cleaned.slice(0, hashIdx) : cleaned;
-  const state = hashIdx >= 0 ? cleaned.slice(hashIdx + 1) : undefined;
+  const state = hashIdx >= 0 ? cleaned.slice(hashIdx + 1) : null;
 
-  // Exchange authorization code for tokens using PKCE (JSON body, matching Claude Code CLI)
+  // Exchange authorization code for tokens (form-urlencoded per RFC 6749 Section 4.1.3)
+  const params: Record<string, string> = {
+    grant_type: 'authorization_code',
+    code: authCode,
+    redirect_uri: CLAUDE_REDIRECT_URI,
+    client_id: CLAUDE_OAUTH_CLIENT_ID,
+    code_verifier: codeVerifier,
+  };
+  if (state) params.state = state;
+
   let tokenRes: Response;
   try {
     tokenRes = await fetch(CLAUDE_TOKEN_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        grant_type: 'authorization_code',
-        code: authCode,
-        ...(state ? { state } : {}),
-        redirect_uri: CLAUDE_REDIRECT_URI,
-        client_id: CLAUDE_OAUTH_CLIENT_ID,
-        code_verifier: codeVerifier,
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString(),
     });
   } catch (fetchErr) {
     console.error('Failed to reach Anthropic token endpoint:', fetchErr);

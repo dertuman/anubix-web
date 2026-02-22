@@ -75,13 +75,16 @@ export async function POST(req: Request) {
       'claude_connections',
       'github_connections',
       'project_env_vars',
-      'subscriptions',
     ] as const;
 
     for (const table of userIdTables) {
       const { error } = await supabase.from(table).delete().eq('user_id', userId);
       if (error) console.warn(`[admin/delete-user] Failed to delete from ${table}:`, error.message);
     }
+
+    // subscriptions is not in the generated types yet — use admin client directly
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('subscriptions').delete().eq('user_id', userId);
 
     // chat_api_keys uses clerk_user_id instead of user_id
     await supabase.from('chat_api_keys').delete().eq('clerk_user_id', userId);

@@ -23,18 +23,16 @@ export async function POST() {
     const codeVerifier = randomBytes(32).toString('base64url');
     const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 
-    // State required by Anthropic for CSRF protection (avoids "Missing state parameter" error)
-    const state = randomBytes(24).toString('base64url');
-
-    // Build the authorization URL
+    // Build the authorization URL (matching Claude Code CLI's flow)
     const claudeUrl = new URL(CLAUDE_AUTHORIZE_URL);
-    claudeUrl.searchParams.set('response_type', 'code');
+    claudeUrl.searchParams.set('code', 'true');
     claudeUrl.searchParams.set('client_id', CLAUDE_OAUTH_CLIENT_ID);
+    claudeUrl.searchParams.set('response_type', 'code');
     claudeUrl.searchParams.set('redirect_uri', CLAUDE_REDIRECT_URI);
     claudeUrl.searchParams.set('scope', 'org:create_api_key user:profile user:inference');
     claudeUrl.searchParams.set('code_challenge', codeChallenge);
     claudeUrl.searchParams.set('code_challenge_method', 'S256');
-    claudeUrl.searchParams.set('state', state);
+    claudeUrl.searchParams.set('state', codeVerifier);
 
     const isDev = process.env.NODE_ENV === 'development';
 
