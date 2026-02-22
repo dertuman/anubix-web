@@ -33,7 +33,7 @@ export function CodeView() {
   const t = useScopedI18n('code');
   const { isSignedIn } = useAuth();
   const {
-    status, connect, connectionError, sessions, activeSessionId,
+    status, connect, disconnect, connectionError, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
     pullSession, messages, sendMessage, clearConversation, approve, deny, answerQuestion, abort,
     isBusy, slashCommands, connectionHealth,
@@ -149,6 +149,13 @@ export function CodeView() {
     </div>
   );
 
+  const handleDisconnect = useCallback(async () => {
+    disconnect();
+    if (cloudMachine.machine) {
+      await cloudMachine.destroy();
+    }
+  }, [disconnect, cloudMachine]);
+
   // ── Not connected ──────────────────────────────────────────
   if (status === 'disconnected' || status === 'connecting') {
     // Signed-in users get the cloud provisioning flow by default
@@ -174,7 +181,7 @@ export function CodeView() {
   if (!activeSessionId) {
     return (
       <div className="relative flex h-full">
-        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} />
+        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
@@ -220,7 +227,7 @@ export function CodeView() {
   // ── Active session ─────────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} />
+      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 

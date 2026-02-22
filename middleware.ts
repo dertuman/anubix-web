@@ -7,7 +7,7 @@ import { isAppConfigured } from '@/lib/setup/config';
 // Static — resolved once at module load, not on every request.
 // Safe because assertKey() only fires inside clerkMiddleware(), which we
 // only call when the app is configured (keys exist).
-const isProtectedRoute = createRouteMatcher(['/profile(.*)']);
+const isProtectedRoute = createRouteMatcher(['/profile(.*)', '/admin(.*)']);
 
 export default async function middleware(
   req: NextRequest,

@@ -10,6 +10,7 @@ import {
   GitBranch,
   Github,
   Loader2,
+  LogOut,
   Menu,
   Minus,
   PanelLeftClose,
@@ -529,6 +530,7 @@ interface CodeSidebarProps {
   onRefreshSessions?: () => Promise<void>;
   previewUrl?: string;
   isBusy?: boolean;
+  onDisconnect?: () => void;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -548,6 +550,7 @@ export const CodeSidebar = memo(function CodeSidebar({
   onRefreshSessions,
   previewUrl,
   isBusy,
+  onDisconnect,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
@@ -1210,6 +1213,19 @@ export const CodeSidebar = memo(function CodeSidebar({
           )}
         </div>
       </ScrollArea>
+      {onDisconnect && (
+        <div className="border-t border-border/20 p-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDisconnect}
+            className="w-full gap-2 text-xs text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="size-3.5" />
+            Disconnect & Destroy Machine
+          </Button>
+        </div>
+      )}
     </>
   );
 

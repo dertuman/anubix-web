@@ -89,7 +89,7 @@ export async function POST(req: Request) {
   if (evt.type === 'user.deleted') {
     const { id } = evt.data;
 
-    console.log('[webhook] user.deleted event received. Full data:', JSON.stringify(evt.data));
+    console.log('[webhook] user.deleted event received for:', id);
 
     if (!id) {
       console.error('[webhook] user.deleted event has no id in data');
@@ -99,18 +99,33 @@ export async function POST(req: Request) {
       );
     }
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-      })
-      .eq('id', id);
+    // Hard-delete all user data from every table.
+    // Note: Fly.io machine teardown is NOT done here — the webhook must respond
+    // quickly and teardown is async. Orphaned machines are caught by the cleanup cron.
+    // If deleting via the admin panel, use /api/admin/delete-user which handles Fly.io first.
+    const tables = [
+      'cloud_machines',
+      'bridge_configs',
+      'claude_connections',
+      'github_connections',
+      'project_env_vars',
+      'chat_api_keys',
+      'subscriptions',
+    ] as const;
 
-    console.log('[webhook] user.deleted result:', { id, error });
+    for (const table of tables) {
+      const col = table === 'chat_api_keys' ? 'clerk_user_id' : 'user_id';
+      const { error: delErr } = await supabase.from(table).delete().eq(col, id);
+      if (delErr) console.warn(`[webhook] Failed to delete from ${table}:`, delErr.message);
+    }
+
+    // Hard-delete the profile row (not soft-delete — the Clerk user is gone)
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+
+    console.log('[webhook] user.deleted cleanup done:', { id, error: error?.message });
 
     if (error) {
-      console.error('Error soft-deleting profile:', error);
+      console.error('Error deleting profile:', error);
       return NextResponse.json(
         { error: 'Failed to delete profile' },
         { status: 500 }
