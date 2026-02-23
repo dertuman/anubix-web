@@ -82,33 +82,30 @@ async function handleProvision(req: NextRequest) {
     region?: string;
   };
 
-  // ── Fetch Claude credentials from profile ──────────────────
+  // ── Fetch Claude credentials from profile (optional) ───────
   const { data: claudeConn } = await supabase
     .from('claude_connections')
     .select()
     .eq('user_id', userId)
     .single();
 
-  if (!claudeConn) {
-    return NextResponse.json(
-      { error: 'No Claude credentials found. Go to Profile > Integrations to connect Claude first.' },
-      { status: 400 },
-    );
-  }
-
-  const claudeMode = claudeConn.claude_mode as 'cli' | 'sdk';
-  const claudeAuthJson = claudeConn.auth_json_encrypted
+  // Claude credentials are optional - user can connect later from Profile > Integrations
+  const claudeMode = claudeConn?.claude_mode as 'cli' | 'sdk' | undefined;
+  const claudeAuthJson = claudeConn?.auth_json_encrypted
     ? decrypt(claudeConn.auth_json_encrypted)
     : undefined;
-  const anthropicApiKey = claudeConn.api_key_encrypted
+  const anthropicApiKey = claudeConn?.api_key_encrypted
     ? decrypt(claudeConn.api_key_encrypted)
     : undefined;
 
-  if (claudeMode === 'cli' && !claudeAuthJson) {
-    return NextResponse.json({ error: 'Claude CLI credentials are incomplete. Please reconnect in Profile > Integrations.' }, { status: 400 });
-  }
-  if (claudeMode === 'sdk' && !anthropicApiKey) {
-    return NextResponse.json({ error: 'Claude API key is missing. Please reconnect in Profile > Integrations.' }, { status: 400 });
+  // Only validate if credentials exist
+  if (claudeConn) {
+    if (claudeMode === 'cli' && !claudeAuthJson) {
+      return NextResponse.json({ error: 'Claude CLI credentials are incomplete. Please reconnect in Profile > Integrations.' }, { status: 400 });
+    }
+    if (claudeMode === 'sdk' && !anthropicApiKey) {
+      return NextResponse.json({ error: 'Claude API key is missing. Please reconnect in Profile > Integrations.' }, { status: 400 });
+    }
   }
 
   // ── Check for existing machine ─────────────────────────────

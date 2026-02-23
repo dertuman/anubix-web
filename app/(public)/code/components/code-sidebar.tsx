@@ -803,7 +803,7 @@ export const CodeSidebar = memo(function CodeSidebar({
               {t('newSession')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] overflow-y-auto w-[95vw] sm:max-w-[95vw] md:max-w-lg">
+          <DialogContent className="max-h-[90dvh] overflow-y-auto overflow-x-hidden w-[95vw] sm:max-w-[95vw] md:max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-lg">{t('newSession')}</DialogTitle>
             </DialogHeader>
@@ -844,12 +844,13 @@ export const CodeSidebar = memo(function CodeSidebar({
                     {selectedPaths.map((p) => (
                       <span
                         key={p}
-                        className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium"
+                        className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium max-w-full"
+                        title={p}
                       >
-                        {p.split(/[\\/]/).pop()}
+                        <span className="truncate">{p.split(/[\\/]/).pop()}</span>
                         <button
                           onClick={() => removeSelectedPath(p)}
-                          className="ml-0.5 rounded-sm p-0.5 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          className="ml-0.5 shrink-0 rounded-sm p-0.5 transition-colors hover:bg-destructive/10 hover:text-destructive"
                         >
                           <X className="size-3" />
                         </button>
@@ -1018,11 +1019,12 @@ export const CodeSidebar = memo(function CodeSidebar({
                                 key={repo.full_name}
                                 onClick={() => handleCloneGitHubRepo(repo)}
                                 disabled={cloning}
-                                className="hover:bg-muted/50 flex w-full items-center gap-2 border-b border-border/10 px-3 py-2.5 text-left text-sm last:border-0 disabled:opacity-50"
+                                className="hover:bg-muted/50 flex w-full items-start gap-2 border-b border-border/10 px-3 py-2.5 text-left text-sm last:border-0 disabled:opacity-50"
+                                title={repo.full_name}
                               >
-                                <span className="min-w-0 flex-1 truncate">{repo.full_name}</span>
+                                <span className="min-w-0 flex-1 break-words">{repo.full_name}</span>
                                 {repo.private && (
-                                  <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium">
+                                  <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
                                     private
                                   </span>
                                 )}
@@ -1115,10 +1117,11 @@ export const CodeSidebar = memo(function CodeSidebar({
                             setSelectedPaths((prev) => [...prev, p]);
                         }}
                         className={cn(
-                          'bg-muted/50 hover:bg-muted rounded-md px-2.5 py-1.5 text-xs font-medium',
+                          'bg-muted/50 hover:bg-muted rounded-md px-2.5 py-1.5 text-xs font-medium max-w-full truncate',
                           selectedPaths.includes(p) &&
                             'bg-primary/10 text-primary'
                         )}
+                        title={p}
                       >
                         {p.split(/[\\/]/).pop()}
                       </button>

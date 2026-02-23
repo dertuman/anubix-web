@@ -65,6 +65,14 @@ function ClaudeCard() {
         claudeAuthJson: authTab === 'cli' ? claudeAuthJson.trim() : undefined,
         anthropicApiKey: authTab === 'sdk' ? anthropicApiKey.trim() : undefined,
       });
+
+      // Auto-push credentials to running machine
+      try {
+        await fetch('/api/cloud/credentials/push', { method: 'POST' });
+      } catch {
+        // Best effort - don't block on failure
+      }
+
       setEditing(false);
       setShowManualAuth(false);
       setClaudeAuthJson('');

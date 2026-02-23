@@ -232,7 +232,6 @@ function SetupForm({
   const canSubmit =
     !isWorking &&
     !savingEnvVars &&
-    claude.isConnected &&
     hasGitRepo;
 
   const mergeEnvVars = (parsed: EnvVarEntry[]) => {
@@ -353,10 +352,10 @@ function SetupForm({
           ) : !showClaudeForm ? (
             <button
               onClick={() => setShowClaudeForm(true)}
-              className="flex w-full items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+              className="flex w-full items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-50 dark:bg-blue-950 px-3 py-2.5 text-sm text-blue-700 dark:text-blue-300"
             >
               <AlertCircle className="size-4 shrink-0" />
-              <span className="flex-1 text-left">Connect Claude to launch</span>
+              <span className="flex-1 text-left">Optional: Connect Claude for AI assistance (you can connect later)</span>
               <span className="text-xs underline">Setup</span>
             </button>
           ) : (
