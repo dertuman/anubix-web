@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { useScopedI18n } from '@/locales/client';
 import { useClaudeCode } from '@/hooks/useClaudeCode';
+import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useCloudMachine } from '@/hooks/useCloudMachine';
 import type { FileAttachment } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
@@ -40,6 +41,7 @@ export function CodeView() {
     sessionLiveStates, fetchRepos,
   } = useClaudeCode();
   const cloudMachine = useCloudMachine();
+  const claudeConnection = useClaudeConnection();
 
   const [showManualSetup, setShowManualSetup] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -181,7 +183,7 @@ export function CodeView() {
   if (!activeSessionId) {
     return (
       <div className="relative flex h-full">
-        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} />
+        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
@@ -227,7 +229,7 @@ export function CodeView() {
   // ── Active session ─────────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} />
+      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 

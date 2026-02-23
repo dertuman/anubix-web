@@ -10,8 +10,8 @@ const CLAUDE_REDIRECT_URI = 'https://console.anthropic.com/oauth/code/callback';
 
 /**
  * POST /api/auth/claude/callback
- * Exchanges an authorization code (pasted by the user) for OAuth tokens.
- * Reads the PKCE verifier from the httpOnly cookie set during /api/auth/claude.
+ * Exchanges an authorization code for OAuth tokens.
+ * Uses JSON body matching the format expected by Anthropic's token endpoint.
  */
 export async function POST(req: NextRequest) {
   try { return await handleCallback(req); } catch (err) {
@@ -34,37 +34,38 @@ async function handleCallback(req: NextRequest) {
     return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
   }
 
-  // Read PKCE verifier from cookie
+  // Read PKCE verifier and state from cookies
   const codeVerifier = req.cookies.get('claude_oauth_pkce')?.value;
+  const storedState = req.cookies.get('claude_oauth_state')?.value;
+
   if (!codeVerifier) {
     return NextResponse.json(
-      { error: 'OAuth session expired — the PKCE cookie was not found. Please click "Start over" and try again.' },
+      { error: 'OAuth session expired — please click "Start over" and try again.' },
       { status: 400 },
     );
   }
 
-  // The pasted code from Anthropic's page is formatted as "code#state"
+  // Parse "code#state" format — Anthropic returns state after #
   const cleaned = code.trim().replace(/\\+$/, '');
   const hashIdx = cleaned.indexOf('#');
   const authCode = hashIdx >= 0 ? cleaned.slice(0, hashIdx) : cleaned;
-  const state = hashIdx >= 0 ? cleaned.slice(hashIdx + 1) : null;
+  // Use state from pasted code if present, otherwise fall back to stored state
+  const state = (hashIdx >= 0 ? cleaned.slice(hashIdx + 1) : null) || storedState || '';
 
-  // Exchange authorization code for tokens (form-urlencoded per RFC 6749 Section 4.1.3)
-  const params: Record<string, string> = {
-    grant_type: 'authorization_code',
-    code: authCode,
-    redirect_uri: CLAUDE_REDIRECT_URI,
-    client_id: CLAUDE_OAUTH_CLIENT_ID,
-    code_verifier: codeVerifier,
-  };
-  if (state) params.state = state;
-
+  // Exchange authorization code for tokens (JSON body matching anthropic-auth library)
   let tokenRes: Response;
   try {
     tokenRes = await fetch(CLAUDE_TOKEN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(params).toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: authCode,
+        state,
+        grant_type: 'authorization_code',
+        client_id: CLAUDE_OAUTH_CLIENT_ID,
+        redirect_uri: CLAUDE_REDIRECT_URI,
+        code_verifier: codeVerifier,
+      }),
     });
   } catch (fetchErr) {
     console.error('Failed to reach Anthropic token endpoint:', fetchErr);
@@ -81,7 +82,7 @@ async function handleCallback(req: NextRequest) {
   try {
     tokenData = JSON.parse(tokenBody);
   } catch {
-    console.error('Claude token response not JSON:', tokenRes.status, tokenBody);
+    console.error('Claude token response not JSON:', tokenRes.status, tokenBody.slice(0, 500));
     return NextResponse.json(
       { error: 'Anthropic returned an unexpected response. Please try again.' },
       { status: 502 },
@@ -103,7 +104,7 @@ async function handleCallback(req: NextRequest) {
     );
   }
 
-  // Build credentials JSON in the format that init-workspace.sh and Claude Code CLI expect
+  // Build credentials JSON in the format that Claude Code CLI expects
   const authJson = JSON.stringify({
     claudeAiOauth: {
       accessToken: tokenData.access_token,
@@ -133,8 +134,9 @@ async function handleCallback(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save credentials' }, { status: 500 });
   }
 
-  // Clear PKCE cookie
+  // Clear OAuth cookies
   const response = NextResponse.json({ ok: true });
   response.cookies.delete('claude_oauth_pkce');
+  response.cookies.delete('claude_oauth_state');
   return response;
 }

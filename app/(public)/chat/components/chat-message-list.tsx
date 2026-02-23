@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useScopedI18n } from '@/locales/client';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -11,37 +11,11 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 
-import { ChatMessage } from './chat-message';
+import { ChatMessage, renderMarkdown } from './chat-message';
 
 // Breathing room between the top of the user's message and the top of the
 // visible scroll area (px). Keeps it consistent regardless of message length.
 const BREATHING_PX = 10;
-
-// ── Streaming word animation ─────────────────────────────────
-// Splits streaming content into "old" (plain text) and "new" (animated spans).
-// Only the latest chunk's words get the fade-in class for performance.
-function StreamingWords({ content, prevLength }: { content: string; prevLength: number }) {
-  const oldPart = content.slice(0, prevLength);
-  const newPart = content.slice(prevLength);
-
-  if (!newPart) return <>{oldPart}</>;
-
-  const newTokens = newPart.match(/(\S+|\s+)/g) || [];
-
-  return (
-    <>
-      {oldPart}
-      {newTokens.map((token, i) => {
-        if (/^\s+$/.test(token)) return <span key={`new-${i}`}>{token}</span>;
-        return (
-          <span key={`new-${i}`} className="animate-fade-in-word">
-            {token}
-          </span>
-        );
-      })}
-    </>
-  );
-}
 
 interface ChatMessageListProps {
   messages: ChatMessageType[];
@@ -75,13 +49,17 @@ export const ChatMessageList = memo(function ChatMessageList({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const justSentRef = useRef(false);
 
-  // Track previous streaming content length for word fade-in
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const prevStreamLenRef = useRef(0);
-
   // Track previous isActive state for scroll-to-bottom on stream end
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const wasActiveRef = useRef(false);
+
+  // Saved scroll position before spacer collapses — used to restore view
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const savedScrollTopRef = useRef(0);
+
+  // Previous spacer height — detects the collapse transition in useLayoutEffect
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const prevSpacerRef = useRef(0);
 
   // ── Scroll helpers ─────────────────────────────────────────
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -106,10 +84,13 @@ export const ChatMessageList = memo(function ChatMessageList({
   // ── Calculate spacer height ────────────────────────────────
   // When streaming/thinking starts, compute spacer so the user's
   // message sits at the top of the viewport with BREATHING_PX gap.
-  // When streaming ends, spacer collapses to 0.
+  // When streaming ends, save scroll position then collapse spacer to 0 so
+  // the useLayoutEffect below can restore it before the next paint.
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (!isActive) {
+      // Save current scroll position BEFORE collapsing spacer
+      savedScrollTopRef.current = scrollRef.current?.scrollTop ?? 0;
       setSpacerHeight(0);
       prevIsActiveRef.current = false;
       return;
@@ -132,7 +113,6 @@ export const ChatMessageList = memo(function ChatMessageList({
     // On the transition to active (message just sent), flag for one-time scroll
     if (!prevIsActiveRef.current) {
       justSentRef.current = true;
-      prevStreamLenRef.current = 0;
       prevIsActiveRef.current = true;
     }
   }, [isActive, messages.length]);
@@ -154,25 +134,35 @@ export const ChatMessageList = memo(function ChatMessageList({
     autoScrollRef.current = false;
   }, [spacerHeight]);
 
-  // ── Scroll to bottom when streaming ends ───────────────────
+  // ── Track wasActive for other logic ────────────────────────
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (wasActiveRef.current && !isActive) {
-      // Streaming just ended — smooth-scroll to show the complete response
-      requestAnimationFrame(() => scrollToBottom(true));
-    }
     wasActiveRef.current = isActive;
-  }, [isActive, scrollToBottom]);
+  }, [isActive]);
 
-  // ── Update prevStreamLen after each render (for word fade-in) ──
+  // ── Restore scroll position when spacer collapses ──────────
+  // Runs synchronously after DOM commit, before paint, preventing any
+  // visible jump caused by the spacer shrinking the scrollable area.
+  // If the user was near the bottom they stay at the bottom; otherwise
+  // their reading position is preserved exactly.
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    if (streamingContent) {
-      requestAnimationFrame(() => {
-        prevStreamLenRef.current = streamingContent.length;
-      });
+  useLayoutEffect(() => {
+    const collapsing = spacerHeight === 0 && prevSpacerRef.current > 0;
+    prevSpacerRef.current = spacerHeight;
+    if (!collapsing) return;
+
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    if (autoScrollRef.current) {
+      // User was already at the bottom — keep them there
+      el.scrollTop = maxScroll;
+    } else {
+      // User was reading — clamp to valid range without jumping further down
+      el.scrollTop = Math.min(savedScrollTopRef.current, maxScroll);
     }
-  }, [streamingContent]);
+  }, [spacerHeight]);
 
   // ── Callback ref for auto-scroll ───────────────────────────
   // Only auto-scrolls when NOT actively streaming/thinking.
@@ -234,7 +224,7 @@ export const ChatMessageList = memo(function ChatMessageList({
             >
               {streamingContent ? (
                 <div className="min-w-0 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
-                  <StreamingWords content={streamingContent} prevLength={prevStreamLenRef.current} />
+                  {renderMarkdown(streamingContent)}
                   <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-foreground/60" />
                 </div>
               ) : (

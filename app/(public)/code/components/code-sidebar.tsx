@@ -3,12 +3,14 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useScopedI18n } from '@/locales/client';
 import {
+  Check,
   Download,
   EllipsisVertical,
   ExternalLink,
   FolderPlus,
   GitBranch,
   Github,
+  Key,
   Loader2,
   LogOut,
   Menu,
@@ -25,6 +27,7 @@ import {
 import { createPortal } from 'react-dom';
 
 import type { BridgeSession } from '@/types/code';
+import type { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { getRecentRepoPaths } from '@/lib/stores/bridge-store';
 import { parseEnvString, type EnvVarEntry } from '@/lib/env-utils';
 import { cn } from '@/lib/utils';
@@ -531,6 +534,7 @@ interface CodeSidebarProps {
   previewUrl?: string;
   isBusy?: boolean;
   onDisconnect?: () => void;
+  claudeConnection?: ReturnType<typeof useClaudeConnection>;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -551,9 +555,17 @@ export const CodeSidebar = memo(function CodeSidebar({
   previewUrl,
   isBusy,
   onDisconnect,
+  claudeConnection,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
+
+  // Claude re-auth state
+  const [showClaudeReauth, setShowClaudeReauth] = useState(false);
+  const [reauthStep, setReauthStep] = useState<'idle' | 'waiting_for_code'>('idle');
+  const [reauthCode, setReauthCode] = useState('');
+  const [reauthError, setReauthError] = useState<string | null>(null);
+  const [reauthSaving, setReauthSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editSession, setEditSession] = useState<BridgeSession | null>(null);
   const [newOpenInternal, setNewOpenInternal] = useState(false);
@@ -1213,17 +1225,141 @@ export const CodeSidebar = memo(function CodeSidebar({
           )}
         </div>
       </ScrollArea>
-      {onDisconnect && (
-        <div className="border-t border-border/20 p-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDisconnect}
-            className="w-full gap-2 text-xs text-muted-foreground hover:text-destructive"
-          >
-            <LogOut className="size-3.5" />
-            Disconnect & Destroy Machine
-          </Button>
+      {(onDisconnect || claudeConnection) && (
+        <div className="border-t border-border/20 p-3 space-y-2">
+          {/* Claude connection status & re-auth */}
+          {claudeConnection && (
+            <div className="space-y-2">
+              {!showClaudeReauth ? (
+                <button
+                  onClick={() => setShowClaudeReauth(true)}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                    claudeConnection.isConnected
+                      ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      : 'text-destructive hover:bg-destructive/10',
+                  )}
+                >
+                  <Key className="size-3.5 shrink-0" />
+                  <span className="flex-1 text-left">
+                    {claudeConnection.isConnected
+                      ? `Claude ${claudeConnection.mode === 'cli' ? 'Pro/Max' : 'API Key'}`
+                      : 'Claude not connected'}
+                  </span>
+                  {claudeConnection.isConnected ? (
+                    <span className="size-2 shrink-0 rounded-full bg-green-500" />
+                  ) : (
+                    <span className="size-2 shrink-0 rounded-full bg-destructive" />
+                  )}
+                </button>
+              ) : (
+                <div className="space-y-2 rounded-lg border border-border/30 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Reconnect Claude</span>
+                    <button
+                      onClick={() => {
+                        setShowClaudeReauth(false);
+                        setReauthStep('idle');
+                        setReauthCode('');
+                        setReauthError(null);
+                      }}
+                      className="text-[10px] text-muted-foreground hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {reauthStep === 'idle' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        setReauthError(null);
+                        try {
+                          const url = await claudeConnection.startOAuth();
+                          window.open(url, '_blank', 'noopener');
+                          setReauthStep('waiting_for_code');
+                        } catch (err) {
+                          setReauthError(err instanceof Error ? err.message : 'Failed to start login');
+                        }
+                      }}
+                      className="w-full gap-1.5 text-xs"
+                    >
+                      <ExternalLink className="size-3" />
+                      Login with Claude
+                    </Button>
+                  )}
+
+                  {reauthStep === 'waiting_for_code' && (
+                    <>
+                      <p className="text-[10px] text-muted-foreground">
+                        Authorize in the tab, then paste the code here.
+                      </p>
+                      <Input
+                        value={reauthCode}
+                        onChange={(e) => setReauthCode(e.target.value)}
+                        placeholder="Paste code here..."
+                        className="h-8 font-mono text-xs"
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          setReauthSaving(true);
+                          setReauthError(null);
+                          try {
+                            await claudeConnection.exchangeCode(reauthCode);
+                            // Auto-push to machine
+                            try {
+                              await claudeConnection.pushToMachine();
+                            } catch {
+                              // Non-fatal: creds saved to DB even if push fails
+                            }
+                            setShowClaudeReauth(false);
+                            setReauthStep('idle');
+                            setReauthCode('');
+                            toast({ title: 'Claude reconnected', description: 'Credentials updated and pushed to machine.' });
+                          } catch (err) {
+                            setReauthError(err instanceof Error ? err.message : 'Failed');
+                            setReauthStep('waiting_for_code');
+                          } finally {
+                            setReauthSaving(false);
+                          }
+                        }}
+                        disabled={reauthSaving || reauthCode.trim().length === 0}
+                        className="w-full gap-1 text-xs"
+                      >
+                        {reauthSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                        {reauthSaving ? 'Connecting...' : 'Connect & Push'}
+                      </Button>
+                      <button
+                        onClick={() => { setReauthStep('idle'); setReauthCode(''); setReauthError(null); }}
+                        className="w-full text-center text-[10px] text-muted-foreground hover:text-foreground"
+                      >
+                        Start over
+                      </button>
+                    </>
+                  )}
+
+                  {reauthError && (
+                    <p className="text-[10px] text-destructive">{reauthError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {onDisconnect && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDisconnect}
+              className="w-full gap-2 text-xs text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="size-3.5" />
+              Disconnect & Destroy Machine
+            </Button>
+          )}
         </div>
       )}
     </>

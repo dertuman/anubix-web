@@ -114,12 +114,26 @@ export function useClaudeConnection() {
     }
   }, []);
 
+  /**
+   * Push the latest Claude credentials from the database to the running machine.
+   * Call this after re-authenticating so the bridge picks up the new tokens.
+   */
+  const pushToMachine = useCallback(async () => {
+    const res = await fetch('/api/cloud/credentials/push', { method: 'POST' });
+    const data = await safeJsonResponse(res);
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to push credentials to machine');
+    }
+    return data;
+  }, []);
+
   return {
     ...state,
     startOAuth,
     exchangeCode,
     save,
     disconnect,
+    pushToMachine,
     refresh: fetchStatus,
   };
 }

@@ -47,7 +47,7 @@ function MessageActions({ text }: { text: string }) {
   );
 }
 
-function renderMarkdown(text: string): React.ReactNode[] {
+export function renderMarkdown(text: string): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
   const regex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|^---$/gm;
   let lastIndex = 0;
