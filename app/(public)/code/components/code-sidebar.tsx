@@ -4,9 +4,13 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useScopedI18n } from '@/locales/client';
 import {
   Check,
+  ChevronDown,
+  ChevronUp,
   Download,
   EllipsisVertical,
   ExternalLink,
+  Eye,
+  EyeOff,
   FolderPlus,
   GitBranch,
   Github,
@@ -18,9 +22,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
+  Play,
   Plus,
   RefreshCw,
+  ScrollText,
   Search,
+  Terminal,
   Trash2,
   X,
 } from 'lucide-react';
@@ -31,7 +38,7 @@ import type { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { getRecentRepoPaths } from '@/lib/stores/bridge-store';
 import { parseEnvString, type EnvVarEntry } from '@/lib/env-utils';
 import { cn } from '@/lib/utils';
-import type { BridgeRepo, FetchReposResult, PullResult } from '@/hooks/useClaudeCode';
+import type { BridgeRepo, BridgeLogs, ExecResult, FetchReposResult, PullResult } from '@/hooks/useClaudeCode';
 import { toast } from '@/components/ui/use-toast';
 import { useGitHubRepos, type GitHubRepo } from '@/hooks/useGitHubRepos';
 import { useGitHubConnection } from '@/hooks/useGitHubConnection';
@@ -535,6 +542,9 @@ interface CodeSidebarProps {
   isBusy?: boolean;
   onDisconnect?: () => void;
   claudeConnection?: ReturnType<typeof useClaudeConnection>;
+  onFetchLogs?: (_opts?: { last?: number; filter?: string }) => Promise<BridgeLogs>;
+  onExecCommand?: (_command: string) => Promise<ExecResult>;
+  onPushCredentials?: (_opts: { claudeMode: 'cli' | 'sdk'; claudeAuthJson?: string; anthropicApiKey?: string }) => Promise<void>;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -556,6 +566,9 @@ export const CodeSidebar = memo(function CodeSidebar({
   isBusy,
   onDisconnect,
   claudeConnection,
+  onFetchLogs,
+  onExecCommand,
+  onPushCredentials,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
@@ -568,6 +581,18 @@ export const CodeSidebar = memo(function CodeSidebar({
   const [reauthSaving, setReauthSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editSession, setEditSession] = useState<BridgeSession | null>(null);
+
+  // Machine tools state
+  const [showMachineTools, setShowMachineTools] = useState(false);
+  const [machineTab, setMachineTab] = useState<'logs' | 'terminal' | 'apikey'>('logs');
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [terminalCmd, setTerminalCmd] = useState('');
+  const [terminalOutput, setTerminalOutput] = useState('');
+  const [terminalRunning, setTerminalRunning] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showApiKeyValue, setShowApiKeyValue] = useState(false);
+  const [apiKeySaving, setApiKeySaving] = useState(false);
   const [newOpenInternal, setNewOpenInternal] = useState(false);
   const newOpen = externalNewOpen ?? newOpenInternal;
   const setNewOpen = (open: boolean) => {
@@ -1343,6 +1368,206 @@ export const CodeSidebar = memo(function CodeSidebar({
 
                   {reauthError && (
                     <p className="text-[10px] text-destructive">{reauthError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Machine tools — logs, terminal, API key */}
+          {(onFetchLogs || onExecCommand || onPushCredentials) && (
+            <div className="space-y-1">
+              <button
+                onClick={() => setShowMachineTools(!showMachineTools)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Terminal className="size-3.5 shrink-0" />
+                <span className="flex-1 text-left">Machine Tools</span>
+                {showMachineTools ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+              </button>
+
+              {showMachineTools && (
+                <div className="space-y-2 rounded-lg border border-border/30 p-2.5">
+                  {/* Tab bar */}
+                  <div className="flex rounded-lg border border-border/30 p-0.5">
+                    {onFetchLogs && (
+                      <button
+                        onClick={() => setMachineTab('logs')}
+                        className={cn(
+                          'flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium',
+                          machineTab === 'logs' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <ScrollText className="size-3" /> Logs
+                      </button>
+                    )}
+                    {onExecCommand && (
+                      <button
+                        onClick={() => setMachineTab('terminal')}
+                        className={cn(
+                          'flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium',
+                          machineTab === 'terminal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Terminal className="size-3" /> Terminal
+                      </button>
+                    )}
+                    {onPushCredentials && (
+                      <button
+                        onClick={() => setMachineTab('apikey')}
+                        className={cn(
+                          'flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium',
+                          machineTab === 'apikey' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Key className="size-3" /> API Key
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Logs tab */}
+                  {machineTab === 'logs' && onFetchLogs && (
+                    <div className="space-y-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          setLogsLoading(true);
+                          try {
+                            const data = await onFetchLogs({ last: 100 });
+                            setLogLines(data.lines);
+                          } catch (err) {
+                            setLogLines([`Error: ${err instanceof Error ? err.message : 'Failed to fetch logs'}`]);
+                          } finally {
+                            setLogsLoading(false);
+                          }
+                        }}
+                        disabled={logsLoading}
+                        className="w-full gap-1 text-[10px]"
+                      >
+                        {logsLoading ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
+                        {logsLoading ? 'Loading...' : 'Fetch Logs'}
+                      </Button>
+                      {logLines.length > 0 && (
+                        <div className="max-h-40 overflow-auto rounded border border-border/20 bg-black/80 p-1.5 font-mono text-[9px] leading-tight text-green-400">
+                          {logLines.map((line, i) => (
+                            <div key={i} className="whitespace-pre-wrap break-all">{line}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Terminal tab */}
+                  {machineTab === 'terminal' && onExecCommand && (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-1">
+                        <Input
+                          value={terminalCmd}
+                          onChange={(e) => setTerminalCmd(e.target.value)}
+                          placeholder="ls -la /root/.claude/"
+                          className="h-7 flex-1 font-mono text-[10px]"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && terminalCmd.trim() && !terminalRunning) {
+                              e.preventDefault();
+                              (async () => {
+                                setTerminalRunning(true);
+                                setTerminalOutput('');
+                                try {
+                                  const res = await onExecCommand(terminalCmd);
+                                  let output = '';
+                                  if (res.stdout) output += res.stdout;
+                                  if (res.stderr) output += (output ? '\n' : '') + res.stderr;
+                                  if (res.error) output += (output ? '\n' : '') + `Error: ${res.error}`;
+                                  output += `\n[exit code: ${res.exitCode}]`;
+                                  setTerminalOutput(output);
+                                } catch (err) {
+                                  setTerminalOutput(`Error: ${err instanceof Error ? err.message : 'Command failed'}`);
+                                } finally {
+                                  setTerminalRunning(false);
+                                }
+                              })();
+                            }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={terminalRunning || !terminalCmd.trim()}
+                          onClick={async () => {
+                            setTerminalRunning(true);
+                            setTerminalOutput('');
+                            try {
+                              const res = await onExecCommand(terminalCmd);
+                              let output = '';
+                              if (res.stdout) output += res.stdout;
+                              if (res.stderr) output += (output ? '\n' : '') + res.stderr;
+                              if (res.error) output += (output ? '\n' : '') + `Error: ${res.error}`;
+                              output += `\n[exit code: ${res.exitCode}]`;
+                              setTerminalOutput(output);
+                            } catch (err) {
+                              setTerminalOutput(`Error: ${err instanceof Error ? err.message : 'Command failed'}`);
+                            } finally {
+                              setTerminalRunning(false);
+                            }
+                          }}
+                          className="h-7 px-2"
+                        >
+                          {terminalRunning ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
+                        </Button>
+                      </div>
+                      {terminalOutput && (
+                        <div className="max-h-40 overflow-auto rounded border border-border/20 bg-black/80 p-1.5 font-mono text-[9px] leading-tight text-green-400">
+                          <pre className="whitespace-pre-wrap break-all">{terminalOutput}</pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* API Key tab */}
+                  {machineTab === 'apikey' && onPushCredentials && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-muted-foreground">
+                        Enter an Anthropic API key to switch to API mode. This bypasses CLI/OAuth auth.
+                      </p>
+                      <div className="relative">
+                        <Input
+                          type={showApiKeyValue ? 'text' : 'password'}
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder="sk-ant-..."
+                          className="h-7 pr-8 font-mono text-[10px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKeyValue(!showApiKeyValue)}
+                          className="absolute right-0 top-0 flex h-7 items-center px-2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showApiKeyValue ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                        </button>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          if (!apiKeyInput.trim()) return;
+                          setApiKeySaving(true);
+                          try {
+                            await onPushCredentials({ claudeMode: 'sdk', anthropicApiKey: apiKeyInput.trim() });
+                            toast({ title: 'API key set', description: 'Switched to API mode. Existing conversations were reset.' });
+                            setApiKeyInput('');
+                          } catch (err) {
+                            toast({ title: 'Failed', description: err instanceof Error ? err.message : 'Failed to set API key', variant: 'destructive' });
+                          } finally {
+                            setApiKeySaving(false);
+                          }
+                        }}
+                        disabled={apiKeySaving || !apiKeyInput.trim()}
+                        className="w-full gap-1 text-[10px]"
+                      >
+                        {apiKeySaving ? <Loader2 className="size-3 animate-spin" /> : <Key className="size-3" />}
+                        {apiKeySaving ? 'Setting...' : 'Set API Key & Switch to SDK Mode'}
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}

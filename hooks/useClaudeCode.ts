@@ -47,6 +47,18 @@ export interface PullResult {
   error?: string;
 }
 
+export interface BridgeLogs {
+  lines: string[];
+  total: number;
+}
+
+export interface ExecResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  error?: string;
+}
+
 export interface UseClaudeCodeReturn {
   status: ConnectionStatus;
   connect: (_url: string, _apiKey: string) => void;
@@ -73,6 +85,9 @@ export interface UseClaudeCodeReturn {
   connectionHealth: ConnectionHealth;
   retry: () => void;
   sessionLiveStates: Map<string, PoolSessionState>;
+  fetchLogs: (_opts?: { last?: number; filter?: string }) => Promise<BridgeLogs>;
+  execCommand: (_command: string) => Promise<ExecResult>;
+  pushCredentials: (_opts: { claudeMode: 'cli' | 'sdk'; claudeAuthJson?: string; anthropicApiKey?: string }) => Promise<void>;
 }
 
 // ── Hook ────────────────────────────────────────────────────
@@ -340,6 +355,34 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.retry();
   }, [pool]);
 
+  // ── Machine debugging helpers ─────────────────────────────
+
+  const fetchLogs = useCallback(async (opts?: { last?: number; filter?: string }): Promise<BridgeLogs> => {
+    const params = new URLSearchParams();
+    if (opts?.last) params.set('last', String(opts.last));
+    if (opts?.filter) params.set('filter', opts.filter);
+    const qs = params.toString();
+    return apiFetch(`/logs${qs ? `?${qs}` : ''}`);
+  }, [apiFetch]);
+
+  const execCommand = useCallback(async (command: string): Promise<ExecResult> => {
+    return apiFetch('/exec', {
+      method: 'POST',
+      body: JSON.stringify({ command }),
+    });
+  }, [apiFetch]);
+
+  const pushCredentials = useCallback(async (opts: {
+    claudeMode: 'cli' | 'sdk';
+    claudeAuthJson?: string;
+    anthropicApiKey?: string;
+  }) => {
+    await apiFetch('/credentials', {
+      method: 'POST',
+      body: JSON.stringify(opts),
+    });
+  }, [apiFetch]);
+
   useEffect(() => {
     return () => { pool.disconnectAll(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -352,5 +395,6 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     fetchRepos, messages, sendMessage, clearConversation,
     approve, deny, answerQuestion, abort: abortAction, isBusy,
     slashCommands, connectionHealth, retry, sessionLiveStates,
+    fetchLogs, execCommand, pushCredentials,
   };
 }

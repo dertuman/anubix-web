@@ -7,6 +7,7 @@ import { encrypt } from '@/lib/encryption';
 const CLAUDE_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
 const CLAUDE_TOKEN_URL = 'https://console.anthropic.com/v1/oauth/token';
 const CLAUDE_REDIRECT_URI = 'https://console.anthropic.com/oauth/code/callback';
+const CLAUDE_SCOPE = 'org:create_api_key user:profile user:inference';
 
 /**
  * POST /api/auth/claude/callback
@@ -104,8 +105,10 @@ async function handleCallback(req: NextRequest) {
     );
   }
 
-  // Build credentials JSON in the format that Claude Code CLI expects
-  // Include expiresAt so the CLI knows when to proactively refresh the token
+  // Build credentials JSON in the format that Claude Code CLI expects.
+  // CRITICAL: Must include `scopes` — the CLI checks Bg(K?.scopes) && K?.accessToken
+  // and rejects credentials without a valid scopes array.
+  // Must include `expiresAt` — CLI uses it to proactively refresh tokens.
   const expiresAt = tokenData.expires_in
     ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
     : new Date(Date.now() + 3600 * 1000).toISOString(); // default 1h
@@ -115,6 +118,7 @@ async function handleCallback(req: NextRequest) {
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
       expiresAt,
+      scopes: CLAUDE_SCOPE.split(' '),
     },
   });
 
