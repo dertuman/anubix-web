@@ -1,7 +1,7 @@
 'use client';
 
 import { useScopedI18n } from '@/locales/client';
-import { Sparkles, Play } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export function SocialProofSection() {
   const t = useScopedI18n('home.socialProof');
@@ -24,20 +24,17 @@ export function SocialProofSection() {
           </p>
         </div>
 
-        {/* Demo video placeholder */}
-        <div className="mx-auto mt-12 max-w-2xl">
-          <div className="group relative flex aspect-video cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 transition-colors hover:border-primary/50 hover:bg-primary/8">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary-muted),transparent_70%)]" />
-            <div className="relative text-center">
-              <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-colors group-hover:bg-primary/20">
-                <Play className="size-6 text-primary" />
-              </div>
-              <p className="text-sm font-semibold text-foreground">
-                {t('videoPlaceholder')}
-              </p>
-              <p className="mt-2 max-w-xs text-xs text-muted-foreground">
-                {t('videoSubtext')}
-              </p>
+        {/* Demo video */}
+        <div className="mx-auto mt-12 max-w-3xl">
+          <div className="overflow-hidden rounded-2xl border border-primary/20 shadow-xl shadow-primary/5">
+            <div className="relative aspect-video">
+              <iframe
+                src="https://www.youtube.com/embed/JYKj_fFyoAU?rel=0&modestbranding=1"
+                title="Demo video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 size-full"
+              />
             </div>
           </div>
         </div>
