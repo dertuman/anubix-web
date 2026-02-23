@@ -25,6 +25,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Save,
   ScrollText,
   Search,
   Terminal,
@@ -164,13 +165,13 @@ function EditSessionModal({
   const handlePushToMachine = async () => {
     const valid = activeVars.filter((v) => v.key.trim());
     if (valid.length === 0) {
-      setEnvMessage('Error: No variables to push');
+      setEnvMessage('Error: No variables to save');
       return;
     }
     setSavingEnv(true);
     setEnvMessage(null);
     try {
-      // Convert array to Record<string, string> and push directly to bridge
+      // Convert array to Record<string, string> and save to database + sync to machine
       const varsObj: Record<string, string> = {};
       for (const v of valid) {
         varsObj[v.key.trim()] = v.value;
@@ -185,11 +186,13 @@ function EditSessionModal({
       if (!res.ok) {
         setEnvMessage(`Error: ${data.error}`);
       } else {
-        setEnvMessage(`Pushed ${data.count} vars to machine`);
-        setTimeout(() => setEnvMessage(null), 4000);
+        // Show the message or warning from the API
+        const displayMsg = data.warning || data.message || `Saved ${data.count} variable(s)`;
+        setEnvMessage(displayMsg);
+        setTimeout(() => setEnvMessage(null), 5000);
       }
     } catch {
-      setEnvMessage('Error: Failed to push to machine');
+      setEnvMessage('Error: Failed to save variables');
     } finally {
       setSavingEnv(false);
     }
@@ -383,7 +386,7 @@ function EditSessionModal({
           <div className="border-border/20 mt-6 border-t pt-5">
             <h3 className="text-sm font-semibold">Environment Variables</h3>
             <p className="text-muted-foreground mt-0.5 text-xs">
-              Push .env.local variables directly to your machine.
+              Add variables to your repository. They are stored encrypted and available in all sessions.
             </p>
 
             {/* Repo tabs (only when multiple repos) */}
@@ -504,9 +507,9 @@ function EditSessionModal({
                   {savingEnv ? (
                     <Loader2 className="size-3 animate-spin" />
                   ) : (
-                    <RefreshCw className="size-3" />
+                    <Save className="size-3" />
                   )}
-                  {savingEnv ? 'Pushing…' : 'Push to Machine'}
+                  {savingEnv ? 'Saving…' : 'Save Variables'}
                 </Button>
               </div>
             )}
@@ -716,6 +719,9 @@ export const CodeSidebar = memo(function CodeSidebar({
       }
       setCloneUrl('');
       setGhCloneSearch('');
+      // Refresh GitHub connection status after successful clone
+      // This ensures the UI updates correctly if OAuth completed during clone
+      await github.refresh();
     } catch {
       setCloneError('Failed to clone repository');
     } finally {
@@ -797,7 +803,7 @@ export const CodeSidebar = memo(function CodeSidebar({
               {t('newSession')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+          <DialogContent className="max-h-[90dvh] overflow-y-auto w-[95vw] sm:max-w-[95vw] md:max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-lg">{t('newSession')}</DialogTitle>
             </DialogHeader>
