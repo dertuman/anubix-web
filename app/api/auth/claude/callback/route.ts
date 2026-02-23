@@ -105,10 +105,16 @@ async function handleCallback(req: NextRequest) {
   }
 
   // Build credentials JSON in the format that Claude Code CLI expects
+  // Include expiresAt so the CLI knows when to proactively refresh the token
+  const expiresAt = tokenData.expires_in
+    ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+    : new Date(Date.now() + 3600 * 1000).toISOString(); // default 1h
+
   const authJson = JSON.stringify({
     claudeAiOauth: {
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
+      expiresAt,
     },
   });
 

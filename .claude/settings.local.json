@@ -8,7 +8,8 @@
       "Bash(npx tsc:*)",
       "Bash(git stash:*)",
       "Bash(pushd:*)",
-      "Bash(popd:*)"
+      "Bash(popd:*)",
+      "Bash(find C:\\\\Users\\\\alex9\\\\Documents\\\\GitHub\\\\anubix-web\\\\app\\\\\\(public\\)\\\\code:*)"
     ]
   }
 }

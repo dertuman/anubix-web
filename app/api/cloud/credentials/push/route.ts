@@ -69,23 +69,25 @@ export async function POST() {
 
     const bridgeApiKey = decrypt(machine.bridge_api_key_encrypted);
 
-    // Build env vars to push
-    const vars: Record<string, string> = { CLAUDE_MODE: claudeMode };
+    // Build credential payload for the dedicated credentials endpoint
+    const credentialPayload: Record<string, string> = { claudeMode };
     if (claudeMode === 'cli' && claudeAuthJson) {
-      vars.CLAUDE_AUTH_JSON = claudeAuthJson;
+      credentialPayload.claudeAuthJson = claudeAuthJson;
     }
     if (claudeMode === 'sdk' && anthropicApiKey) {
-      vars.ANTHROPIC_API_KEY = anthropicApiKey;
+      credentialPayload.anthropicApiKey = anthropicApiKey;
     }
 
-    // Push to bridge
-    const res = await fetch(`${machine.bridge_url}/_bridge/env`, {
+    // Push to bridge via dedicated credentials endpoint
+    // This writes CLI creds to ~/.claude/.credentials.json (not .env.local)
+    // and sets ANTHROPIC_API_KEY in process.env for SDK mode
+    const res = await fetch(`${machine.bridge_url}/_bridge/credentials`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': bridgeApiKey,
       },
-      body: JSON.stringify({ vars }),
+      body: JSON.stringify(credentialPayload),
     });
 
     if (!res.ok) {
