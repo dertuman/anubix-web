@@ -70,7 +70,7 @@ export function ModeToggle() {
       </motion.div>
 
       {/* Desktop segmented control */}
-      <div className="fixed left-4 top-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm border border-border p-1 shadow-sm" data-allow-anon>
+      <div className="fixed right-4 bottom-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/95 backdrop-blur-sm border border-border p-1 shadow-lg" data-allow-anon>
         <button
           onClick={() => setMode('chat')}
           data-allow-anon
