@@ -7,11 +7,10 @@ import { useUserData } from '@/context/UserDataContext';
 import { useScopedI18n } from '@/locales/client';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import {
+  Blocks,
   Info,
   LogIn,
-  MessageSquare,
   ShieldCheck,
-  Terminal,
 } from 'lucide-react';
 
 import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -25,8 +24,7 @@ import { Button, buttonVariants } from './ui/button';
 
 const NAV_ICONS: Record<string, React.ReactNode> = {
   '/about': <Info className="size-4" />,
-  '/chat': <MessageSquare className="size-4" />,
-  '/code': <Terminal className="size-4" />,
+  '/workspace': <Blocks className="size-4" />,
   '/admin/users': <ShieldCheck className="size-4" />,
 };
 
@@ -44,14 +42,8 @@ export function SiteHeader() {
         comingSoon: false,
       },
       {
-        title: 'Chat',
-        href: '/chat',
-        isPublic: true,
-        comingSoon: false,
-      },
-      {
-        title: 'Code',
-        href: '/code',
+        title: 'Workspace',
+        href: '/workspace',
         isPublic: true,
         comingSoon: false,
       },
