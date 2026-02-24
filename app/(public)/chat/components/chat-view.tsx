@@ -17,7 +17,7 @@ import { useScopedI18n } from '@/locales/client';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 import type { ChatConversation, ChatMessage as ChatMessageType } from '@/types/chat';
-import { AI_MODELS, AI_MODELS_MAP, DEFAULT_MODEL, PROVIDER_PRECEDENCE, type ModelId } from '@/types/chat';
+import { AI_MODELS, AI_MODELS_MAP, DEFAULT_MODEL, PREFERRED_DEFAULTS, PROVIDER_PRECEDENCE, type ModelId } from '@/types/chat';
 import type { FileAttachment } from '@/types/code';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
@@ -127,10 +127,17 @@ export function ChatView({ modeToggle }: ChatViewProps = {}) {
     [providersData],
   );
 
-  // ── Best available model (based on provider precedence) ──────
+  // ── Best available model (preferred defaults → provider precedence) ──
   const bestAvailableModel = useMemo<ModelId>(() => {
+    const available = providersData ?? [];
+    // Check explicit preferred defaults first (Gemini 3 Flash → GPT-4o)
+    for (const modelId of PREFERRED_DEFAULTS) {
+      const model = AI_MODELS_MAP[modelId];
+      if (model && available.includes(model.provider)) return modelId;
+    }
+    // Fallback: first available model by provider precedence
     for (const provider of PROVIDER_PRECEDENCE) {
-      if ((providersData ?? []).includes(provider)) {
+      if (available.includes(provider)) {
         const model = AI_MODELS.find((m) => m.provider === provider);
         if (model) return model.id as ModelId;
       }
@@ -396,7 +403,7 @@ export function ChatView({ modeToggle }: ChatViewProps = {}) {
   // ── Active conversation ─────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={conversationsLoading} onSelect={setSelectedId} onNewChat={handleNewChat} onDelete={(id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+      <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={conversationsLoading} onSelect={setSelectedId} onNewChat={handleNewChat} onDelete={(id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} modeToggle={modeToggle} />
       <div className="relative flex flex-1 flex-col overflow-hidden" {...dragHandlers}>
         {dragOverlay}
 

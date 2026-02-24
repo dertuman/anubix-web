@@ -39,6 +39,9 @@ export const AI_MODELS_MAP: Record<string, AIModel> = Object.fromEntries(
 
 export const DEFAULT_MODEL: ModelId = 'gemini-3-flash-preview';
 
+/** Preferred default models in priority order (first available wins). */
+export const PREFERRED_DEFAULTS: ModelId[] = ['gemini-3-flash-preview', 'gpt-4o'];
+
 /** Provider precedence for auto-selecting the best available model. */
 export const PROVIDER_PRECEDENCE: AIProvider[] = ['google', 'openai', 'anthropic'];
 
