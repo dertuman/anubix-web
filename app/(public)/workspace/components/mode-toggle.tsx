@@ -37,7 +37,7 @@ export function ModeToggle() {
     <>
       {/* Mobile FAB */}
       <motion.div
-        className="fixed bottom-6 right-6 z-50 md:hidden"
+        className="fixed bottom-6 left-6 z-50 md:hidden"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         data-allow-anon
@@ -70,7 +70,7 @@ export function ModeToggle() {
       </motion.div>
 
       {/* Desktop segmented control */}
-      <div className="fixed right-4 bottom-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/95 backdrop-blur-sm border border-border p-1 shadow-lg" data-allow-anon>
+      <div className="fixed left-4 bottom-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/95 backdrop-blur-sm border border-border p-1 shadow-lg" data-allow-anon>
         <button
           onClick={() => setMode('chat')}
           data-allow-anon
