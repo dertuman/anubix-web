@@ -4,15 +4,21 @@ import { Suspense } from 'react';
 import { Loader } from '@/components/ui/loader';
 import { WorkspaceProvider } from './context/workspace-context';
 import { EnvironmentDialogProvider } from './context/environment-dialog-context';
+import { CloudMachineProvider } from './context/cloud-machine-context';
+import { ClaudeCodeProvider } from './context/claude-code-context';
 import { WorkspaceView } from './components/workspace-view';
 
 function WorkspaceContent() {
   return (
-    <WorkspaceProvider>
-      <EnvironmentDialogProvider>
-        <WorkspaceView />
-      </EnvironmentDialogProvider>
-    </WorkspaceProvider>
+    <CloudMachineProvider>
+      <ClaudeCodeProvider>
+        <WorkspaceProvider>
+          <EnvironmentDialogProvider>
+            <WorkspaceView />
+          </EnvironmentDialogProvider>
+        </WorkspaceProvider>
+      </ClaudeCodeProvider>
+    </CloudMachineProvider>
   );
 }
 

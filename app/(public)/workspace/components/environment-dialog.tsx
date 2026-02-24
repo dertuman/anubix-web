@@ -38,6 +38,7 @@ export function EnvironmentDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogTitle className="sr-only">Environment Setup</DialogTitle>
         {connectionError ? (
           <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8">
             <div className="flex size-16 items-center justify-center rounded-2xl bg-destructive/10">

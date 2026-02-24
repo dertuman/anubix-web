@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { useClaudeCode } from '@/hooks/useClaudeCode';
-import { useCloudMachine } from '@/hooks/useCloudMachine';
+import { useClaudeCodeContext } from '../context/claude-code-context';
+import { useCloudMachineContext } from '../context/cloud-machine-context';
 import { useEnvironmentDialog } from '../context/environment-dialog-context';
 import { CodeView } from '../../code/components/code-view';
 import { ModeToggle } from './mode-toggle';
@@ -14,8 +14,8 @@ import { ModeToggle } from './mode-toggle';
  */
 export function CodeViewWrapper() {
   const { isSignedIn } = useAuth();
-  const { status, connect } = useClaudeCode();
-  const cloudMachine = useCloudMachine();
+  const { status, connect } = useClaudeCodeContext();
+  const cloudMachine = useCloudMachineContext();
   const { showEnvironmentDialog } = useEnvironmentDialog();
 
   // Auto-connect when machine is running

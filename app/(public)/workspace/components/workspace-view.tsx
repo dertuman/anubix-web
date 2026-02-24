@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useWorkspace } from '../context/workspace-context';
 import { useEnvironmentDialog } from '../context/environment-dialog-context';
-import { useClaudeCode } from '@/hooks/useClaudeCode';
+import { useClaudeCodeContext } from '../context/claude-code-context';
 import { LoginPrompt } from './login-prompt';
 import { EnvironmentDialog } from './environment-dialog';
 
@@ -43,7 +43,7 @@ export function WorkspaceView() {
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [loginPromptMessage, setLoginPromptMessage] = useState<string>();
   const { isOpen: isEnvironmentDialogOpen, hideEnvironmentDialog } = useEnvironmentDialog();
-  const { status, connect, connectionError } = useClaudeCode();
+  const { status, connect, connectionError } = useClaudeCodeContext();
 
   const showLoginPrompt = (message?: string) => {
     setLoginPromptMessage(message);

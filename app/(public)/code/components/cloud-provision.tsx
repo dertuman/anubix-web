@@ -33,11 +33,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  useCloudMachine,
-  type CloudMachine,
-  type ProvisionOptions,
-} from '@/hooks/useCloudMachine';
+import { useCloudMachineContext } from '../../workspace/context/cloud-machine-context';
+import type { CloudMachine, ProvisionOptions } from '@/hooks/useCloudMachine';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useGitHubConnection } from '@/hooks/useGitHubConnection';
 import { useGitHubRepos, type GitHubRepo } from '@/hooks/useGitHubRepos';
@@ -79,7 +76,7 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
     start,
     // stop,
     destroy,
-  } = useCloudMachine();
+  } = useCloudMachineContext();
 
   // ── Auto-connect when machine becomes running ────────────
   if (machine?.status === 'running' && machine.bridgeUrl && machine.bridgeApiKey) {

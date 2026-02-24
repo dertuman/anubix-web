@@ -5,9 +5,9 @@ import { Cloud, Eye, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
-import { useClaudeCode } from '@/hooks/useClaudeCode';
+import { useClaudeCodeContext } from '../../workspace/context/claude-code-context';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
-import { useCloudMachine } from '@/hooks/useCloudMachine';
+import { useCloudMachineContext } from '../../workspace/context/cloud-machine-context';
 import type { FileAttachment } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
 import { cn } from '@/lib/utils';
@@ -40,8 +40,8 @@ export function CodeView({ modeToggle }: CodeViewProps = {}) {
     isBusy, slashCommands, connectionHealth,
     sessionLiveStates, fetchRepos,
     fetchLogs, execCommand, pushCredentials,
-  } = useClaudeCode();
-  const cloudMachine = useCloudMachine();
+  } = useClaudeCodeContext();
+  const cloudMachine = useCloudMachineContext();
   const claudeConnection = useClaudeConnection();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -10,7 +10,16 @@
       "Bash(pushd:*)",
       "Bash(popd:*)",
       "Bash(find C:\\\\Users\\\\alex9\\\\Documents\\\\GitHub\\\\anubix-web\\\\app\\\\\\(public\\)\\\\code:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(netstat:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe:*)",
+      "Bash(which npx:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(/c/Windows/system32/cmd.exe:*)",
+      "Bash(cd:*)"
     ]
   }
 }
