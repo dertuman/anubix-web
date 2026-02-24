@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase/server';
+import type { Json } from '@/types/supabase';
 
 /**
  * POST /api/webhooks/revenuecat
@@ -35,11 +36,11 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Extract webhook data ──────────────────────────────────
-  const userId = event.app_user_id; // RevenueCat app_user_id = Clerk userId
-  const eventType = event.type;
-  const subscriber = event.subscriber || {};
-  const entitlements = subscriber.entitlements || {};
-  const subscriptions = subscriber.subscriptions || {};
+  const userId = event.app_user_id as string | undefined; // RevenueCat app_user_id = Clerk userId
+  const eventType = event.type as string | undefined;
+  const subscriber = (event.subscriber as Record<string, unknown> | undefined) || {};
+  const entitlements = (subscriber.entitlements as Record<string, unknown> | undefined) || {};
+  const subscriptions = (subscriber.subscriptions as Record<string, unknown> | undefined) || {};
 
   if (!userId) {
     console.warn('RevenueCat webhook: Missing app_user_id', { eventType });
@@ -50,11 +51,12 @@ export async function POST(req: NextRequest) {
 
   // ── Determine subscription state ──────────────────────────
   // Check the "Anubix Pro" entitlement (case-insensitive)
-  const proEntitlement = entitlements['Anubix Pro'] || entitlements['anubix_pro'];
+  const proEntitlement = (entitlements['Anubix Pro'] || entitlements['anubix_pro']) as Record<string, unknown> | undefined;
 
   // Subscription is active if entitlement hasn't expired
-  const isActive = proEntitlement?.expires_date
-    ? new Date(proEntitlement.expires_date) > new Date()
+  const expiresDate = proEntitlement?.expires_date as string | undefined;
+  const isActive = expiresDate
+    ? new Date(expiresDate) > new Date()
     : false;
 
   // Find the most recent active subscription to get details
@@ -71,13 +73,14 @@ export async function POST(req: NextRequest) {
     const subData = sub as Record<string, unknown>;
 
     // Check if this subscription is still valid
-    if (subData.expires_date && new Date(subData.expires_date) > new Date()) {
+    const subExpiresDate = subData.expires_date as string | undefined;
+    if (subExpiresDate && new Date(subExpiresDate) > new Date()) {
       productId = key;
-      currentPeriodEnd = subData.expires_date;
-      currentPeriodStart = subData.purchase_date || subData.original_purchase_date || null;
-      unsubscribeDetectedAt = subData.unsubscribe_detected_at || null;
+      currentPeriodEnd = subExpiresDate;
+      currentPeriodStart = (subData.purchase_date as string | undefined) || (subData.original_purchase_date as string | undefined) || null;
+      unsubscribeDetectedAt = (subData.unsubscribe_detected_at as string | undefined) || null;
       autoRenew = !unsubscribeDetectedAt;
-      store = subData.store || null;
+      store = (subData.store as string | undefined) || null;
 
       // Infer billing interval from product_id
       // Assumes product IDs follow naming convention: anubix_pro_monthly, anubix_pro_annual
@@ -104,8 +107,8 @@ export async function POST(req: NextRequest) {
     .from('subscriptions')
     .upsert(
       {
-        user_id: userId,
-        revenuecat_customer_id: userId,
+        user_id: userId as string,
+        revenuecat_customer_id: userId as string,
         entitlement_id: 'Anubix Pro',
         product_id: productId,
         store,
@@ -116,7 +119,7 @@ export async function POST(req: NextRequest) {
         auto_renew: autoRenew,
         unsubscribe_detected_at: unsubscribeDetectedAt,
         last_webhook_at: new Date().toISOString(),
-        raw_webhook_event: event, // Store full payload for debugging
+        raw_webhook_event: event as unknown as Json, // Store full payload for debugging
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' } // Update existing record if user already has subscription
