@@ -8,9 +8,9 @@ import { useWorkspace } from '../context/workspace-context';
 import { ModeToggle } from './mode-toggle';
 import { LoginPrompt } from './login-prompt';
 
-// Lazy load the heavy mode-specific components
-const ChatView = lazy(() => import('../../chat/components/chat-view').then(m => ({ default: m.ChatView })));
-const CodeView = lazy(() => import('../../code/components/code-view').then(m => ({ default: m.CodeView })));
+// Lazy load the heavy mode-specific components with workspace wrappers
+const ChatViewWrapper = lazy(() => import('./chat-view-wrapper').then(m => ({ default: m.ChatViewWrapper })));
+const CodeViewWrapper = lazy(() => import('./code-view-wrapper').then(m => ({ default: m.CodeViewWrapper })));
 
 function MessageListSkeleton() {
   return (
@@ -86,7 +86,7 @@ export function WorkspaceView() {
               className="h-full"
             >
               <Suspense fallback={<MessageListSkeleton />}>
-                <ChatView />
+                <ChatViewWrapper />
               </Suspense>
             </motion.div>
           ) : (
@@ -99,7 +99,7 @@ export function WorkspaceView() {
               className="h-full"
             >
               <Suspense fallback={<MessageListSkeleton />}>
-                <CodeView />
+                <CodeViewWrapper />
               </Suspense>
             </motion.div>
           )}

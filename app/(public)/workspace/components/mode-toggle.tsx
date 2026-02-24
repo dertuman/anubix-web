@@ -49,8 +49,8 @@ export function ModeToggle() {
           className={cn(
             'size-14 rounded-full shadow-lg transition-all',
             mode === 'chat'
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              ? 'bg-primary hover:bg-primary/90'
+              : 'bg-accent hover:bg-accent/90'
           )}
           title={mode === 'chat' ? 'Switch to Code Mode' : 'Switch to Chat Mode'}
         >
@@ -70,14 +70,14 @@ export function ModeToggle() {
       </motion.div>
 
       {/* Desktop segmented control */}
-      <div className="fixed right-4 top-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm border border-border p-1 shadow-sm" data-allow-anon>
+      <div className="fixed left-4 top-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm border border-border p-1 shadow-sm" data-allow-anon>
         <button
           onClick={() => setMode('chat')}
           data-allow-anon
           className={cn(
             'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
             mode === 'chat'
-              ? 'bg-blue-600 text-white shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           )}
         >
@@ -92,7 +92,7 @@ export function ModeToggle() {
           className={cn(
             'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
             mode === 'code'
-              ? 'bg-green-600 text-white shadow-sm'
+              ? 'bg-accent text-accent-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           )}
         >
