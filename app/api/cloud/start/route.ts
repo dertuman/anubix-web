@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
+import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
 
 // Allow up to 60s for machine restart + health check
 export const maxDuration = 60;
@@ -34,6 +35,15 @@ async function handleStart() {
   const supabase = await createClerkSupabaseClient();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+  }
+
+  // ── Check subscription (admins bypass) ─────────────────────
+  const subCheck = await checkSubscriptionOrAdmin(supabase, userId);
+  if (!subCheck.allowed) {
+    return NextResponse.json(
+      { error: subCheck.reason, code: 'SUBSCRIPTION_REQUIRED' },
+      { status: 403 },
+    );
   }
 
   const { data: machine } = await supabase

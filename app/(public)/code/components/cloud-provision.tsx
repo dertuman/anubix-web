@@ -72,6 +72,7 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
     isLoading,
     isWorking,
     error,
+    errorCode,
     provision,
     start,
     // stop,
@@ -124,6 +125,7 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
         onDestroy={destroy}
         isWorking={isWorking}
         error={error}
+        errorCode={errorCode}
       />
     );
   }
@@ -147,6 +149,7 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
       onManualSetup={onManualSetup}
       isWorking={isWorking}
       error={error}
+      errorCode={errorCode}
     />
   );
 }
@@ -158,11 +161,13 @@ function SetupForm({
   onManualSetup,
   isWorking,
   error,
+  errorCode,
 }: {
   onProvision: (_opts: ProvisionOptions) => Promise<void>;
   onManualSetup: () => void;
   isWorking: boolean;
   error: string | null;
+  errorCode: string | null;
 }) {
   const [templateValue, setTemplateValue] = useState('talkartech');
   const [gitRepoUrl, setGitRepoUrl] = useState('');
@@ -328,7 +333,17 @@ function SetupForm({
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-            <p className="text-sm text-destructive">{error}</p>
+            <div className="space-y-1">
+              <p className="text-sm text-destructive">{error}</p>
+              {errorCode === 'SUBSCRIPTION_REQUIRED' && (
+                <a
+                  href="/#pricing"
+                  className="inline-block text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+                >
+                  View plans
+                </a>
+              )}
+            </div>
           </div>
         )}
 
@@ -349,7 +364,7 @@ function SetupForm({
           ) : !showClaudeForm ? (
             <button
               onClick={() => setShowClaudeForm(true)}
-              className="flex w-full items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-50 dark:bg-blue-950 px-3 py-2.5 text-sm text-blue-700 dark:text-blue-300"
+              className="flex w-full items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-50 px-3 py-2.5 text-sm text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
             >
               <AlertCircle className="size-4 shrink-0" />
               <span className="flex-1 text-left">Optional: Connect Claude for AI assistance (you can connect later)</span>
@@ -361,7 +376,7 @@ function SetupForm({
                 <span className="text-sm font-medium">Connect Claude</span>
                 <button
                   onClick={() => { setShowClaudeForm(false); setClaudeError(null); setShowManualAuth(false); setOauthStep('idle'); setOauthCode(''); }}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -424,7 +439,7 @@ function SetupForm({
                   </Button>
                   <button
                     onClick={() => { setOauthStep('idle'); setOauthCode(''); setClaudeError(null); }}
-                    className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    className="w-full rounded-md py-1 text-center text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     Start over
                   </button>
@@ -445,7 +460,7 @@ function SetupForm({
               {/* Manual credentials toggle */}
               <button
                 onClick={() => setShowManualAuth(!showManualAuth)}
-                className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                className="w-full rounded-md py-1 text-center text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 {showManualAuth ? 'Hide manual options' : 'Enter credentials manually'}
               </button>
@@ -460,7 +475,7 @@ function SetupForm({
                         'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                         claudeAuthTab === 'cli'
                           ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       )}
                     >
                       <Terminal className="size-3" />
@@ -472,7 +487,7 @@ function SetupForm({
                         'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                         claudeAuthTab === 'sdk'
                           ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       )}
                     >
                       <Key className="size-3" />
@@ -676,7 +691,7 @@ function SetupForm({
 
                   <button
                     onClick={() => setManualGitUrl(true)}
-                    className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    className="rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     Enter URL manually instead
                   </button>
@@ -692,7 +707,7 @@ function SetupForm({
                   {!github.isLoading && !github.isConnected && (
                     <button
                       onClick={() => github.connect('/code')}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       <Github className="size-3" />
                       Connect GitHub for private repos
@@ -704,7 +719,7 @@ function SetupForm({
                         setManualGitUrl(false);
                         setGitRepoUrl('');
                       }}
-                      className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       Back to repo picker
                     </button>
@@ -718,7 +733,7 @@ function SetupForm({
           <div className="space-y-2">
             <button
               onClick={() => setShowEnvVars(!showEnvVars)}
-              className="flex w-full items-center justify-between text-sm font-medium"
+              className="flex w-full items-center justify-between rounded-md px-1 py-0.5 text-sm font-medium transition-colors hover:bg-muted"
             >
               <span>Environment Variables {envVars.length > 0 && `(${envVars.length})`}</span>
               <Plus className={cn('size-4 text-muted-foreground transition-transform', showEnvVars && 'rotate-45')} />
@@ -799,7 +814,7 @@ function SetupForm({
         <div className="text-center">
           <button
             onClick={onManualSetup}
-            className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             Or connect to your own bridge &rarr;
           </button>
@@ -869,12 +884,14 @@ function StoppedView({
   onDestroy,
   isWorking,
   error,
+  errorCode,
 }: {
   machine: CloudMachine;
   onStart: () => Promise<void>;
   onDestroy: () => Promise<void>;
   isWorking: boolean;
   error: string | null;
+  errorCode: string | null;
 }) {
   const [confirmDestroy, setConfirmDestroy] = useState(false);
 
@@ -899,7 +916,17 @@ function StoppedView({
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-            <p className="text-sm text-destructive">{error}</p>
+            <div className="space-y-1">
+              <p className="text-sm text-destructive">{error}</p>
+              {errorCode === 'SUBSCRIPTION_REQUIRED' && (
+                <a
+                  href="/#pricing"
+                  className="inline-block text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+                >
+                  View plans
+                </a>
+              )}
+            </div>
           </div>
         )}
 

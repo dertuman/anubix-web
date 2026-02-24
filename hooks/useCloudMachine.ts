@@ -45,6 +45,8 @@ export interface UseCloudMachineReturn {
   isWorking: boolean;
   /** Error message from the last operation */
   error: string | null;
+  /** Machine-readable error code (e.g. 'SUBSCRIPTION_REQUIRED') */
+  errorCode: string | null;
   /** Create a new cloud machine */
   provision: (_opts: ProvisionOptions) => Promise<void>;
   /** Resume a stopped machine */
@@ -76,6 +78,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Fetch status ─────────────────────────────────────────
@@ -146,6 +149,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
     async (opts: ProvisionOptions) => {
       setIsWorking(true);
       setError(null);
+      setErrorCode(null);
 
       try {
         // Temporary password gate — see app/(public)/code/page.tsx
@@ -166,6 +170,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
         const data = await safeJson(res);
 
         if (!res.ok) {
+          if (data.code) setErrorCode(data.code);
           throw new Error(data.error || 'Provisioning failed');
         }
 
@@ -205,12 +210,16 @@ export function useCloudMachine(): UseCloudMachineReturn {
   const start = useCallback(async () => {
     setIsWorking(true);
     setError(null);
+    setErrorCode(null);
 
     try {
       const res = await fetch('/api/cloud/start', { method: 'POST' });
       const data = await safeJson(res);
 
-      if (!res.ok) throw new Error(data.error || 'Failed to start');
+      if (!res.ok) {
+        if (data.code) setErrorCode(data.code);
+        throw new Error(data.error || 'Failed to start');
+      }
 
       if (data.status === 'running') {
         setMachine((prev) =>
@@ -295,6 +304,7 @@ export function useCloudMachine(): UseCloudMachineReturn {
     isLoading,
     isWorking,
     error,
+    errorCode,
     provision,
     start,
     stop,

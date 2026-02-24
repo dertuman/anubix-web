@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt, decrypt } from '@/lib/encryption';
+import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
 import {
   createFlyApp,
   allocateFlyIps,
@@ -70,25 +71,12 @@ async function handleProvision(req: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
-  // ── Check active subscription ─────────────────────────────
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select()
-    .eq('user_id', userId)
-    .single();
-
-  if (!subscription || !subscription.is_active) {
+  // ── Check subscription (admins bypass) ─────────────────────
+  const subCheck = await checkSubscriptionOrAdmin(supabase, userId);
+  if (!subCheck.allowed) {
     return NextResponse.json(
-      { error: 'Active subscription required. Please subscribe to provision a cloud machine.' },
-      { status: 403 }
-    );
-  }
-
-  // Verify subscription is monthly or annual
-  if (!subscription.billing_interval || !['monthly', 'annual'].includes(subscription.billing_interval)) {
-    return NextResponse.json(
-      { error: 'Valid subscription plan required (monthly or annual).' },
-      { status: 403 }
+      { error: subCheck.reason, code: 'SUBSCRIPTION_REQUIRED' },
+      { status: 403 },
     );
   }
 

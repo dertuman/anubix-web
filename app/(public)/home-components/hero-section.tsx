@@ -60,7 +60,7 @@ export function HeroSection() {
 
         {/* CTAs */}
         <div className="mt-10 flex flex-col items-center gap-4">
-          <Link href="/sign-up" className="w-full sm:w-auto">
+          <Link href="/workspace" className="w-full sm:w-auto">
             <Button
               size="lg"
               className="w-full gap-2 px-8 text-base font-semibold sm:w-auto"

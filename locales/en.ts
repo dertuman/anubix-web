@@ -195,7 +195,7 @@ export default {
       titleHighlight: 'from your phone.',
       subtitle:
         'Anubix is a full coding agent in the cloud. Describe what you want, watch it build in real time, and deploy in one click — from any device. Switch between Claude, GPT, Gemini, and hundreds of other models mid-build.',
-      cta: 'Start building free',
+      cta: 'Start building',
       ctaSecondary: 'Explore the multi-model chat',
       trustLine: 'No credit card. No lock-in. You own your code.',
       stat1: '300+ AI models',
@@ -324,7 +324,7 @@ export default {
     cta: {
       title: 'Your next app is one conversation away.',
       subtitle: 'Build from any device. Use any model. Deploy in one click.',
-      button: 'Start building free',
+      button: 'Start building',
       trustLine: 'No credit card. No lock-in. You own your code.',
     },
   },
