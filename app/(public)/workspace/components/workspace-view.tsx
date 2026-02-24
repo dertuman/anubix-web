@@ -1,10 +1,12 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect, createContext, useContext } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useWorkspace } from '../context/workspace-context';
 import { ModeToggle } from './mode-toggle';
+import { LoginPrompt } from './login-prompt';
 
 // Lazy load the heavy mode-specific components
 const ChatView = lazy(() => import('../../chat/components/chat-view').then(m => ({ default: m.ChatView })));
@@ -18,44 +20,101 @@ function MessageListSkeleton() {
   );
 }
 
+// Context to trigger login prompt from child components
+interface LoginPromptContextValue {
+  showLoginPrompt: (_message?: string) => void;
+}
+
+const LoginPromptContext = createContext<LoginPromptContextValue | undefined>(undefined);
+
+export function useLoginPrompt() {
+  const context = useContext(LoginPromptContext);
+  if (!context) {
+    throw new Error('useLoginPrompt must be used within WorkspaceView');
+  }
+  return context;
+}
+
 export function WorkspaceView() {
   const { mode } = useWorkspace();
+  const { isSignedIn, isLoaded } = useAuth();
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const [loginPromptMessage, setLoginPromptMessage] = useState<string>();
+
+  const showLoginPrompt = (message?: string) => {
+    setLoginPromptMessage(message);
+    setLoginPromptOpen(true);
+  };
+
+  // Intercept interactions for unauthenticated users
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!isSignedIn) {
+      // Add click interceptor to show login when clicking on inputs/buttons
+      const handleInteraction = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // Check if clicked element is an input, textarea, or button within workspace
+        if (
+          target.closest('textarea') ||
+          target.closest('input') ||
+          (target.closest('button') && !target.closest('[data-allow-anon]'))
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          showLoginPrompt();
+        }
+      };
+
+      document.addEventListener('click', handleInteraction, true);
+      return () => document.removeEventListener('click', handleInteraction, true);
+    }
+  }, [isSignedIn, isLoaded]);
 
   return (
-    <div className="relative h-full">
-      {/* Mode-specific view with animations */}
-      <AnimatePresence mode="wait">
-        {mode === 'chat' ? (
-          <motion.div
-            key="chat"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="h-full"
-          >
-            <Suspense fallback={<MessageListSkeleton />}>
-              <ChatView />
-            </Suspense>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="code"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="h-full"
-          >
-            <Suspense fallback={<MessageListSkeleton />}>
-              <CodeView />
-            </Suspense>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <LoginPromptContext.Provider value={{ showLoginPrompt }}>
+      <div className="relative h-full">
+        {/* Mode-specific view with animations */}
+        <AnimatePresence mode="wait">
+          {mode === 'chat' ? (
+            <motion.div
+              key="chat"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="h-full"
+            >
+              <Suspense fallback={<MessageListSkeleton />}>
+                <ChatView />
+              </Suspense>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="code"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="h-full"
+            >
+              <Suspense fallback={<MessageListSkeleton />}>
+                <CodeView />
+              </Suspense>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Mode toggle button */}
-      <ModeToggle />
-    </div>
+        {/* Mode toggle button */}
+        <ModeToggle />
+
+        {/* Login prompt for unauthenticated users */}
+        <LoginPrompt
+          isOpen={loginPromptOpen}
+          onClose={() => setLoginPromptOpen(false)}
+          message={loginPromptMessage}
+        />
+      </div>
+    </LoginPromptContext.Provider>
   );
 }

@@ -40,10 +40,12 @@ export function ModeToggle() {
         className="fixed bottom-6 right-6 z-50 md:hidden"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        data-allow-anon
       >
         <Button
           onClick={toggleMode}
           size="lg"
+          data-allow-anon
           className={cn(
             'size-14 rounded-full shadow-lg transition-all',
             mode === 'chat'
@@ -68,9 +70,10 @@ export function ModeToggle() {
       </motion.div>
 
       {/* Desktop segmented control */}
-      <div className="fixed right-4 top-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm border border-border p-1 shadow-sm">
+      <div className="fixed right-4 top-4 z-50 hidden md:flex items-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm border border-border p-1 shadow-sm" data-allow-anon>
         <button
           onClick={() => setMode('chat')}
+          data-allow-anon
           className={cn(
             'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
             mode === 'chat'
@@ -85,6 +88,7 @@ export function ModeToggle() {
         </button>
         <button
           onClick={() => setMode('code')}
+          data-allow-anon
           className={cn(
             'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
             mode === 'code'
