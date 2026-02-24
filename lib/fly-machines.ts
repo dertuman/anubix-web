@@ -165,7 +165,7 @@ export interface FlyMachine {
 
 export interface CreateMachineOptions {
   bridgeApiKey: string;
-  claudeMode: 'cli' | 'sdk';
+  claudeMode?: 'cli' | 'sdk';   // optional now - user can connect Claude later
   claudeAuthJson?: string;      // for cli mode
   anthropicApiKey?: string;     // for sdk mode
   volumeId: string;
@@ -197,15 +197,17 @@ export async function createFlyMachine(
 
   const env: Record<string, string> = {
     BRIDGE_API_KEY: bridgeApiKey,
-    CLAUDE_MODE: claudeMode,
     HOST: '0.0.0.0',
     REPOS_BASE_PATH: '/workspace',
     PREVIEW_FALLBACK_PORT: '3000',
   };
 
-  // Claude auth — inject the appropriate credential
-  if (claudeMode === 'cli' && claudeAuthJson) {
-    env.CLAUDE_AUTH_JSON = claudeAuthJson;
+  // Claude auth — inject the appropriate credential (if available)
+  if (claudeMode) {
+    env.CLAUDE_MODE = claudeMode;
+    if (claudeMode === 'cli' && claudeAuthJson) {
+      env.CLAUDE_AUTH_JSON = claudeAuthJson;
+    }
   }
   if (claudeMode === 'sdk' && anthropicApiKey) {
     env.ANTHROPIC_API_KEY = anthropicApiKey;

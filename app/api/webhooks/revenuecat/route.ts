@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let event: any;
+  let event: Record<string, unknown>;
   try {
     event = await req.json();
   } catch {
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   // Iterate through all subscriptions to find active one
   for (const [key, sub] of Object.entries(subscriptions)) {
-    const subData = sub as any;
+    const subData = sub as Record<string, unknown>;
 
     // Check if this subscription is still valid
     if (subData.expires_date && new Date(subData.expires_date) > new Date()) {

@@ -282,6 +282,75 @@ export interface Database {
         };
         Relationships: [];
       };
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          revenuecat_customer_id: string | null;
+          entitlement_id: string;
+          product_id: string | null;
+          store: string | null;
+          is_active: boolean;
+          billing_interval: string | null;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          auto_renew: boolean;
+          cancellation_date: string | null;
+          unsubscribe_detected_at: string | null;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          last_webhook_at: string | null;
+          last_api_check_at: string | null;
+          raw_webhook_event: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          revenuecat_customer_id?: string | null;
+          entitlement_id?: string;
+          product_id?: string | null;
+          store?: string | null;
+          is_active?: boolean;
+          billing_interval?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          auto_renew?: boolean;
+          cancellation_date?: string | null;
+          unsubscribe_detected_at?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          last_webhook_at?: string | null;
+          last_api_check_at?: string | null;
+          raw_webhook_event?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          revenuecat_customer_id?: string | null;
+          entitlement_id?: string;
+          product_id?: string | null;
+          store?: string | null;
+          is_active?: boolean;
+          billing_interval?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          auto_renew?: boolean;
+          cancellation_date?: string | null;
+          unsubscribe_detected_at?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          last_webhook_at?: string | null;
+          last_api_check_at?: string | null;
+          raw_webhook_event?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       cloud_machines: {
         Row: {
           id: string;
@@ -397,3 +466,7 @@ export type GitHubConnectionUpdate = Database['public']['Tables']['github_connec
 export type ClaudeConnection = Database['public']['Tables']['claude_connections']['Row'];
 export type ClaudeConnectionInsert = Database['public']['Tables']['claude_connections']['Insert'];
 export type ClaudeConnectionUpdate = Database['public']['Tables']['claude_connections']['Update'];
+
+export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
+export type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert'];
+export type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update'];
