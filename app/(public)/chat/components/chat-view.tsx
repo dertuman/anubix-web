@@ -41,7 +41,11 @@ import { ShareDialog } from './share-dialog';
 // Prevent unnecessary refetches on tab focus while keeping data fresh
 const QUERY_STALE_TIME = 30_000; // 30 seconds
 
-export function ChatView() {
+interface ChatViewProps {
+  modeToggle?: React.ReactNode;
+}
+
+export function ChatView({ modeToggle }: ChatViewProps = {}) {
   const t = useScopedI18n('chat');
   const { userId } = useAuth();
   const queryClient = useQueryClient();
@@ -350,7 +354,7 @@ export function ChatView() {
   if (!selectedId) {
     return (
       <div className="relative flex h-full">
-        <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={conversationsLoading} onSelect={setSelectedId} onNewChat={handleNewChat} onDelete={(id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+        <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={conversationsLoading} onSelect={setSelectedId} onNewChat={handleNewChat} onDelete={(id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} modeToggle={modeToggle} />
         <div className="relative flex flex-1 flex-col overflow-hidden" {...dragHandlers}>
           {dragOverlay}
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-4">

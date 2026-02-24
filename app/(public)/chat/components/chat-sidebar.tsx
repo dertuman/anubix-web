@@ -52,6 +52,7 @@ interface ChatSidebarProps {
   onDelete: (_id: string) => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
+  modeToggle?: React.ReactNode;
 }
 
 export const ChatSidebar = memo(function ChatSidebar({
@@ -63,6 +64,7 @@ export const ChatSidebar = memo(function ChatSidebar({
   onDelete,
   mobileOpen,
   onMobileClose,
+  modeToggle,
 }: ChatSidebarProps) {
   const t = useScopedI18n('chat.sidebar');
   const [collapsed, setCollapsed] = useState(false);
@@ -75,33 +77,39 @@ export const ChatSidebar = memo(function ChatSidebar({
 
   const sidebarContent = (
     <>
-      <div className="flex items-center gap-1.5 p-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onNewChat}
-          className="border-border/30 text-foreground hover:bg-accent flex-1 gap-2 bg-transparent"
-        >
-          <MessageSquarePlus className="size-4" />
-          {t('newChat')}
-        </Button>
+      <div className="flex flex-col gap-2 p-3">
+        {/* Mode toggle - only show in workspace */}
+        {modeToggle && <div className="w-full">{modeToggle}</div>}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(true)}
-          className="text-muted-foreground hover:text-foreground hidden size-8 shrink-0 md:flex"
-        >
-          <PanelLeftClose className="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onMobileClose}
-          className="text-muted-foreground hover:text-foreground size-8 shrink-0 md:hidden"
-        >
-          <X className="size-4" />
-        </Button>
+        {/* New chat button and collapse controls */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onNewChat}
+            className="border-border/30 text-foreground hover:bg-accent flex-1 gap-2 bg-transparent"
+          >
+            <MessageSquarePlus className="size-4" />
+            {t('newChat')}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(true)}
+            className="text-muted-foreground hover:text-foreground hidden size-8 shrink-0 md:flex"
+          >
+            <PanelLeftClose className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMobileClose}
+            className="text-muted-foreground hover:text-foreground size-8 shrink-0 md:hidden"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]>div]:block!">

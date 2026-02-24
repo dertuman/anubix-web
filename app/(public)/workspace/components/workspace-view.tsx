@@ -5,7 +5,6 @@ import { useAuth } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useWorkspace } from '../context/workspace-context';
-import { ModeToggle } from './mode-toggle';
 import { LoginPrompt } from './login-prompt';
 
 // Lazy load the heavy mode-specific components with workspace wrappers
@@ -104,9 +103,6 @@ export function WorkspaceView() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Mode toggle button */}
-        <ModeToggle />
 
         {/* Login prompt for unauthenticated users */}
         <LoginPrompt

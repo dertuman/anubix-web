@@ -30,7 +30,11 @@ const statusBadgeClass = (status: string) =>
     status === 'busy' && 'bg-warning/20 text-warning ring-1 ring-warning/25',
     status === 'error' && 'bg-destructive/20 text-destructive ring-1 ring-destructive/25');
 
-export function CodeView() {
+interface CodeViewProps {
+  modeToggle?: React.ReactNode;
+}
+
+export function CodeView({ modeToggle }: CodeViewProps = {}) {
   const t = useScopedI18n('code');
   const { isSignedIn } = useAuth();
   const {
@@ -184,7 +188,7 @@ export function CodeView() {
   if (!activeSessionId) {
     return (
       <div className="relative flex h-full">
-        <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} />
+        <CodeSidebar modeToggle={modeToggle} sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
@@ -230,7 +234,7 @@ export function CodeView() {
   // ── Active session ─────────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <CodeSidebar sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} />
+      <CodeSidebar modeToggle={modeToggle} sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 

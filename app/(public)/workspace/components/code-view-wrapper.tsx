@@ -7,6 +7,7 @@ import { useClaudeCode } from '@/hooks/useClaudeCode';
 import { useCloudMachine } from '@/hooks/useCloudMachine';
 import { Button } from '@/components/ui/button';
 import { CodeView } from '../../code/components/code-view';
+import { ModeToggle } from './mode-toggle';
 
 /**
  * Wrapper for CodeView in workspace context
@@ -105,6 +106,6 @@ export function CodeViewWrapper() {
     );
   }
 
-  // Show full CodeView (handles all connected states)
-  return <CodeView />;
+  // Show full CodeView with mode toggle (handles all connected states)
+  return <CodeView modeToggle={<ModeToggle variant="sidebar" />} />;
 }

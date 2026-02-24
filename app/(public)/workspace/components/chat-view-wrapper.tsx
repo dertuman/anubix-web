@@ -2,10 +2,11 @@
 
 import { ChatView } from '../../chat/components/chat-view';
 import { useAuth } from '@clerk/nextjs';
+import { ModeToggle } from './mode-toggle';
 
 /**
  * Wrapper for ChatView in workspace context
- * Shows blank slate for unauthenticated users
+ * Shows blank slate for unauthenticated users, passes mode toggle to sidebar
  */
 export function ChatViewWrapper() {
   const { isSignedIn } = useAuth();
@@ -29,6 +30,6 @@ export function ChatViewWrapper() {
     );
   }
 
-  // For authenticated users, show full ChatView
-  return <ChatView />;
+  // For authenticated users, show full ChatView with mode toggle
+  return <ChatView modeToggle={<ModeToggle variant="sidebar" />} />;
 }

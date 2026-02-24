@@ -548,6 +548,7 @@ interface CodeSidebarProps {
   onFetchLogs?: (_opts?: { last?: number; filter?: string }) => Promise<BridgeLogs>;
   onExecCommand?: (_command: string) => Promise<ExecResult>;
   onPushCredentials?: (_opts: { claudeMode: 'cli' | 'sdk'; claudeAuthJson?: string; anthropicApiKey?: string }) => Promise<void>;
+  modeToggle?: React.ReactNode;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -572,6 +573,7 @@ export const CodeSidebar = memo(function CodeSidebar({
   onFetchLogs,
   onExecCommand,
   onPushCredentials,
+  modeToggle,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
@@ -792,6 +794,9 @@ export const CodeSidebar = memo(function CodeSidebar({
   const sidebarContent = (
     <>
       <div className="flex items-center gap-1.5 p-3">
+        {/* Mode toggle - only show in workspace */}
+        {modeToggle && <div className="mb-2">{modeToggle}</div>}
+
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
           <DialogTrigger asChild>
             <Button
