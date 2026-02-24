@@ -793,9 +793,11 @@ export const CodeSidebar = memo(function CodeSidebar({
 
   const sidebarContent = (
     <>
-      <div className="flex items-center gap-1.5 p-3">
+      <div className="flex flex-col gap-2 p-3">
         {/* Mode toggle - only show in workspace */}
-        {modeToggle && <div className="mb-2">{modeToggle}</div>}
+        {modeToggle && <div className="w-full">{modeToggle}</div>}
+
+        <div className="flex items-center gap-1.5">
 
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
           <DialogTrigger asChild>
@@ -1186,6 +1188,7 @@ export const CodeSidebar = memo(function CodeSidebar({
         >
           <X className="size-4" />
         </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]>div]:block!">

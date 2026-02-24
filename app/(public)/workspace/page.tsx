@@ -3,12 +3,15 @@
 import { Suspense } from 'react';
 import { Loader } from '@/components/ui/loader';
 import { WorkspaceProvider } from './context/workspace-context';
+import { EnvironmentDialogProvider } from './context/environment-dialog-context';
 import { WorkspaceView } from './components/workspace-view';
 
 function WorkspaceContent() {
   return (
     <WorkspaceProvider>
-      <WorkspaceView />
+      <EnvironmentDialogProvider>
+        <WorkspaceView />
+      </EnvironmentDialogProvider>
     </WorkspaceProvider>
   );
 }

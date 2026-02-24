@@ -1,23 +1,22 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { Loader2, Cloud } from 'lucide-react';
 import { useClaudeCode } from '@/hooks/useClaudeCode';
 import { useCloudMachine } from '@/hooks/useCloudMachine';
-import { Button } from '@/components/ui/button';
+import { useEnvironmentDialog } from '../context/environment-dialog-context';
 import { CodeView } from '../../code/components/code-view';
 import { ModeToggle } from './mode-toggle';
 
 /**
  * Wrapper for CodeView in workspace context
- * Handles connection automatically without blocking the UI
+ * Always shows the workspace UI, handles connection in background
  */
 export function CodeViewWrapper() {
   const { isSignedIn } = useAuth();
   const { status, connect } = useClaudeCode();
   const cloudMachine = useCloudMachine();
-  const [isProvisioning, setIsProvisioning] = useState(false);
+  const { showEnvironmentDialog } = useEnvironmentDialog();
 
   // Auto-connect when machine is running
   useEffect(() => {
@@ -28,84 +27,40 @@ export function CodeViewWrapper() {
       cloudMachine.machine.bridgeUrl &&
       cloudMachine.machine.bridgeApiKey
     ) {
+      // Attempt background connection
       connect(cloudMachine.machine.bridgeUrl, cloudMachine.machine.bridgeApiKey);
+
+      // Connection status changes will be tracked through the status dependency
     }
-  }, [isSignedIn, status, cloudMachine.machine, connect]);
+  }, [isSignedIn, status, cloudMachine.machine, connect, showEnvironmentDialog]);
 
-  // Handle cloud provisioning
-  const handleProvision = useCallback(async () => {
-    if (!isSignedIn) return;
-    setIsProvisioning(true);
-    try {
-      await cloudMachine.provision({
-        gitRepoUrl: 'https://github.com/dertuman/talkartech-fullstack-template-supabase.git',
-      });
-    } catch (error) {
-      console.error('Provision error:', error);
-    } finally {
-      setIsProvisioning(false);
+  // Show environment dialog for authenticated users without environment
+  useEffect(() => {
+    if (
+      isSignedIn &&
+      status === 'disconnected' &&
+      !cloudMachine.machine &&
+      !cloudMachine.isLoading
+    ) {
+      // Auto-show dialog after a brief delay to let UI settle
+      const timer = setTimeout(() => {
+        showEnvironmentDialog();
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [isSignedIn, cloudMachine]);
+  }, [isSignedIn, status, cloudMachine.machine, cloudMachine.isLoading, showEnvironmentDialog]);
 
-  // For unauthenticated users - show blank slate
-  if (!isSignedIn) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex max-w-md flex-col items-center gap-4 text-center">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
-            <span className="text-2xl font-bold text-primary">A</span>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">Code Mode</h2>
-            <p className="text-sm text-muted-foreground">
-              Sign in to access the full coding environment with Claude Code integration.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  // For authenticated users without connection - show minimal setup prompt
-  if (status === 'disconnected' && !cloudMachine.machine) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex max-w-md flex-col items-center gap-4 text-center">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
-            <Cloud className="size-8 text-primary" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">Launch Environment</h2>
-            <p className="text-sm text-muted-foreground">
-              Start a cloud development environment to begin coding with Claude.
-            </p>
-          </div>
-          <Button
-            onClick={handleProvision}
-            disabled={isProvisioning || cloudMachine.isLoading}
-            className="gap-2"
-            size="lg"
-          >
-            {isProvisioning || cloudMachine.isLoading ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Launching...
-              </>
-            ) : (
-              <>
-                <Cloud className="size-4" />
-                Launch Environment
-              </>
-            )}
-          </Button>
-          {cloudMachine.error && (
-            <p className="text-sm text-destructive">{cloudMachine.error}</p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Listen for custom event to open environment dialog
+  useEffect(() => {
+    const handleOpenDialog = () => {
+      showEnvironmentDialog();
+    };
 
-  // Show full CodeView with mode toggle (handles all connected states)
+    window.addEventListener('open-environment-dialog', handleOpenDialog);
+    return () => window.removeEventListener('open-environment-dialog', handleOpenDialog);
+  }, [showEnvironmentDialog]);
+
+  // Always render the full CodeView workspace
   return <CodeView modeToggle={<ModeToggle variant="sidebar" />} />;
 }

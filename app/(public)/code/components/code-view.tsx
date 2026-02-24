@@ -1,10 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, FolderPlus, Trash2, Upload } from 'lucide-react';
+import { Cloud, Eye, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAuth } from '@clerk/nextjs';
 import { useScopedI18n } from '@/locales/client';
 import { useClaudeCode } from '@/hooks/useClaudeCode';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
@@ -17,8 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
 
-import { BridgeSetup } from './bridge-setup';
-import { CloudProvision } from './cloud-provision';
 import { CodeInput, type CodeInputHandle, type QueuedMessage } from './code-input';
 import { CodeMessageList } from './code-message-list';
 import { CodeSidebar, MobileSidebarTrigger } from './code-sidebar';
@@ -36,9 +33,8 @@ interface CodeViewProps {
 
 export function CodeView({ modeToggle }: CodeViewProps = {}) {
   const t = useScopedI18n('code');
-  const { isSignedIn } = useAuth();
   const {
-    status, connect, disconnect, connectionError, sessions, activeSessionId,
+    status, disconnect, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
     pullSession, messages, sendMessage, clearConversation, approve, deny, answerQuestion, abort,
     isBusy, slashCommands, connectionHealth,
@@ -48,7 +44,6 @@ export function CodeView({ modeToggle }: CodeViewProps = {}) {
   const cloudMachine = useCloudMachine();
   const claudeConnection = useClaudeConnection();
 
-  const [showManualSetup, setShowManualSetup] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
@@ -163,23 +158,8 @@ export function CodeView({ modeToggle }: CodeViewProps = {}) {
     }
   }, [disconnect, cloudMachine]);
 
-  // ── Not connected ──────────────────────────────────────────
-  if (status === 'disconnected' || status === 'connecting') {
-    // Signed-in users get the cloud provisioning flow by default
-    if (isSignedIn && !showManualSetup) {
-      return (
-        <CloudProvision
-          onConnected={(url, key) => connect(url, key)}
-          onManualSetup={() => setShowManualSetup(true)}
-        />
-      );
-    }
-    // Fallback: manual bridge URL + API key entry
-    return <BridgeSetup onConnect={connect} isConnecting={status === 'connecting'} error={connectionError} />;
-  }
-
-  // Reset manual setup flag when connected
-  if (showManualSetup && status === 'connected') setShowManualSetup(false);
+  // Note: Removed blocking screens - connection is now handled by CodeViewWrapper
+  // and environment dialog. CodeView always renders the full workspace UI.
 
   // ── Preview URL (for cloud machines) ────────────────────────
   const previewUrl = cloudMachine.machine?.previewUrl ?? undefined;
@@ -212,14 +192,50 @@ export function CodeView({ modeToggle }: CodeViewProps = {}) {
             </div>
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 sm:gap-4">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
-              <span className="text-xl font-bold text-primary sm:text-2xl">A</span>
-            </div>
-            <p className="text-base font-medium text-foreground sm:text-lg">{t('sessions.selectSession')}</p>
-            <p className="text-center text-sm text-muted-foreground">Select a session from the sidebar or create a new one</p>
-            <Button onClick={() => setNewSessionOpen(true)} className="mt-2 gap-2">
-              <FolderPlus className="size-4" />{t('sessions.newSession')}
-            </Button>
+            {status === 'disconnected' || status === 'connecting' ? (
+              <>
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
+                  {status === 'connecting' ? (
+                    <Loader2 className="size-8 animate-spin text-primary sm:size-10" />
+                  ) : (
+                    <span className="text-xl font-bold text-primary sm:text-2xl">A</span>
+                  )}
+                </div>
+                <p className="text-base font-medium text-foreground sm:text-lg">
+                  {status === 'connecting' ? 'Connecting...' : 'Not Connected'}
+                </p>
+                <p className="text-center text-sm text-muted-foreground">
+                  {status === 'connecting'
+                    ? 'Establishing connection to your environment'
+                    : 'Connect to an environment to start coding with Claude'}
+                </p>
+                {status === 'disconnected' && (
+                  <Button
+                    onClick={() => {
+                      // Trigger environment dialog through context
+                      const event = new CustomEvent('open-environment-dialog');
+                      window.dispatchEvent(event);
+                    }}
+                    className="mt-4 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    size="lg"
+                  >
+                    <Cloud className="size-5" />
+                    Launch Environment
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
+                  <span className="text-xl font-bold text-primary sm:text-2xl">A</span>
+                </div>
+                <p className="text-base font-medium text-foreground sm:text-lg">{t('sessions.selectSession')}</p>
+                <p className="text-center text-sm text-muted-foreground">Select a session from the sidebar or create a new one</p>
+                <Button onClick={() => setNewSessionOpen(true)} className="mt-2 gap-2">
+                  <FolderPlus className="size-4" />{t('sessions.newSession')}
+                </Button>
+              </>
+            )}
           </div>
           <div className="shrink-0 border-t border-border/20 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
             <div className="relative mx-auto">

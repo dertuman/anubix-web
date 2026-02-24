@@ -5,7 +5,10 @@ import { useAuth } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useWorkspace } from '../context/workspace-context';
+import { useEnvironmentDialog } from '../context/environment-dialog-context';
+import { useClaudeCode } from '@/hooks/useClaudeCode';
 import { LoginPrompt } from './login-prompt';
+import { EnvironmentDialog } from './environment-dialog';
 
 // Lazy load the heavy mode-specific components with workspace wrappers
 const ChatViewWrapper = lazy(() => import('./chat-view-wrapper').then(m => ({ default: m.ChatViewWrapper })));
@@ -39,6 +42,8 @@ export function WorkspaceView() {
   const { isSignedIn, isLoaded } = useAuth();
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [loginPromptMessage, setLoginPromptMessage] = useState<string>();
+  const { isOpen: isEnvironmentDialogOpen, hideEnvironmentDialog } = useEnvironmentDialog();
+  const { status, connect, connectionError } = useClaudeCode();
 
   const showLoginPrompt = (message?: string) => {
     setLoginPromptMessage(message);
@@ -110,6 +115,20 @@ export function WorkspaceView() {
           onClose={() => setLoginPromptOpen(false)}
           message={loginPromptMessage}
         />
+
+        {/* Environment connection dialog for code mode */}
+        {mode === 'code' && (
+          <EnvironmentDialog
+            isOpen={isEnvironmentDialogOpen}
+            onClose={hideEnvironmentDialog}
+            onConnected={(url, key) => {
+              connect(url, key);
+              hideEnvironmentDialog();
+            }}
+            connectionStatus={status === 'connecting' ? 'disconnected' : status}
+            connectionError={connectionError ?? undefined}
+          />
+        )}
       </div>
     </LoginPromptContext.Provider>
   );
