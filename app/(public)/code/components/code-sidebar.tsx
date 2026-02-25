@@ -584,6 +584,10 @@ export const CodeSidebar = memo(function CodeSidebar({
   const [reauthCode, setReauthCode] = useState('');
   const [reauthError, setReauthError] = useState<string | null>(null);
   const [reauthSaving, setReauthSaving] = useState(false);
+
+  // GitHub connection state
+  const [showGitHubDisconnect, setShowGitHubDisconnect] = useState(false);
+  const [githubDisconnecting, setGithubDisconnecting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editSession, setEditSession] = useState<BridgeSession | null>(null);
 
@@ -1269,6 +1273,107 @@ export const CodeSidebar = memo(function CodeSidebar({
       </ScrollArea>
       {(onDisconnect || claudeConnection) && (
         <div className="border-t border-border/20 p-3 space-y-2">
+          {/* GitHub connection status */}
+          {github && (
+            <div className="space-y-1">
+              {github.isLoading ? (
+                <div className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span className="flex-1">Checking GitHub...</span>
+                </div>
+              ) : github.isConnected ? (
+                <div className="space-y-1">
+                  {!showGitHubDisconnect ? (
+                    <button
+                      onClick={() => setShowGitHubDisconnect(true)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                        'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <Github className="size-3.5 shrink-0" />
+                      <span className="flex-1 text-left truncate">
+                        GitHub: @{github.username}
+                      </span>
+                      <span className="size-2 shrink-0 rounded-full bg-green-500" />
+                    </button>
+                  ) : (
+                    <div className="space-y-1.5 rounded-lg border border-border/30 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">GitHub Connected</span>
+                        <button
+                          onClick={() => setShowGitHubDisconnect(false)}
+                          className="text-[10px] text-muted-foreground hover:text-foreground"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Github className="size-3.5" />
+                        <span className="flex-1 truncate">@{github.username}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            setGithubDisconnecting(true);
+                            try {
+                              await github.disconnect();
+                              setShowGitHubDisconnect(false);
+                              toast({
+                                title: 'GitHub disconnected',
+                                description: 'You can reconnect anytime from the sidebar.'
+                              });
+                            } catch (err) {
+                              toast({
+                                title: 'Failed to disconnect',
+                                description: err instanceof Error ? err.message : 'Please try again',
+                                variant: 'destructive'
+                              });
+                            } finally {
+                              setGithubDisconnecting(false);
+                            }
+                          }}
+                          disabled={githubDisconnecting}
+                          className="flex-1 gap-1 text-xs text-destructive hover:text-destructive"
+                        >
+                          {githubDisconnecting ? (
+                            <Loader2 className="size-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-3" />
+                          )}
+                          Disconnect
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => github.connect('/code')}
+                          className="flex-1 gap-1 text-xs"
+                        >
+                          <RefreshCw className="size-3" />
+                          Reconnect
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => github.connect('/code')}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                    'text-destructive hover:bg-destructive/10'
+                  )}
+                >
+                  <Github className="size-3.5 shrink-0" />
+                  <span className="flex-1 text-left">GitHub not connected</span>
+                  <span className="size-2 shrink-0 rounded-full bg-destructive" />
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Claude connection status & re-auth */}
           {claudeConnection && (
             <div className="space-y-2">

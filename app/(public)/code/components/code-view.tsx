@@ -94,6 +94,20 @@ export function CodeView({ modeToggle }: CodeViewProps = {}) {
     if (activeSessionId) setTimeout(() => codeInputRef.current?.focus(), 80);
   }, [activeSessionId]);
 
+  // Handle OAuth errors from GitHub redirect
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get('error');
+    if (error) {
+      toast({
+        title: 'GitHub connection failed',
+        description: error.replace(/_/g, ' '),
+        variant: 'destructive'
+      });
+      // Clean URL
+      window.history.replaceState({}, '', '/code');
+    }
+  }, []);
+
   // ── File handling ──────────────────────────────────────────
   const handleFilesAdded = useCallback(async (rawFiles: File[]) => {
     for (const file of rawFiles) {
