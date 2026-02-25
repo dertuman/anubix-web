@@ -19,13 +19,17 @@ export function useGitHubRepos(enabled: boolean = true) {
     setIsLoading(true);
     try {
       const res = await fetch('/api/github/repos');
-      if (!res.ok) return;
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[useGitHubRepos] Failed to fetch repos:', res.status, error);
+        return;
+      }
       const data = await res.json();
       if (data.repos) {
         setRepos(data.repos);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('[useGitHubRepos] Exception while fetching repos:', err);
     } finally {
       setIsLoading(false);
     }

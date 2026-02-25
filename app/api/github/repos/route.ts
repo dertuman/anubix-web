@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
@@ -9,20 +9,14 @@ import { decrypt } from '@/lib/encryption';
  * Returns the user's GitHub repos using their stored token.
  */
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
   const supabase = await createClerkSupabaseClient();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
-  }
-
-  // Get user's email from JWT
-  const email = (await supabase.auth.getUser()).data.user?.email;
-  if (!email) {
-    return NextResponse.json({ error: 'No email found in session' }, { status: 401 });
   }
 
   const { data: ghConn } = await supabase

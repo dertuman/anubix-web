@@ -18,14 +18,20 @@ export function useGitHubConnection() {
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/github/status');
-      if (!res.ok) return;
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[useGitHubConnection] Failed to fetch status:', res.status, error);
+        setState((prev) => ({ ...prev, isLoading: false }));
+        return;
+      }
       const data = await res.json();
       setState({
         isConnected: data.connected ?? false,
         username: data.username ?? null,
         isLoading: false,
       });
-    } catch {
+    } catch (err) {
+      console.error('[useGitHubConnection] Exception while fetching status:', err);
       setState((prev) => ({ ...prev, isLoading: false }));
     }
   }, []);
@@ -46,9 +52,14 @@ export function useGitHubConnection() {
       const res = await fetch('/api/auth/github/disconnect', { method: 'POST' });
       if (res.ok) {
         setState({ isConnected: false, username: null, isLoading: false });
+      } else {
+        const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[useGitHubConnection] Failed to disconnect:', res.status, error);
+        throw new Error(error.error || 'Failed to disconnect');
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('[useGitHubConnection] Exception while disconnecting:', err);
+      throw err;
     }
   }, []);
 
