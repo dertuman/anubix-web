@@ -38,7 +38,7 @@ export function useLoginPrompt() {
 }
 
 export function WorkspaceView() {
-  const { mode } = useWorkspace();
+  const { mode, isDemoMode, demoPromptCount } = useWorkspace();
   const { isSignedIn, isLoaded } = useAuth();
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const [loginPromptMessage, setLoginPromptMessage] = useState<string>();
@@ -54,7 +54,7 @@ export function WorkspaceView() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    if (!isSignedIn) {
+    if (!isSignedIn && !isDemoMode) {
       // Add click interceptor to show login when clicking on inputs/buttons
       const handleInteraction = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
@@ -73,7 +73,14 @@ export function WorkspaceView() {
       document.addEventListener('click', handleInteraction, true);
       return () => document.removeEventListener('click', handleInteraction, true);
     }
-  }, [isSignedIn, isLoaded]);
+  }, [isSignedIn, isLoaded, isDemoMode]);
+
+  // Show login prompt after first prompt in demo mode
+  useEffect(() => {
+    if (!isSignedIn && isDemoMode && demoPromptCount >= 1) {
+      showLoginPrompt('Sign in to continue using the workspace and send more prompts');
+    }
+  }, [isSignedIn, isDemoMode, demoPromptCount]);
 
   return (
     <LoginPromptContext.Provider value={{ showLoginPrompt }}>

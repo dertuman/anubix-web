@@ -29,9 +29,10 @@ const statusBadgeClass = (status: string) =>
 
 interface CodeViewProps {
   modeToggle?: React.ReactNode;
+  onPromptSent?: () => void;
 }
 
-export function CodeView({ modeToggle }: CodeViewProps = {}) {
+export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
   const t = useScopedI18n('code');
   const {
     status, disconnect, sessions, activeSessionId,
@@ -139,7 +140,9 @@ export function CodeView({ modeToggle }: CodeViewProps = {}) {
     if (!activeSessionId) return;
     setAttachedFiles([]);
     await sendMessage(text, files);
-  }, [activeSessionId, sendMessage]);
+    // Notify parent about prompt being sent (for demo mode tracking)
+    onPromptSent?.();
+  }, [activeSessionId, sendMessage, onPromptSent]);
 
   // ── Cumulative token usage across all result messages ──────
   const tokenUsage = useMemo(() => {

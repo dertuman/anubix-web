@@ -425,7 +425,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
                   <Square className="size-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-10 rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary sm:size-12" title="Record voice">
+              <Button variant="ghost" size="icon" onClick={startRecording} disabled={disabled} className="size-12 rounded-xl text-muted-foreground ring-1 ring-border/40 hover:text-primary" title="Record voice">
                 <Mic className="size-5" />
               </Button>
               {canSend && (

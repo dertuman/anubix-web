@@ -60,7 +60,7 @@ export function HeroSection() {
 
         {/* CTAs */}
         <div className="mt-10 flex flex-col items-center gap-4">
-          <Link href="/workspace" className="w-full sm:w-auto">
+          <Link href="/workspace?demo=true" className="w-full sm:w-auto">
             <Button
               size="lg"
               className="w-full gap-2 px-8 text-base font-semibold sm:w-auto"
@@ -70,7 +70,7 @@ export function HeroSection() {
             </Button>
           </Link>
           <Link
-            href="/chat"
+            href="/workspace?demo=true&mode=chat"
             className="text-muted-foreground hover:text-primary text-sm transition-colors underline-offset-4 hover:underline"
           >
             or {t('ctaSecondary')} →

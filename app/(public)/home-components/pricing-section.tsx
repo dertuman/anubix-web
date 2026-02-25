@@ -79,7 +79,7 @@ export function PricingSection() {
                 </ul>
 
                 <div className="mt-8">
-                  <Link href="/chat">
+                  <Link href="/workspace?demo=true">
                     <Button
                       variant={featured ? 'default' : 'outline'}
                       size="lg"

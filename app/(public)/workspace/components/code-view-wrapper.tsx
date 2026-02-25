@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useClaudeCodeContext } from '../context/claude-code-context';
 import { useCloudMachineContext } from '../context/cloud-machine-context';
 import { useEnvironmentDialog } from '../context/environment-dialog-context';
+import { useWorkspace } from '../context/workspace-context';
 import { CodeView } from '../../code/components/code-view';
 import { ModeToggle } from './mode-toggle';
 
@@ -17,6 +18,7 @@ export function CodeViewWrapper() {
   const { status, connect } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const { showEnvironmentDialog } = useEnvironmentDialog();
+  const { isDemoMode, incrementDemoPromptCount } = useWorkspace();
 
   // Auto-connect when machine is running
   useEffect(() => {
@@ -61,6 +63,13 @@ export function CodeViewWrapper() {
     return () => window.removeEventListener('open-environment-dialog', handleOpenDialog);
   }, [showEnvironmentDialog]);
 
+  // Track demo prompts for unauthenticated users
+  const handlePromptSent = () => {
+    if (!isSignedIn && isDemoMode) {
+      incrementDemoPromptCount();
+    }
+  };
+
   // Always render the full CodeView workspace
-  return <CodeView modeToggle={<ModeToggle variant="sidebar" />} />;
+  return <CodeView modeToggle={<ModeToggle variant="sidebar" />} onPromptSent={handlePromptSent} />;
 }

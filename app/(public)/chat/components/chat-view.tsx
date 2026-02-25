@@ -43,9 +43,10 @@ const QUERY_STALE_TIME = 30_000; // 30 seconds
 
 interface ChatViewProps {
   modeToggle?: React.ReactNode;
+  onPromptSent?: () => void;
 }
 
-export function ChatView({ modeToggle }: ChatViewProps = {}) {
+export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
   const t = useScopedI18n('chat');
   const { userId } = useAuth();
   const queryClient = useQueryClient();
@@ -243,7 +244,9 @@ export function ChatView({ modeToggle }: ChatViewProps = {}) {
 
     clearFiles();
     await sendMessage(convId, text, selectedModel, files);
-  }, [selectedId, selectedModel, createMutation, clearFiles, sendMessage]);
+    // Notify parent about prompt being sent (for demo mode tracking)
+    onPromptSent?.();
+  }, [selectedId, selectedModel, createMutation, clearFiles, sendMessage, onPromptSent]);
 
   // ── Share toggle ────────────────────────────────────────────
   const handleToggleShare = useCallback(async () => {

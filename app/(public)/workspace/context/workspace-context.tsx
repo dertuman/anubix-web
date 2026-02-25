@@ -8,6 +8,10 @@ export type WorkspaceMode = 'chat' | 'code';
 interface WorkspaceContextValue {
   mode: WorkspaceMode;
   setMode: (_value: WorkspaceMode) => void;
+  isDemoMode: boolean;
+  demoPromptCount: number;
+  incrementDemoPromptCount: () => void;
+  resetDemoPromptCount: () => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
@@ -20,12 +24,25 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const initialMode = (searchParams.get('mode') === 'chat' ? 'chat' : 'code') as WorkspaceMode;
   const [mode, setModeState] = useState<WorkspaceMode>(initialMode);
 
+  // Demo mode tracking - check URL param
+  const isDemoMode = searchParams.get('demo') === 'true';
+  const [demoPromptCount, setDemoPromptCount] = useState(0);
+
   // Update URL when mode changes
   const setMode = (newMode: WorkspaceMode) => {
     setModeState(newMode);
     const params = new URLSearchParams(searchParams.toString());
     params.set('mode', newMode);
     router.replace(`/workspace?${params.toString()}`, { scroll: false });
+  };
+
+  // Demo prompt tracking functions
+  const incrementDemoPromptCount = () => {
+    setDemoPromptCount(prev => prev + 1);
+  };
+
+  const resetDemoPromptCount = () => {
+    setDemoPromptCount(0);
   };
 
   // Sync mode with URL changes
@@ -37,7 +54,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [searchParams]);
 
   return (
-    <WorkspaceContext.Provider value={{ mode, setMode }}>
+    <WorkspaceContext.Provider value={{
+      mode,
+      setMode,
+      isDemoMode,
+      demoPromptCount,
+      incrementDemoPromptCount,
+      resetDemoPromptCount
+    }}>
       {children}
     </WorkspaceContext.Provider>
   );

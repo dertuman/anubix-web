@@ -2,17 +2,27 @@
 
 import { ChatView } from '../../chat/components/chat-view';
 import { useAuth } from '@clerk/nextjs';
+import { useWorkspace } from '../context/workspace-context';
 import { ModeToggle } from './mode-toggle';
 
 /**
  * Wrapper for ChatView in workspace context
- * Shows blank slate for unauthenticated users, passes mode toggle to sidebar
+ * Shows blank slate for unauthenticated users in non-demo mode
+ * In demo mode, allows one prompt before requiring sign-in
  */
 export function ChatViewWrapper() {
   const { isSignedIn } = useAuth();
+  const { isDemoMode, incrementDemoPromptCount } = useWorkspace();
 
-  // For unauthenticated users in workspace, show blank slate
-  if (!isSignedIn) {
+  // Track demo prompts for unauthenticated users
+  const handlePromptSent = () => {
+    if (!isSignedIn && isDemoMode) {
+      incrementDemoPromptCount();
+    }
+  };
+
+  // For unauthenticated users NOT in demo mode, show blank slate
+  if (!isSignedIn && !isDemoMode) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex max-w-md flex-col items-center gap-4 text-center">
@@ -30,6 +40,6 @@ export function ChatViewWrapper() {
     );
   }
 
-  // For authenticated users, show full ChatView with mode toggle
-  return <ChatView modeToggle={<ModeToggle variant="sidebar" />} />;
+  // For authenticated users OR demo mode users, show full ChatView with mode toggle
+  return <ChatView modeToggle={<ModeToggle variant="sidebar" />} onPromptSent={handlePromptSent} />;
 }
