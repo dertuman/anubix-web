@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
 
 import { createSupabaseAdmin } from '@/lib/supabase/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 import { teardownFlyResources } from '@/lib/fly-machines';
 
 /**
@@ -19,8 +20,8 @@ import { teardownFlyResources } from '@/lib/fly-machines';
  */
 export async function POST(req: Request) {
   try {
-    const { userId: requesterId } = await auth();
-    if (!requesterId) {
+    const requesterEmail = await getAuthEmail();
+    if (!requesterEmail) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -32,8 +33,8 @@ export async function POST(req: Request) {
     // Verify requester is admin (using email)
     const { data: requester } = await supabase
       .from('profiles')
-      .select('is_admin, email')
-      .eq('id', requesterId)
+      .select('is_admin')
+      .eq('email', requesterEmail)
       .single();
 
     if (!requester?.is_admin) {
@@ -45,11 +46,6 @@ export async function POST(req: Request) {
 
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
-    }
-
-    // Prevent self-deletion
-    if (userId === requesterId) {
-      return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 });
     }
 
     // Look up target user's email from their Clerk ID
@@ -64,6 +60,11 @@ export async function POST(req: Request) {
     }
 
     const email = targetUser.email;
+
+    // Prevent self-deletion
+    if (email === requesterEmail) {
+      return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 });
+    }
 
     // ── Step 1: Tear down Fly.io (best-effort) ──────────────────
     const { data: machine } = await supabase

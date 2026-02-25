@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
 
 import { createSupabaseAdmin } from '@/lib/supabase/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 /**
  * POST /api/admin/backfill-profiles
@@ -11,8 +12,8 @@ import { createSupabaseAdmin } from '@/lib/supabase/server';
  */
 export async function POST() {
   try {
-    const { userId: requesterId } = await auth();
-    if (!requesterId) {
+    const requesterEmail = await getAuthEmail();
+    if (!requesterEmail) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -24,7 +25,7 @@ export async function POST() {
     const { data: requester } = await supabase
       .from('profiles')
       .select('is_admin')
-      .eq('id', requesterId)
+      .eq('email', requesterEmail)
       .single();
 
     if (!requester?.is_admin) {

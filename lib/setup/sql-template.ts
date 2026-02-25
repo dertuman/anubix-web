@@ -11,6 +11,8 @@ export const PROFILES_TABLE_SQL = `-- ==========================================
 -- 1. Create the profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id TEXT PRIMARY KEY,
+  email TEXT NOT NULL DEFAULT '',
+  name TEXT NOT NULL DEFAULT '',
   bio TEXT DEFAULT '' NOT NULL,
   dob DATE,
   profile_picture TEXT DEFAULT 'https://placehold.co/600x400/png?text=Hello+World' NOT NULL,
@@ -27,17 +29,17 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 2. Enable Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 3. RLS Policies
+-- 3. RLS Policies (email-based — works across all Clerk instances)
 
 -- Users can read their own profile
-CREATE POLICY "Users can read own profile"
+CREATE POLICY "Users can read own profile by email"
   ON public.profiles FOR SELECT
-  USING ((select (auth.jwt()->>'sub')) = id);
+  USING (email = (SELECT auth.jwt() ->> 'email'));
 
 -- Users can update their own profile
-CREATE POLICY "Users can update own profile"
+CREATE POLICY "Users can update own profile by email"
   ON public.profiles FOR UPDATE
-  USING ((select (auth.jwt()->>'sub')) = id);
+  USING (email = (SELECT auth.jwt() ->> 'email'));
 
 -- Service role has full access (used by Clerk webhooks)
 CREATE POLICY "Service role full access"

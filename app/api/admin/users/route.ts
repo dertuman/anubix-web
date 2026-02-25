@@ -1,24 +1,24 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
 import { createSupabaseAdmin } from '@/lib/supabase/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 async function getAdminClient() {
-  const { userId } = await auth();
-  if (!userId) return { error: 'Unauthorized', status: 401, supabase: null, userId: null };
+  const email = await getAuthEmail();
+  if (!email) return { error: 'Unauthorized', status: 401, supabase: null, email: null };
 
   const supabase = createSupabaseAdmin();
-  if (!supabase) return { error: 'Database not configured', status: 503, supabase: null, userId: null };
+  if (!supabase) return { error: 'Database not configured', status: 503, supabase: null, email: null };
 
   const { data: requester } = await supabase
     .from('profiles')
     .select('is_admin')
-    .eq('id', userId)
+    .eq('email', email)
     .single();
 
-  if (!requester?.is_admin) return { error: 'Forbidden', status: 403, supabase: null, userId: null };
+  if (!requester?.is_admin) return { error: 'Forbidden', status: 403, supabase: null, email: null };
 
-  return { error: null, status: 200, supabase, userId };
+  return { error: null, status: 200, supabase, email };
 }
 
 /**
@@ -91,7 +91,7 @@ export async function GET() {
  */
 export async function PATCH(req: Request) {
   try {
-    const { error, status, supabase, userId: requesterId } = await getAdminClient();
+    const { error, status, supabase, email: requesterEmail } = await getAdminClient();
     if (error || !supabase) return NextResponse.json({ error }, { status });
 
     const body = await req.json();
@@ -101,8 +101,15 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Missing userId or is_admin' }, { status: 400 });
     }
 
+    // Look up the target user's email
+    const { data: target } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .single();
+
     // Prevent admins from removing their own admin status
-    if (userId === requesterId && !is_admin) {
+    if (target?.email === requesterEmail && !is_admin) {
       return NextResponse.json({ error: 'You cannot remove your own admin access' }, { status: 400 });
     }
 
