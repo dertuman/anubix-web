@@ -36,18 +36,18 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Extract webhook data ──────────────────────────────────
-  const userId = event.app_user_id as string | undefined; // RevenueCat app_user_id = Clerk userId
+  const clerkUserId = event.app_user_id as string | undefined; // RevenueCat app_user_id = Clerk userId
   const eventType = event.type as string | undefined;
   const subscriber = (event.subscriber as Record<string, unknown> | undefined) || {};
   const entitlements = (subscriber.entitlements as Record<string, unknown> | undefined) || {};
   const subscriptions = (subscriber.subscriptions as Record<string, unknown> | undefined) || {};
 
-  if (!userId) {
+  if (!clerkUserId) {
     console.warn('RevenueCat webhook: Missing app_user_id', { eventType });
     return NextResponse.json({ received: true }); // Acknowledge but don't process
   }
 
-  console.log(`📥 RevenueCat webhook: ${eventType} for user ${userId}`);
+  console.log(`📥 RevenueCat webhook: ${eventType} for user ${clerkUserId}`);
 
   // ── Determine subscription state ──────────────────────────
   // Check the "Anubix Pro" entitlement (case-insensitive)
@@ -103,12 +103,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
+  // Look up user's email from their Clerk ID
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', clerkUserId)
+    .single();
+
+  if (!profile?.email) {
+    console.error('RevenueCat webhook: Could not find email for Clerk user:', clerkUserId);
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const email = profile.email;
+
   const { error: upsertError } = await supabase
     .from('subscriptions')
     .upsert(
       {
-        user_id: userId as string,
-        revenuecat_customer_id: userId as string,
+        email,
+        revenuecat_customer_id: clerkUserId,
         entitlement_id: 'Anubix Pro',
         product_id: productId,
         store,
@@ -122,18 +136,19 @@ export async function POST(req: NextRequest) {
         raw_webhook_event: event as unknown as Json, // Store full payload for debugging
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id' } // Update existing record if user already has subscription
+      { onConflict: 'email' } // Update existing record if user already has subscription
     );
 
   if (upsertError) {
     console.error('RevenueCat webhook: Failed to upsert subscription', {
-      userId,
+      clerkUserId,
+      email,
       error: upsertError.message,
     });
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 
-  console.log(`✅ Synced subscription for user ${userId}: ${eventType} (active: ${isActive}, interval: ${billingInterval})`);
+  console.log(`✅ Synced subscription for user ${email}: ${eventType} (active: ${isActive}, interval: ${billingInterval})`);
 
   return NextResponse.json({ received: true });
 }

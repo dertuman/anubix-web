@@ -132,33 +132,57 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hard-delete all user data from every table.
+    // First, get the user's email from their profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', id)
+      .single();
+
+    if (!profile?.email) {
+      console.error('[webhook] Could not find email for user:', id);
+      return NextResponse.json(
+        { error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    const email = profile.email;
+
+    // Hard-delete all user data from every table using email.
     // Note: Fly.io machine teardown is NOT done here — the webhook must respond
     // quickly and teardown is async. Orphaned machines are caught by the cleanup cron.
     // If deleting via the admin panel, use /api/admin/delete-user which handles Fly.io first.
-    const tables = [
-      'cloud_machines',
-      'bridge_configs',
-      'claude_connections',
-      'github_connections',
-      'project_env_vars',
-      'chat_api_keys',
-    ] as const;
 
-    for (const table of tables) {
-      const col = table === 'chat_api_keys' ? 'clerk_user_id' : 'user_id';
-      const { error: delErr } = await supabase.from(table).delete().eq(col, id);
-      if (delErr) console.warn(`[webhook] Failed to delete from ${table}:`, delErr.message);
-    }
+    // Delete from cloud_machines
+    await supabase.from('cloud_machines').delete().eq('user_email', email);
 
-    // subscriptions is not in the generated types yet — use admin client directly
+    // Delete from bridge_configs
+    await supabase.from('bridge_configs').delete().eq('email', email);
+
+    // Delete from claude_connections
+    await supabase.from('claude_connections').delete().eq('user_email', email);
+
+    // Delete from github_connections
+    await supabase.from('github_connections').delete().eq('user_email', email);
+
+    // Delete from project_env_vars
+    await supabase.from('project_env_vars').delete().eq('user_email', email);
+
+    // Delete from chat_api_keys
+    await supabase.from('chat_api_keys').delete().eq('email', email);
+
+    // Delete from conversations
+    await supabase.from('conversations').delete().eq('email', email);
+
+    // subscriptions - use email
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('subscriptions').delete().eq('user_id', id);
+    await (supabase as any).from('subscriptions').delete().eq('email', email);
 
     // Hard-delete the profile row (not soft-delete — the Clerk user is gone)
-    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    const { error } = await supabase.from('profiles').delete().eq('email', email);
 
-    console.log('[webhook] user.deleted cleanup done:', { id, error: error?.message });
+    console.log('[webhook] user.deleted cleanup done:', { id, email, error: error?.message });
 
     if (error) {
       console.error('Error deleting profile:', error);

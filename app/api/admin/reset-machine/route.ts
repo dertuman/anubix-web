@@ -45,11 +45,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
+    // Look up target user's email from their Clerk ID
+    const { data: targetUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .single();
+
+    if (!targetUser?.email) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const email = targetUser.email;
+
     // Look up the machine record
     const { data: machine } = await supabase
       .from('cloud_machines')
       .select('fly_app_name, fly_machine_id, status')
-      .eq('user_id', userId)
+      .eq('user_email', email)
       .single();
 
     // Attempt Fly.io teardown (best-effort — don't fail if the machine is already gone)
@@ -58,7 +71,7 @@ export async function POST(req: Request) {
         await supabase
           .from('cloud_machines')
           .update({ status: 'destroying' })
-          .eq('user_id', userId);
+          .eq('user_email', email);
 
         await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id ?? undefined);
       } catch (flyErr) {
@@ -66,32 +79,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Delete all machine-related rows regardless of Fly.io outcome
-    const tables = [
-      'cloud_machines',
-      'bridge_configs',
-      'claude_connections',
-      'github_connections',
-      'project_env_vars',
-    ] as const;
+    // Delete all machine-related rows using email
+    await supabase.from('cloud_machines').delete().eq('user_email', email);
+    await supabase.from('bridge_configs').delete().eq('email', email);
+    await supabase.from('claude_connections').delete().eq('user_email', email);
+    await supabase.from('github_connections').delete().eq('user_email', email);
+    await supabase.from('project_env_vars').delete().eq('user_email', email);
 
-    const deleteResults = await Promise.allSettled(
-      tables.map((table) => supabase.from(table).delete().eq('user_id', userId)),
-    );
-
-    const failures = deleteResults
-      .map((r, i) => (r.status === 'rejected' ? tables[i] : null))
-      .filter(Boolean);
-
-    if (failures.length > 0) {
-      console.error('[admin/reset-machine] Some deletes failed:', failures);
-      return NextResponse.json(
-        { error: `Partial failure — could not delete: ${failures.join(', ')}` },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({ success: true, userId });
+    return NextResponse.json({ success: true, userId, email });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     console.error('[admin/reset-machine] Unhandled error:', err);

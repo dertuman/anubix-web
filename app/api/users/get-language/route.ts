@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
+import { getAuthEmail } from '@/lib/auth-utils';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 
 export async function GET() {
-  const { userId } = await auth();
+  const email = await getAuthEmail();
 
-  if (!userId) {
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -20,7 +20,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('profiles')
       .select('language')
-      .eq('id', userId)
+      .eq('email', email)
       .single();
 
     if (error) {

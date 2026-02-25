@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
+import { getAuthEmail } from '@/lib/auth-utils';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
+  const email = await getAuthEmail();
 
-  if (!userId) {
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase
       .from('profiles')
       .update({ language: locale })
-      .eq('id', userId);
+      .eq('email', email);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

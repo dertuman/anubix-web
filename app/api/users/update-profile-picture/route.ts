@@ -1,7 +1,7 @@
 import { File } from 'buffer';
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
+import { getAuthEmail } from '@/lib/auth-utils';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { randomUppercaseString } from '@/lib/utils';
@@ -10,9 +10,9 @@ const BUCKET = 'profile-pictures';
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
+    const email = await getAuthEmail();
 
-    if (!userId) {
+    if (!email) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
 
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
           ? path
           : 'https://placehold.co/600x400/png?text=Hello+World',
       })
-      .eq('id', userId);
+      .eq('email', email);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -42,11 +42,11 @@ export async function GET(req: Request) {
     try {
       await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id);
       await supabase.from('cloud_machines').delete().eq('id', machine.id);
-      // Also clean up bridge_configs
-      if (machine.bridge_url) {
+      // Also clean up bridge_configs (using user_email)
+      if (machine.bridge_url && machine.user_email) {
         await supabase.from('bridge_configs')
           .delete()
-          .eq('user_id', machine.user_id)
+          .eq('email', machine.user_email)
           .eq('bridge_url', machine.bridge_url);
       }
       results.stoppedCleaned++;

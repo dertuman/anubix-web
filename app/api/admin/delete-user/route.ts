@@ -29,10 +29,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
 
-    // Verify requester is admin
+    // Verify requester is admin (using email)
     const { data: requester } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin, email')
       .eq('id', requesterId)
       .single();
 
@@ -52,45 +52,50 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 });
     }
 
+    // Look up target user's email from their Clerk ID
+    const { data: targetUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .single();
+
+    if (!targetUser?.email) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const email = targetUser.email;
+
     // ── Step 1: Tear down Fly.io (best-effort) ──────────────────
     const { data: machine } = await supabase
       .from('cloud_machines')
       .select('fly_app_name, fly_machine_id')
-      .eq('user_id', userId)
+      .eq('user_email', email)
       .single();
 
     if (machine?.fly_app_name) {
       try {
-        await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('user_id', userId);
+        await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('user_email', email);
         await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id ?? undefined);
       } catch (flyErr) {
         console.warn('[admin/delete-user] Fly.io teardown failed (continuing):', flyErr);
       }
     }
 
-    // ── Step 2: Delete all DB rows ───────────────────────────────
-    const userIdTables = [
-      'cloud_machines',
-      'bridge_configs',
-      'claude_connections',
-      'github_connections',
-      'project_env_vars',
-    ] as const;
+    // ── Step 2: Delete all DB rows using email ───────────────────
+    await supabase.from('cloud_machines').delete().eq('user_email', email);
+    await supabase.from('bridge_configs').delete().eq('email', email);
+    await supabase.from('claude_connections').delete().eq('user_email', email);
+    await supabase.from('github_connections').delete().eq('user_email', email);
+    await supabase.from('project_env_vars').delete().eq('user_email', email);
+    await supabase.from('chat_api_keys').delete().eq('email', email);
+    await supabase.from('conversations').delete().eq('email', email);
 
-    for (const table of userIdTables) {
-      const { error } = await supabase.from(table).delete().eq('user_id', userId);
-      if (error) console.warn(`[admin/delete-user] Failed to delete from ${table}:`, error.message);
-    }
-
-    // subscriptions is not in the generated types yet — use admin client directly
+    // subscriptions - use email
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('subscriptions').delete().eq('user_id', userId);
-
-    // chat_api_keys uses clerk_user_id instead of user_id
-    await supabase.from('chat_api_keys').delete().eq('clerk_user_id', userId);
+    await (supabase as any).from('subscriptions').delete().eq('email', email);
 
     // Hard-delete the profile last (webhook will try to delete it again — safe no-op)
-    await supabase.from('profiles').delete().eq('id', userId);
+    await supabase.from('profiles').delete().eq('email', email);
 
     // ── Step 3: Delete from Clerk ────────────────────────────────
     try {

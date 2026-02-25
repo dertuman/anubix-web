@@ -19,10 +19,16 @@ export async function GET() {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
+  // Get user's email from JWT
+  const email = (await supabase.auth.getUser()).data.user?.email;
+  if (!email) {
+    return NextResponse.json({ error: 'No email found in session' }, { status: 401 });
+  }
+
   const { data: ghConn } = await supabase
     .from('github_connections')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (!ghConn) {
@@ -44,7 +50,7 @@ export async function GET() {
 
   if (res.status === 401) {
     // Token revoked — clean up connection
-    await supabase.from('github_connections').delete().eq('user_id', userId);
+    await supabase.from('github_connections').delete().eq('user_email', email);
     return NextResponse.json({ connected: false, repos: [] });
   }
 

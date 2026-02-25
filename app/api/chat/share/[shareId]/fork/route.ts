@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
+import { getAuthEmail } from '@/lib/auth-utils';
 import { createConversation, fetchMessages, getConversationByShareId, saveMessage } from '@/lib/chat-db';
 import { createClerkSupabaseClient, createSupabaseAdmin } from '@/lib/supabase/server';
 
@@ -11,8 +11,8 @@ interface Params { params: Promise<{ shareId: string }> }
  * Creates a copy owned by the authenticated user.
  */
 export async function POST(_req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // Use admin client to read the shared conversation (no RLS restrictions)
   const adminSb = createSupabaseAdmin();
@@ -32,7 +32,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     // Create the forked conversation
     const forkedId = await createConversation(
       userSb,
-      userId,
+      email,
       original.model,
       `${original.title} (fork)`,
     );
