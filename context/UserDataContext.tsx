@@ -21,19 +21,21 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   const { isSignedIn, user } = useUser();
   const supabase = useClerkSupabaseClient();
 
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+
   const {
     data: profile,
     isLoading,
     error,
   } = useQuery<Profile | null>({
-    queryKey: ['userData'],
+    queryKey: ['userData', userEmail],
     queryFn: async () => {
-      if (!user?.id || !supabase) return null;
+      if (!userEmail || !supabase) return null;
 
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('email', userEmail)
         .single();
 
       if (error) {
@@ -44,11 +46,11 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       return data;
     },
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    enabled: !!isSignedIn && !!user?.id && !!supabase,
+    enabled: !!isSignedIn && !!userEmail && !!supabase,
   });
 
   const refreshUserData = () => {
-    queryClient.invalidateQueries({ queryKey: ['userData'] });
+    queryClient.invalidateQueries({ queryKey: ['userData', userEmail] });
   };
 
   return (
