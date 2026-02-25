@@ -15,20 +15,6 @@ import {
   teardownFlyResources,
 } from '@/lib/fly-machines';
 
-/**
- * ============================================================
- * TEMPORARILY PASSWORD-PROTECTED
- * ============================================================
- * Provisioning requires the X-Access-Password header to match
- * the ACCESS_PASSWORD environment variable.
- *
- * TO RE-ENABLE (remove password gate):
- * 1. Delete the password check block at the top of POST.
- * 2. Also remove the password gate from the code page at:
- *      app/(public)/code/page.tsx
- * ============================================================
- */
-
 // Allow up to 300s for Fly.io provisioning (app + volume + machine + template install + health check)
 // Heavy templates like talkartech-fullstack need 3-5 min for git clone + npm install before the server starts.
 export const maxDuration = 300;
@@ -39,20 +25,10 @@ export const maxDuration = 300;
  * One-click provisioning: creates a Fly.io app + volume + machine
  * running the anubix-bridge Docker image. Returns the bridge URL
  * and API key so the client can auto-connect.
+ *
+ * Access is gated by subscription (admins bypass).
  */
 export async function POST(req: NextRequest) {
-  // ── Password gate (temporary) ─────────────────────────────
-  const requiredPassword = process.env.ACCESS_PASSWORD;
-  if (requiredPassword) {
-    const accessPassword = req.headers.get('x-access-password');
-    if (accessPassword !== requiredPassword) {
-      return NextResponse.json(
-        { error: 'Provisioning is temporarily disabled. Something amazing is coming soon.' },
-        { status: 503 },
-      );
-    }
-  }
-
   try { return await handleProvision(req); } catch (err) {
     console.error('Unhandled provision error:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';

@@ -152,18 +152,9 @@ export function useCloudMachine(): UseCloudMachineReturn {
       setErrorCode(null);
 
       try {
-        // Temporary password gate — see app/(public)/code/page.tsx
-        const accessPassword =
-          typeof window !== 'undefined'
-            ? (sessionStorage.getItem('anubix-access-password') ?? '')
-            : '';
-
         const res = await fetch('/api/cloud/provision', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Access-Password': accessPassword,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(opts),
         });
 
