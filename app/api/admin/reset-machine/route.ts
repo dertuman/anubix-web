@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     const { data: machine } = await supabase
       .from('cloud_machines')
       .select('fly_app_name, fly_machine_id, status')
-      .eq('user_email', email)
+      .eq('email', email)
       .single();
 
     // Attempt Fly.io teardown (best-effort — don't fail if the machine is already gone)
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         await supabase
           .from('cloud_machines')
           .update({ status: 'destroying' })
-          .eq('user_email', email);
+          .eq('email', email);
 
         await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id ?? undefined);
       } catch (flyErr) {
@@ -80,11 +80,11 @@ export async function POST(req: Request) {
     }
 
     // Delete all machine-related rows using email
-    await supabase.from('cloud_machines').delete().eq('user_email', email);
+    await supabase.from('cloud_machines').delete().eq('email', email);
     await supabase.from('bridge_configs').delete().eq('email', email);
-    await supabase.from('claude_connections').delete().eq('user_email', email);
-    await supabase.from('github_connections').delete().eq('user_email', email);
-    await supabase.from('project_env_vars').delete().eq('user_email', email);
+    await supabase.from('claude_connections').delete().eq('email', email);
+    await supabase.from('github_connections').delete().eq('email', email);
+    await supabase.from('project_env_vars').delete().eq('email', email);
 
     return NextResponse.json({ success: true, userId, email });
   } catch (err) {

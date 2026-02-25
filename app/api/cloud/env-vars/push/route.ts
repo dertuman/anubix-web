@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   const rows = Object.entries(vars)
     .filter(([key]) => key.trim())
     .map(([key, value]) => ({
-      user_email: email,
+      email: email,
       key: key.trim(),
       value_encrypted: encrypt(value),
       repo_path: repoPath,
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   const { error: dbError } = await supabase
     .from('project_env_vars')
-    .upsert(rows, { onConflict: 'user_email,repo_path,key' });
+    .upsert(rows, { onConflict: 'email,repo_path,key' });
 
   if (dbError) {
     return NextResponse.json({ error: `Database error: ${dbError.message}` }, { status: 500 });
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   // If no running machine, that's OK — vars are saved and will be loaded on next session
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
   const { data: allEnvRows } = await supabase
     .from('project_env_vars')
     .select()
-    .eq('user_email', email);
+    .eq('email', email);
 
   const allRows = allEnvRows ?? [];
 

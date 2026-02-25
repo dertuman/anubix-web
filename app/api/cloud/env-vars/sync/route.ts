@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!machine || machine.status !== 'running') {
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   const { data: envRows, error: envErr } = await supabase
     .from('project_env_vars')
     .select()
-    .eq('user_email', email);
+    .eq('email', email);
 
   if (envErr) {
     return NextResponse.json({ error: envErr.message }, { status: 500 });

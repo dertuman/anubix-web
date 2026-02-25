@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!machine || machine.status !== 'running') {
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       const { data: ghConn } = await supabase
         .from('github_connections')
         .select()
-        .eq('user_email', email)
+        .eq('email', email)
         .single();
 
       if (ghConn) {

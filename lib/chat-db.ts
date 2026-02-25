@@ -21,7 +21,7 @@ export async function createConversation(
 ): Promise<string> {
   const { data, error } = await sb
     .from('conversations')
-    .insert({ email: email, model, title: title || 'New Conversation' })
+    .insert({ email, model, title: title || 'New Conversation' })
     .select('id')
     .single();
 

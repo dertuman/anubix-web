@@ -13,8 +13,6 @@
 --
 -- ============================================================
 
-\set ON_ERROR_STOP on
-
 -- Show start time
 SELECT NOW() as migration_start_time;
 
@@ -29,6 +27,9 @@ END $$;
 
 -- Add email column if it doesn't exist
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS email TEXT;
+
+-- Make clerk_user_id nullable (email is now the primary identifier)
+ALTER TABLE conversations ALTER COLUMN clerk_user_id DROP NOT NULL;
 
 -- Copy data from user_email to email if user_email exists and email is null
 DO $$

@@ -49,7 +49,7 @@ async function handleStart() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!machine) {
@@ -78,7 +78,7 @@ async function handleStart() {
   }
 
   try {
-    await supabase.from('cloud_machines').update({ status: 'starting' }).eq('user_email', email);
+    await supabase.from('cloud_machines').update({ status: 'starting' }).eq('email', email);
 
     await startFlyMachine(machine.fly_app_name, machine.fly_machine_id);
     await waitForMachineState(machine.fly_app_name, machine.fly_machine_id, 'started', 60);
@@ -92,7 +92,7 @@ async function handleStart() {
       status: 'running',
       stopped_at: null,
       last_health_check_at: new Date().toISOString(),
-    }).eq('user_email', email);
+    }).eq('email', email);
 
     return NextResponse.json({
       bridgeUrl: machine.bridge_url,
@@ -105,7 +105,7 @@ async function handleStart() {
     await supabase.from('cloud_machines').update({
       status: 'error',
       error_message: message,
-    }).eq('user_email', email);
+    }).eq('email', email);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

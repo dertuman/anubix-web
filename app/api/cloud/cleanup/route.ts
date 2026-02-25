@@ -42,12 +42,11 @@ export async function GET(req: Request) {
     try {
       await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id);
       await supabase.from('cloud_machines').delete().eq('id', machine.id);
-      // Also clean up bridge_configs (using user_email)
-      if (machine.bridge_url && machine.user_email) {
-        await supabase.from('bridge_configs')
-          .delete()
-          .eq('email', machine.user_email)
-          .eq('bridge_url', machine.bridge_url);
+      if (machine.email) {
+        await supabase.from('bridge_configs').delete().eq('email', machine.email);
+        await supabase.from('claude_connections').delete().eq('email', machine.email);
+        await supabase.from('github_connections').delete().eq('email', machine.email);
+        await supabase.from('project_env_vars').delete().eq('email', machine.email);
       }
       results.stoppedCleaned++;
     } catch (err) {
@@ -67,6 +66,12 @@ export async function GET(req: Request) {
     try {
       await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id);
       await supabase.from('cloud_machines').delete().eq('id', machine.id);
+      if (machine.email) {
+        await supabase.from('bridge_configs').delete().eq('email', machine.email);
+        await supabase.from('claude_connections').delete().eq('email', machine.email);
+        await supabase.from('github_connections').delete().eq('email', machine.email);
+        await supabase.from('project_env_vars').delete().eq('email', machine.email);
+      }
       results.errorCleaned++;
     } catch (err) {
       results.errors.push(`error ${machine.fly_app_name}: ${err}`);

@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('[chat/conversations] Error:', (error as Error).message);
-    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+    const msg = (error as Error).message;
+    console.error('[chat/conversations POST] Error:', msg);
+    return NextResponse.json({ error: msg || 'An unexpected error occurred.' }, { status: 500 });
   }
 }

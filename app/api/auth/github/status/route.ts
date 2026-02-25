@@ -21,7 +21,7 @@ export async function GET() {
   const { data } = await supabase
     .from('github_connections')
     .select('github_username, scopes')
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!data) {

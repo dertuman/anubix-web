@@ -32,7 +32,7 @@ async function handleStop() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!machine) {
@@ -53,14 +53,14 @@ async function handleStop() {
   }
 
   try {
-    await supabase.from('cloud_machines').update({ status: 'stopping' }).eq('user_email', email);
+    await supabase.from('cloud_machines').update({ status: 'stopping' }).eq('email', email);
 
     await stopFlyMachine(machine.fly_app_name, machine.fly_machine_id);
 
     await supabase.from('cloud_machines').update({
       status: 'stopped',
       stopped_at: new Date().toISOString(),
-    }).eq('user_email', email);
+    }).eq('email', email);
 
     return NextResponse.json({ status: 'stopped' });
   } catch (err) {
@@ -68,7 +68,7 @@ async function handleStop() {
     await supabase.from('cloud_machines').update({
       status: 'error',
       error_message: message,
-    }).eq('user_email', email);
+    }).eq('email', email);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

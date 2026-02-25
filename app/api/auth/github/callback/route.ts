@@ -97,14 +97,14 @@ export async function GET(req: NextRequest) {
 
   const { error: upsertErr } = await supabase.from('github_connections').upsert(
     {
-      user_email: email,
+      email: email,
       github_user_id: ghUser.id,
       github_username: ghUser.login,
       access_token_encrypted: encrypt(accessToken),
       scopes,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_email' },
+    { onConflict: 'email' },
   );
 
   if (upsertErr) {

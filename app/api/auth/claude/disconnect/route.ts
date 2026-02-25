@@ -21,7 +21,7 @@ export async function POST() {
   await supabase
     .from('claude_connections')
     .delete()
-    .eq('user_email', email);
+    .eq('email', email);
 
   return NextResponse.json({ ok: true });
 }

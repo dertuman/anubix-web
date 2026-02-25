@@ -70,7 +70,6 @@ export interface StoredFileAttachment {
 
 export interface ChatConversation {
   id: string;
-  clerk_user_id: string;
   email: string;
   title: string;
   model: string;
@@ -99,7 +98,6 @@ export interface ChatMessage {
 
 export interface ChatApiKey {
   id: string;
-  clerk_user_id: string;
   email: string;
   provider: AIProvider;
   encrypted_key: string;

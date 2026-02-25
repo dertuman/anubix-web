@@ -21,7 +21,7 @@ export async function POST() {
   const { error } = await supabase
     .from('github_connections')
     .delete()
-    .eq('user_email', email);
+    .eq('email', email);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

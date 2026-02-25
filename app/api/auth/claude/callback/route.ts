@@ -130,13 +130,13 @@ async function handleCallback(req: NextRequest) {
 
   const { error: upsertErr } = await supabase.from('claude_connections').upsert(
     {
-      user_email: email,
+      email: email,
       claude_mode: 'cli',
       auth_json_encrypted: encrypt(authJson),
       api_key_encrypted: null,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_email' },
+    { onConflict: 'email' },
   );
 
   if (upsertErr) {

@@ -27,7 +27,7 @@ export async function POST() {
     const { data: claudeConn } = await supabase
       .from('claude_connections')
       .select()
-      .eq('user_email', email)
+      .eq('email', email)
       .single();
 
     if (!claudeConn) {
@@ -56,7 +56,7 @@ export async function POST() {
     const { data: machine } = await supabase
       .from('cloud_machines')
       .select()
-      .eq('user_email', email)
+      .eq('email', email)
       .single();
 
     if (!machine || machine.status !== 'running') {

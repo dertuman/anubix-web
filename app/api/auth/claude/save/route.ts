@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const row = {
-    user_email: email,
+    email: email,
     claude_mode: claudeMode,
     auth_json_encrypted: claudeAuthJson ? encrypt(claudeAuthJson) : null,
     api_key_encrypted: anthropicApiKey ? encrypt(anthropicApiKey) : null,
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase
     .from('claude_connections')
-    .upsert(row, { onConflict: 'user_email' });
+    .upsert(row, { onConflict: 'email' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

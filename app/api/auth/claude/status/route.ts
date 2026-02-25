@@ -21,7 +21,7 @@ export async function GET() {
   const { data } = await supabase
     .from('claude_connections')
     .select('claude_mode, created_at')
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!data) {

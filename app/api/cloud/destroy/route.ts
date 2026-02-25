@@ -32,7 +32,7 @@ async function handleDestroy() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!machine) {
@@ -40,35 +40,26 @@ async function handleDestroy() {
   }
 
   try {
-    await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('user_email', email);
+    await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('email', email);
 
     // Best-effort teardown of Fly.io resources
     await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id);
+  } catch (err) {
+    console.error('Fly.io teardown failed (continuing with DB cleanup):', err);
+  }
 
-    // Delete the cloud_machines row
-    await supabase.from('cloud_machines').delete().eq('user_email', email);
-
-    // Also clean up bridge_configs if it points to this machine
-    if (machine.bridge_url) {
-      const { data: bridgeConfig } = await supabase
-        .from('bridge_configs')
-        .select()
-        .eq('user_email', email)
-        .single();
-
-      if (bridgeConfig?.bridge_url === machine.bridge_url) {
-        await supabase.from('bridge_configs').delete().eq('user_email', email);
-      }
-    }
+  // Always clean up all machine-related DB rows so the user isn't stuck
+  try {
+    await supabase.from('cloud_machines').delete().eq('email', email);
+    await supabase.from('bridge_configs').delete().eq('email', email);
+    await supabase.from('claude_connections').delete().eq('email', email);
+    await supabase.from('github_connections').delete().eq('email', email);
+    await supabase.from('project_env_vars').delete().eq('email', email);
 
     return NextResponse.json({ status: 'destroyed' });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to destroy machine';
-    console.error('Destroy failed:', message);
-
-    // Still try to delete the DB row so user isn't stuck
-    await supabase.from('cloud_machines').delete().eq('user_email', email);
-
+    const message = err instanceof Error ? err.message : 'Failed to clean up database rows';
+    console.error('Destroy DB cleanup failed:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

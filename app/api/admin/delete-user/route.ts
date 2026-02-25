@@ -70,12 +70,12 @@ export async function POST(req: Request) {
     const { data: machine } = await supabase
       .from('cloud_machines')
       .select('fly_app_name, fly_machine_id')
-      .eq('user_email', email)
+      .eq('email', email)
       .single();
 
     if (machine?.fly_app_name) {
       try {
-        await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('user_email', email);
+        await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('email', email);
         await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id ?? undefined);
       } catch (flyErr) {
         console.warn('[admin/delete-user] Fly.io teardown failed (continuing):', flyErr);
@@ -83,11 +83,11 @@ export async function POST(req: Request) {
     }
 
     // ── Step 2: Delete all DB rows using email ───────────────────
-    await supabase.from('cloud_machines').delete().eq('user_email', email);
+    await supabase.from('cloud_machines').delete().eq('email', email);
     await supabase.from('bridge_configs').delete().eq('email', email);
-    await supabase.from('claude_connections').delete().eq('user_email', email);
-    await supabase.from('github_connections').delete().eq('user_email', email);
-    await supabase.from('project_env_vars').delete().eq('user_email', email);
+    await supabase.from('claude_connections').delete().eq('email', email);
+    await supabase.from('github_connections').delete().eq('email', email);
+    await supabase.from('project_env_vars').delete().eq('email', email);
     await supabase.from('chat_api_keys').delete().eq('email', email);
     await supabase.from('conversations').delete().eq('email', email);
 

@@ -22,7 +22,7 @@ export async function GET() {
   const { data: ghConn } = await supabase
     .from('github_connections')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!ghConn) {
@@ -44,7 +44,7 @@ export async function GET() {
 
   if (res.status === 401) {
     // Token revoked — clean up connection
-    await supabase.from('github_connections').delete().eq('user_email', email);
+    await supabase.from('github_connections').delete().eq('email', email);
     return NextResponse.json({ connected: false, repos: [] });
   }
 

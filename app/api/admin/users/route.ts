@@ -41,24 +41,24 @@ export async function GET() {
       return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
 
-    // Fetch all machines (uses user_email)
+    // Fetch all machines (uses email)
     const { data: machines } = await supabase
       .from('cloud_machines')
-      .select('user_email, status, fly_app_name');
+      .select('email, status, fly_app_name');
 
-    // Fetch users with Claude connections (uses user_email)
+    // Fetch users with Claude connections (uses email)
     const { data: claudeRows } = await supabase
       .from('claude_connections')
-      .select('user_email');
+      .select('email');
 
-    // Fetch users with GitHub connections (uses user_email)
+    // Fetch users with GitHub connections (uses email)
     const { data: githubRows } = await supabase
       .from('github_connections')
-      .select('user_email');
+      .select('email');
 
-    const machineByEmail = Object.fromEntries((machines ?? []).map((m) => [m.user_email, m]));
-    const claudeSet = new Set((claudeRows ?? []).map((r) => r.user_email));
-    const githubSet = new Set((githubRows ?? []).map((r) => r.user_email));
+    const machineByEmail = Object.fromEntries((machines ?? []).map((m) => [m.email, m]));
+    const claudeSet = new Set((claudeRows ?? []).map((r) => r.email));
+    const githubSet = new Set((githubRows ?? []).map((r) => r.email));
 
     const users = (profiles ?? []).map((p) => {
       const machine = machineByEmail[p.email];

@@ -26,7 +26,7 @@ export async function POST() {
   const { data: githubConn } = await supabase
     .from('github_connections')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!githubConn || !githubConn.access_token_encrypted) {
@@ -40,7 +40,7 @@ export async function POST() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (!machine || machine.status !== 'running') {

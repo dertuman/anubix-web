@@ -32,7 +32,7 @@ async function handleStatus() {
   const { data, error } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (error || !data) {
@@ -56,7 +56,7 @@ async function handleStatus() {
         await supabase.from('cloud_machines').update({
           status: 'running',
           last_health_check_at: new Date().toISOString(),
-        }).eq('user_email', email);
+        }).eq('email', email);
       }
     } catch {
       // Bridge not reachable — keep current status

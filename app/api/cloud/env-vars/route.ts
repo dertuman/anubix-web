@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('project_env_vars')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .order('key');
 
   if (repoPath) {
@@ -94,7 +94,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const rows = vars.map((v) => ({
-    user_email: email,
+    email: email,
     key: v.key.trim(),
     value_encrypted: encrypt(v.value),
     repo_path: repoPath,
@@ -103,7 +103,7 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await supabase
     .from('project_env_vars')
-    .upsert(rows, { onConflict: 'user_email,repo_path,key' });
+    .upsert(rows, { onConflict: 'email,repo_path,key' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -139,7 +139,7 @@ export async function DELETE(req: NextRequest) {
   const { error } = await supabase
     .from('project_env_vars')
     .delete()
-    .eq('user_email', email)
+    .eq('email', email)
     .eq('repo_path', repoPath)
     .eq('key', key);
 

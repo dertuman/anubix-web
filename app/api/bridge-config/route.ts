@@ -18,7 +18,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('bridge_configs')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (error || !data) {
@@ -55,12 +55,12 @@ export async function POST(req: NextRequest) {
     .from('bridge_configs')
     .upsert(
       {
-        user_email: email,
+        email,
         bridge_url: bridgeUrl,
         api_key_encrypted: encrypted,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'user_email' }
+      { onConflict: 'email' }
     );
 
   if (error) {
@@ -82,6 +82,6 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
-  await supabase.from('bridge_configs').delete().eq('user_email', email);
+  await supabase.from('bridge_configs').delete().eq('email', email);
   return NextResponse.json({ success: true });
 }

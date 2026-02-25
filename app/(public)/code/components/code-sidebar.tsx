@@ -590,6 +590,7 @@ export const CodeSidebar = memo(function CodeSidebar({
   const [githubDisconnecting, setGithubDisconnecting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editSession, setEditSession] = useState<BridgeSession | null>(null);
+  const [showDestroyConfirm, setShowDestroyConfirm] = useState(false);
 
   // Machine tools state
   const [showMachineTools, setShowMachineTools] = useState(false);
@@ -1700,7 +1701,7 @@ export const CodeSidebar = memo(function CodeSidebar({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onDisconnect}
+              onClick={() => setShowDestroyConfirm(true)}
               className="w-full gap-2 text-xs text-muted-foreground hover:text-destructive"
             >
               <LogOut className="size-3.5" />
@@ -1726,6 +1727,19 @@ export const CodeSidebar = memo(function CodeSidebar({
           if (deleteId) handleDelete(deleteId);
         }}
       />
+      {onDisconnect && (
+        <ConfirmationDialog
+          isOpen={showDestroyConfirm}
+          onOpenChange={setShowDestroyConfirm}
+          title="Destroy Machine"
+          description="Are you sure you want to disconnect and destroy your cloud machine? All unsaved work, sessions, and data on the machine will be permanently lost. This cannot be undone."
+          confirmButtonText="Destroy Machine"
+          handleConfirm={() => {
+            setShowDestroyConfirm(false);
+            onDisconnect();
+          }}
+        />
+      )}
       {editSession && (
         <EditSessionModal
           session={editSession}

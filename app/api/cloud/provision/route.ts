@@ -96,7 +96,7 @@ async function handleProvision(req: NextRequest) {
   const { data: claudeConn } = await supabase
     .from('claude_connections')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   // Claude credentials are optional - user can connect later from Profile > Integrations
@@ -122,7 +122,7 @@ async function handleProvision(req: NextRequest) {
   const { data: existing } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_email', email)
+    .eq('email', email)
     .single();
 
   if (existing) {
@@ -152,7 +152,7 @@ async function handleProvision(req: NextRequest) {
     }
     // If destroyed or error, clean up the row and create fresh
     if (existing.status === 'destroyed' || existing.status === 'error') {
-      await supabase.from('cloud_machines').delete().eq('user_email', email);
+      await supabase.from('cloud_machines').delete().eq('email', email);
     }
   }
 
@@ -162,7 +162,7 @@ async function handleProvision(req: NextRequest) {
     const { data: envRows } = await supabase
       .from('project_env_vars')
       .select()
-      .eq('user_email', email);
+      .eq('email', email);
     if (envRows && envRows.length > 0) {
       const envMap: Record<string, string> = {};
       for (const row of envRows) {
@@ -178,7 +178,7 @@ async function handleProvision(req: NextRequest) {
     const { data: ghConn } = await supabase
       .from('github_connections')
       .select()
-      .eq('user_email', email)
+      .eq('email', email)
       .single();
     if (ghConn) {
       githubToken = decrypt(ghConn.access_token_encrypted);
@@ -194,7 +194,7 @@ async function handleProvision(req: NextRequest) {
 
   // ── Insert DB row (provisioning) ───────────────────────────
   const { error: insertErr } = await supabase.from('cloud_machines').insert({
-    user_email: email,
+    email: email,
     fly_app_name: appName,
     fly_region: region,
     bridge_url: bridgeUrl,
@@ -248,7 +248,7 @@ async function handleProvision(req: NextRequest) {
       fly_machine_id: machineId,
       fly_volume_id: volumeId,
       status: 'starting',
-    }).eq('user_email', email);
+    }).eq('email', email);
 
     // 4. Wait for machine to start
     await waitForMachineState(appName, machineId, 'started', 120);
@@ -260,7 +260,7 @@ async function handleProvision(req: NextRequest) {
     await supabase.from('cloud_machines').update({
       status: 'running',
       last_health_check_at: new Date().toISOString(),
-    }).eq('user_email', email);
+    }).eq('email', email);
 
     // 7. Also update bridge_configs so useBridgeConfig auto-connects
     await supabase.from('bridge_configs').upsert(
@@ -289,13 +289,13 @@ async function handleProvision(req: NextRequest) {
       error_message: message,
       fly_machine_id: machineId || null,
       fly_volume_id: volumeId || null,
-    }).eq('user_email', email);
+    }).eq('email', email);
 
     // Best-effort cleanup
     await teardownFlyResources(appName, machineId);
 
     // Remove the failed DB row so user can retry
-    await supabase.from('cloud_machines').delete().eq('user_email', email);
+    await supabase.from('cloud_machines').delete().eq('email', email);
 
     return NextResponse.json({ error: `Provisioning failed: ${message}` }, { status: 500 });
   }

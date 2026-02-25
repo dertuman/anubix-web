@@ -155,19 +155,19 @@ export async function POST(req: Request) {
     // If deleting via the admin panel, use /api/admin/delete-user which handles Fly.io first.
 
     // Delete from cloud_machines
-    await supabase.from('cloud_machines').delete().eq('user_email', email);
+    await supabase.from('cloud_machines').delete().eq('email', email);
 
     // Delete from bridge_configs
     await supabase.from('bridge_configs').delete().eq('email', email);
 
     // Delete from claude_connections
-    await supabase.from('claude_connections').delete().eq('user_email', email);
+    await supabase.from('claude_connections').delete().eq('email', email);
 
     // Delete from github_connections
-    await supabase.from('github_connections').delete().eq('user_email', email);
+    await supabase.from('github_connections').delete().eq('email', email);
 
     // Delete from project_env_vars
-    await supabase.from('project_env_vars').delete().eq('user_email', email);
+    await supabase.from('project_env_vars').delete().eq('email', email);
 
     // Delete from chat_api_keys
     await supabase.from('chat_api_keys').delete().eq('email', email);
