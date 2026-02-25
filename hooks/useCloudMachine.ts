@@ -151,27 +151,46 @@ export function useCloudMachine(): UseCloudMachineReturn {
       setError(null);
       setErrorCode(null);
 
-      try {
-        const res = await fetch('/api/cloud/provision', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(opts),
-        });
+      // The provision API takes 1-5 minutes (Fly.io setup). We don't want
+      // to block the UI that whole time. Strategy:
+      //   1. Fire the request
+      //   2. Race it against a 3-second timeout
+      //   3. If it responds quickly (error, or already-running) → handle immediately
+      //   4. If it times out → the DB row exists, polling picks up progress
 
-        const data = await safeJson(res);
+      const fetchPromise = fetch('/api/cloud/provision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(opts),
+      }).then(async (res) => ({
+        res,
+        data: await safeJson(res),
+      }));
+
+      type QuickResult = { res: Response; data: Record<string, unknown> };
+      const quickResult = await Promise.race<QuickResult | null>([
+        fetchPromise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]);
+
+      if (quickResult) {
+        // Request completed within 3 seconds (fast error or existing machine)
+        const { res, data } = quickResult;
 
         if (!res.ok) {
-          if (data.code) setErrorCode(data.code);
-          throw new Error(data.error || 'Provisioning failed');
+          if (data.code) setErrorCode(data.code as string);
+          setError((data.error as string) || 'Provisioning failed');
+          setIsWorking(false);
+          await fetchStatus();
+          return;
         }
 
-        // If the server returned running immediately (existing machine)
         if (data.status === 'running') {
           setMachine({
             status: 'running',
-            bridgeUrl: data.bridgeUrl,
-            bridgeApiKey: data.bridgeApiKey,
-            previewUrl: data.previewUrl,
+            bridgeUrl: data.bridgeUrl as string,
+            bridgeApiKey: data.bridgeApiKey as string,
+            previewUrl: (data.previewUrl as string) || null,
             region: opts.region || 'lhr',
             claudeMode: 'cli',
             templateName: opts.templateName || null,
@@ -182,17 +201,32 @@ export function useCloudMachine(): UseCloudMachineReturn {
             lastHealthCheckAt: new Date().toISOString(),
           });
           setIsWorking(false);
-        } else {
-          // Fetch latest status — polling will take over
-          await fetchStatus();
+          return;
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Provisioning failed';
-        setError(msg);
-        setIsWorking(false);
-        // Refresh to get the actual DB state
+
+        // Some other quick status — fetch and let polling handle it
         await fetchStatus();
+        return;
       }
+
+      // Timed out — provisioning is in progress on the server.
+      // The DB row should exist by now. Fetch status so polling starts.
+      await fetchStatus();
+
+      // Handle the eventual response in the background
+      fetchPromise
+        .then(async ({ res, data }) => {
+          if (!res.ok) {
+            if (data.code) setErrorCode(data.code as string);
+            setError((data.error as string) || 'Provisioning failed');
+            setIsWorking(false);
+          }
+          // Whether success or failure, reconcile with DB state
+          await fetchStatus();
+        })
+        .catch(async () => {
+          await fetchStatus();
+        });
     },
     [fetchStatus]
   );

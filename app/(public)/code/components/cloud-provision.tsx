@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import {
   AlertCircle,
@@ -59,9 +59,9 @@ const TEMPLATES = [
 ] as const;
 
 const PROVISION_STEPS = [
-  { key: 'provisioning', label: 'Creating cloud app' },
-  { key: 'starting', label: 'Starting machine' },
-  { key: 'running', label: 'Verifying health' },
+  { key: 'provisioning', label: 'Creating cloud app', hint: 'Setting up infrastructure' },
+  { key: 'starting', label: 'Starting machine', hint: 'Installing dependencies' },
+  { key: 'running', label: 'Verifying connection', hint: 'Almost there' },
 ] as const;
 
 // ── Component ────────────────────────────────────────────────
@@ -830,23 +830,43 @@ function ProvisioningView({ machine }: { machine: CloudMachine }) {
   const currentStep =
     machine.status === 'provisioning' ? 0 : machine.status === 'starting' ? 1 : 2;
 
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs.toString().padStart(2, '0')}s` : `${secs}s`;
+
   return (
     <div className="flex h-full items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/6 bg-card/30 p-6 backdrop-blur-sm">
         <div className="space-y-1 text-center">
-          <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-2xl bg-primary/10">
-            <Cloud className="size-8 text-primary" />
+          <div className="relative mx-auto mb-3 flex size-16 items-center justify-center">
+            <span className="absolute inset-0 animate-ping rounded-2xl bg-primary/10" style={{ animationDuration: '2s' }} />
+            <span className="absolute inset-1 animate-pulse rounded-xl bg-primary/5" />
+            <Cloud className="relative size-8 text-primary" />
           </div>
           <h2 className="text-xl font-bold">Setting up your environment</h2>
-          <p className="text-sm text-muted-foreground">This usually takes 1-3 minutes...</p>
+          <p className="text-sm text-muted-foreground">
+            This usually takes 2-4 minutes
+            <span className="ml-1.5 font-mono text-xs text-muted-foreground/70">({timeStr})</span>
+          </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-1">
           {PROVISION_STEPS.map((step, i) => (
-            <div key={step.key} className="flex items-center gap-3">
+            <div
+              key={step.key}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                i === currentStep && 'bg-primary/5',
+              )}
+            >
               <div
                 className={cn(
-                  'flex size-7 items-center justify-center rounded-full border-2 text-xs font-medium',
+                  'flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-medium transition-all',
                   i < currentStep && 'border-primary bg-primary text-primary-foreground',
                   i === currentStep && 'border-primary text-primary',
                   i > currentStep && 'border-border text-muted-foreground',
@@ -860,17 +880,34 @@ function ProvisioningView({ machine }: { machine: CloudMachine }) {
                   <span>{i + 1}</span>
                 )}
               </div>
-              <span
-                className={cn(
-                  'text-sm',
-                  i <= currentStep ? 'font-medium text-foreground' : 'text-muted-foreground',
+              <div className="min-w-0 flex-1">
+                <span
+                  className={cn(
+                    'text-sm',
+                    i <= currentStep ? 'font-medium text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  {step.label}
+                </span>
+                {i === currentStep && (
+                  <p className="text-xs text-muted-foreground/70">{step.hint}</p>
                 )}
-              >
-                {step.label}
-              </span>
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+            style={{ width: `${Math.min(((currentStep + 0.5) / PROVISION_STEPS.length) * 100, 95)}%` }}
+          />
+        </div>
+
+        <p className="rounded-lg bg-muted/60 px-3 py-2 text-center text-xs text-muted-foreground">
+          You can close this page — provisioning continues in the background
+        </p>
       </div>
     </div>
   );

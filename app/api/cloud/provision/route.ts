@@ -1,19 +1,19 @@
 import { randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
-import { encrypt, decrypt } from '@/lib/encryption';
-import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
 import { getAuthEmail } from '@/lib/auth-utils';
+import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
+import { decrypt, encrypt } from '@/lib/encryption';
 import {
-  createFlyApp,
   allocateFlyIps,
-  createFlyVolume,
+  createFlyApp,
   createFlyMachine,
-  waitForMachineState,
-  waitForBridgeHealth,
+  createFlyVolume,
   teardownFlyResources,
+  waitForBridgeHealth,
+  waitForMachineState,
 } from '@/lib/fly-machines';
+import { createClerkSupabaseClient } from '@/lib/supabase/server';
 
 // Allow up to 300s for Fly.io provisioning (app + volume + machine + template install + health check)
 // Heavy templates like talkartech-fullstack need 3-5 min for git clone + npm install before the server starts.
@@ -29,9 +29,12 @@ export const maxDuration = 300;
  * Access is gated by subscription (admins bypass).
  */
 export async function POST(req: NextRequest) {
-  try { return await handleProvision(req); } catch (err) {
+  try {
+    return await handleProvision(req);
+  } catch (err) {
     console.error('Unhandled provision error:', err);
-    const message = err instanceof Error ? err.message : 'Internal server error';
+    const message =
+      err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -44,7 +47,10 @@ async function handleProvision(req: NextRequest) {
 
   const supabase = await createClerkSupabaseClient();
   if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    );
   }
 
   // ── Check subscription (admins bypass) ─────────────────────
@@ -52,7 +58,7 @@ async function handleProvision(req: NextRequest) {
   if (!subCheck.allowed) {
     return NextResponse.json(
       { error: subCheck.reason, code: 'SUBSCRIPTION_REQUIRED' },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -87,10 +93,22 @@ async function handleProvision(req: NextRequest) {
   // Only validate if credentials exist
   if (claudeConn) {
     if (claudeMode === 'cli' && !claudeAuthJson) {
-      return NextResponse.json({ error: 'Claude CLI credentials are incomplete. Please reconnect in Profile > Integrations.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            'Claude CLI credentials are incomplete. Please reconnect in Profile > Integrations.',
+        },
+        { status: 400 }
+      );
     }
     if (claudeMode === 'sdk' && !anthropicApiKey) {
-      return NextResponse.json({ error: 'Claude API key is missing. Please reconnect in Profile > Integrations.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            'Claude API key is missing. Please reconnect in Profile > Integrations.',
+        },
+        { status: 400 }
+      );
     }
   }
 
@@ -116,14 +134,14 @@ async function handleProvision(req: NextRequest) {
     if (existing.status === 'provisioning' || existing.status === 'starting') {
       return NextResponse.json(
         { error: 'Machine is already being provisioned. Please wait.' },
-        { status: 409 },
+        { status: 409 }
       );
     }
     if (existing.status === 'stopped') {
       // Restart it instead of creating a new one
       return NextResponse.json(
         { error: 'Machine is stopped. Use /api/cloud/start to resume it.' },
-        { status: 409 },
+        { status: 409 }
       );
     }
     // If destroyed or error, clean up the row and create fresh
@@ -162,7 +180,10 @@ async function handleProvision(req: NextRequest) {
   }
 
   // ── Generate identifiers ───────────────────────────────────
-  const emailHash = email.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 6);
+  const emailHash = email
+    .replace(/[^a-z0-9]/gi, '')
+    .toLowerCase()
+    .slice(0, 6);
   const rand = randomBytes(2).toString('hex');
   const appName = `anubix-u-${emailHash}-${rand}`;
   const bridgeApiKey = randomBytes(32).toString('base64url');
@@ -177,7 +198,9 @@ async function handleProvision(req: NextRequest) {
     bridge_api_key_encrypted: encrypt(bridgeApiKey),
     claude_mode: claudeMode,
     claude_auth_json_encrypted: claudeAuthJson ? encrypt(claudeAuthJson) : null,
-    anthropic_api_key_encrypted: anthropicApiKey ? encrypt(anthropicApiKey) : null,
+    anthropic_api_key_encrypted: anthropicApiKey
+      ? encrypt(anthropicApiKey)
+      : null,
     template_name: templateName || null,
     git_repo_url: gitRepoUrl || null,
     status: 'provisioning',
@@ -220,11 +243,14 @@ async function handleProvision(req: NextRequest) {
     machineId = machine.id;
 
     // Update DB with Fly.io resource IDs
-    await supabase.from('cloud_machines').update({
-      fly_machine_id: machineId,
-      fly_volume_id: volumeId,
-      status: 'starting',
-    }).eq('email', email);
+    await supabase
+      .from('cloud_machines')
+      .update({
+        fly_machine_id: machineId,
+        fly_volume_id: volumeId,
+        status: 'starting',
+      })
+      .eq('email', email);
 
     // 4. Wait for machine to start
     await waitForMachineState(appName, machineId, 'started', 120);
@@ -233,10 +259,13 @@ async function handleProvision(req: NextRequest) {
     await waitForBridgeHealth(bridgeUrl, bridgeApiKey);
 
     // 6. Mark as running
-    await supabase.from('cloud_machines').update({
-      status: 'running',
-      last_health_check_at: new Date().toISOString(),
-    }).eq('email', email);
+    await supabase
+      .from('cloud_machines')
+      .update({
+        status: 'running',
+        last_health_check_at: new Date().toISOString(),
+      })
+      .eq('email', email);
 
     // 7. Also update bridge_configs so useBridgeConfig auto-connects
     await supabase.from('bridge_configs').upsert(
@@ -246,7 +275,7 @@ async function handleProvision(req: NextRequest) {
         api_key_encrypted: encrypt(bridgeApiKey),
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'email' },
+      { onConflict: 'email' }
     );
 
     return NextResponse.json({
@@ -256,16 +285,20 @@ async function handleProvision(req: NextRequest) {
       status: 'running',
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown provisioning error';
+    const message =
+      err instanceof Error ? err.message : 'Unknown provisioning error';
     console.error('Provisioning failed:', message);
 
     // Update DB with error
-    await supabase.from('cloud_machines').update({
-      status: 'error',
-      error_message: message,
-      fly_machine_id: machineId || null,
-      fly_volume_id: volumeId || null,
-    }).eq('email', email);
+    await supabase
+      .from('cloud_machines')
+      .update({
+        status: 'error',
+        error_message: message,
+        fly_machine_id: machineId || null,
+        fly_volume_id: volumeId || null,
+      })
+      .eq('email', email);
 
     // Best-effort cleanup
     await teardownFlyResources(appName, machineId);
@@ -273,6 +306,9 @@ async function handleProvision(req: NextRequest) {
     // Remove the failed DB row so user can retry
     await supabase.from('cloud_machines').delete().eq('email', email);
 
-    return NextResponse.json({ error: `Provisioning failed: ${message}` }, { status: 500 });
+    return NextResponse.json(
+      { error: `Provisioning failed: ${message}` },
+      { status: 500 }
+    );
   }
 }
