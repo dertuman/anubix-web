@@ -16,13 +16,13 @@ export type SubscriptionCheckResult =
  */
 export async function checkSubscriptionOrAdmin(
   sb: Sb,
-  userId: string,
+  email: string,
 ): Promise<SubscriptionCheckResult> {
   // 1. Admin bypass
   const { data: profile } = await sb
     .from('profiles')
     .select('is_admin')
-    .eq('id', userId)
+    .eq('email', email)
     .single();
 
   if (profile?.is_admin) {
@@ -33,7 +33,7 @@ export async function checkSubscriptionOrAdmin(
   const { data: subscription } = await sb
     .from('subscriptions')
     .select('is_active, billing_interval')
-    .eq('user_id', userId)
+    .eq('email', email)
     .single();
 
   if (!subscription || !subscription.is_active) {

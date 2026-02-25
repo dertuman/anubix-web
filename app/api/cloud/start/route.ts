@@ -38,7 +38,7 @@ async function handleStart() {
   }
 
   // ── Check subscription (admins bypass) ─────────────────────
-  const subCheck = await checkSubscriptionOrAdmin(supabase, userId);
+  const subCheck = await checkSubscriptionOrAdmin(supabase, email);
   if (!subCheck.allowed) {
     return NextResponse.json(
       { error: subCheck.reason, code: 'SUBSCRIPTION_REQUIRED' },

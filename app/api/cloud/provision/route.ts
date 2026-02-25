@@ -71,20 +71,9 @@ async function handleProvision(req: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
-<<<<<<< HEAD
   // ── Check subscription (admins bypass) ─────────────────────
-  const subCheck = await checkSubscriptionOrAdmin(supabase, userId);
+  const subCheck = await checkSubscriptionOrAdmin(supabase, email);
   if (!subCheck.allowed) {
-=======
-  // ── Check active subscription ─────────────────────────────
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select()
-    .eq('email', email)
-    .single();
-
-  if (!subscription || !subscription.is_active) {
->>>>>>> 827daf8 (Migrate to email-based authentication across entire application)
     return NextResponse.json(
       { error: subCheck.reason, code: 'SUBSCRIPTION_REQUIRED' },
       { status: 403 },
