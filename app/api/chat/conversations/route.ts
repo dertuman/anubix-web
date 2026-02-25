@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createConversation, fetchConversations } from '@/lib/chat-db';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
@@ -8,14 +8,14 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
  * GET /api/chat/conversations — List all conversations for the user.
  */
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   try {
-    const conversations = await fetchConversations(sb, userId);
+    const conversations = await fetchConversations(sb, email);
     return NextResponse.json({ success: true, data: conversations });
   } catch (error) {
     console.error('[chat/conversations] Error:', (error as Error).message);
@@ -28,8 +28,8 @@ export async function GET() {
  * Body: { model: string, title?: string }
  */
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const { model, title } = await req.json();
     if (!model) return NextResponse.json({ error: 'Model is required' }, { status: 400 });
 
-    const id = await createConversation(sb, userId, model, title);
+    const id = await createConversation(sb, email, model, title);
 
     // Fetch the full created conversation
     const { data } = await sb

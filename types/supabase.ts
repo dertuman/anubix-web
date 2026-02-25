@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          email: string;
           bridge_url: string;
           api_key_encrypted: string;
           created_at: string;
@@ -20,7 +21,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string;
+          email?: string;
           bridge_url: string;
           api_key_encrypted: string;
           created_at?: string;
@@ -29,6 +31,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          email?: string;
           bridge_url?: string;
           api_key_encrypted?: string;
           created_at?: string;
@@ -91,6 +94,7 @@ export interface Database {
         Row: {
           id: string;
           clerk_user_id: string;
+          email: string;
           title: string;
           model: string;
           message_count: number;
@@ -101,7 +105,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          clerk_user_id: string;
+          clerk_user_id?: string;
+          email?: string;
           title?: string;
           model: string;
           message_count?: number;
@@ -113,6 +118,7 @@ export interface Database {
         Update: {
           id?: string;
           clerk_user_id?: string;
+          email?: string;
           title?: string;
           model?: string;
           message_count?: number;
@@ -160,6 +166,7 @@ export interface Database {
         Row: {
           id: string;
           clerk_user_id: string;
+          email: string;
           provider: string;
           encrypted_key: string;
           iv: string;
@@ -169,7 +176,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          clerk_user_id: string;
+          clerk_user_id?: string;
+          email?: string;
           provider: string;
           encrypted_key: string;
           iv: string;
@@ -180,6 +188,7 @@ export interface Database {
         Update: {
           id?: string;
           clerk_user_id?: string;
+          email?: string;
           provider?: string;
           encrypted_key?: string;
           iv?: string;
@@ -193,6 +202,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          user_email: string;
           key: string;
           value_encrypted: string;
           repo_path: string;
@@ -201,7 +211,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string;
+          user_email?: string;
           key: string;
           value_encrypted: string;
           repo_path?: string;
@@ -211,6 +222,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          user_email?: string;
           key?: string;
           value_encrypted?: string;
           repo_path?: string;
@@ -223,6 +235,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          user_email: string;
           github_user_id: number;
           github_username: string;
           access_token_encrypted: string;
@@ -232,7 +245,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string;
+          user_email?: string;
           github_user_id: number;
           github_username: string;
           access_token_encrypted: string;
@@ -243,6 +257,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          user_email?: string;
           github_user_id?: number;
           github_username?: string;
           access_token_encrypted?: string;
@@ -256,6 +271,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          user_email: string;
           claude_mode: string;
           auth_json_encrypted: string | null;
           api_key_encrypted: string | null;
@@ -264,7 +280,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string;
+          user_email?: string;
           claude_mode?: string;
           auth_json_encrypted?: string | null;
           api_key_encrypted?: string | null;
@@ -274,6 +291,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          user_email?: string;
           claude_mode?: string;
           auth_json_encrypted?: string | null;
           api_key_encrypted?: string | null;
@@ -286,6 +304,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          email: string;
           revenuecat_customer_id: string | null;
           entitlement_id: string;
           product_id: string | null;
@@ -307,7 +326,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string;
+          email?: string;
           revenuecat_customer_id?: string | null;
           entitlement_id?: string;
           product_id?: string | null;
@@ -330,6 +350,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          email?: string;
           revenuecat_customer_id?: string | null;
           entitlement_id?: string;
           product_id?: string | null;
@@ -355,6 +376,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          user_email: string;
           fly_app_name: string;
           fly_machine_id: string | null;
           fly_volume_id: string | null;
@@ -378,7 +400,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string;
+          user_email?: string;
           fly_app_name: string;
           fly_machine_id?: string | null;
           fly_volume_id?: string | null;
@@ -403,6 +426,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          user_email?: string;
           fly_app_name?: string;
           fly_machine_id?: string | null;
           fly_volume_id?: string | null;

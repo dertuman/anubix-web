@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { deleteConversation, fetchMessages, getConversation, updateConversation } from '@/lib/chat-db';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
@@ -10,8 +10,8 @@ interface Params { params: Promise<{ conversationId: string }> }
  * GET /api/chat/conversations/[conversationId] — Fetch conversation + messages.
  */
 export async function GET(_req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -20,7 +20,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   try {
     const conversation = await getConversation(sb, conversationId);
-    if (!conversation || conversation.clerk_user_id !== userId) {
+    if (!conversation || conversation.email !== email) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -36,8 +36,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
  * Body: { title?, model? }
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -46,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   try {
     const conversation = await getConversation(sb, conversationId);
-    if (!conversation || conversation.clerk_user_id !== userId) {
+    if (!conversation || conversation.email !== email) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -66,8 +66,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
  * DELETE /api/chat/conversations/[conversationId] — Delete conversation.
  */
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -76,7 +76,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   try {
     const conversation = await getConversation(sb, conversationId);
-    if (!conversation || conversation.clerk_user_id !== userId) {
+    if (!conversation || conversation.email !== email) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

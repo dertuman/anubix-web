@@ -207,6 +207,16 @@
   }
 }
 
+@layer utilities {
+  /* Word wrapping utility for long text (URLs, error messages, etc.) */
+  .wrap-break-word {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+}
+
 @keyframes accordion-down {
   from {
     height: 0;

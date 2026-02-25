@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 
@@ -8,8 +8,8 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
  * Returns GitHub connection status for the current user.
  */
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -21,7 +21,7 @@ export async function GET() {
   const { data } = await supabase
     .from('github_connections')
     .select('github_username, scopes')
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (!data) {

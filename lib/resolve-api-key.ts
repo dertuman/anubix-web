@@ -15,14 +15,14 @@ type Sb = SupabaseClient<Database>;
  */
 export async function resolveApiKey(
   sb: Sb,
-  clerkUserId: string,
+  email: string,
   provider: AIProvider,
 ): Promise<string> {
   // 1. Check user's stored key
   const { data: storedKey } = await sb
     .from('chat_api_keys')
     .select('encrypted_key, iv, auth_tag')
-    .eq('clerk_user_id', clerkUserId)
+    .eq('email', email)
     .eq('provider', provider)
     .single();
 
@@ -38,7 +38,7 @@ export async function resolveApiKey(
   const { data: profile } = await sb
     .from('profiles')
     .select('is_admin')
-    .eq('id', clerkUserId)
+    .eq('email', email)
     .single();
 
   if (profile?.is_admin) {

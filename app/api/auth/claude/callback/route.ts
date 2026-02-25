@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCallback(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -130,13 +130,13 @@ async function handleCallback(req: NextRequest) {
 
   const { error: upsertErr } = await supabase.from('claude_connections').upsert(
     {
-      user_id: userId,
+      user_email: email,
       claude_mode: 'cli',
       auth_json_encrypted: encrypt(authJson),
       api_key_encrypted: null,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_id' },
+    { onConflict: 'user_email' },
   );
 
   if (upsertErr) {

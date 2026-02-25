@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { decrypt } from '@/lib/encryption';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
@@ -9,8 +9,8 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
  * Pushes GitHub credentials to the running Fly machine via bridge.
  */
 export async function POST() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -26,7 +26,7 @@ export async function POST() {
   const { data: githubConn } = await supabase
     .from('github_connections')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (!githubConn || !githubConn.access_token_encrypted) {
@@ -40,7 +40,7 @@ export async function POST() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (!machine || machine.status !== 'running') {

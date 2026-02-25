@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt, decrypt } from '@/lib/encryption';
 
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -18,7 +18,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('bridge_configs')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (error || !data) {
@@ -34,8 +34,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -55,12 +55,12 @@ export async function POST(req: NextRequest) {
     .from('bridge_configs')
     .upsert(
       {
-        user_id: userId,
+        user_email: email,
         bridge_url: bridgeUrl,
         api_key_encrypted: encrypted,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id' }
+      { onConflict: 'user_email' }
     );
 
   if (error) {
@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -82,6 +82,6 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
-  await supabase.from('bridge_configs').delete().eq('user_id', userId);
+  await supabase.from('bridge_configs').delete().eq('user_email', email);
   return NextResponse.json({ success: true });
 }

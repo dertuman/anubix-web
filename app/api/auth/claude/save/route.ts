@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
@@ -9,8 +9,8 @@ import { encrypt } from '@/lib/encryption';
  * Saves Claude credentials (CLI JSON or API key) for the current user.
  */
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const row = {
-    user_id: userId,
+    user_email: email,
     claude_mode: claudeMode,
     auth_json_encrypted: claudeAuthJson ? encrypt(claudeAuthJson) : null,
     api_key_encrypted: anthropicApiKey ? encrypt(anthropicApiKey) : null,
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase
     .from('claude_connections')
-    .upsert(row, { onConflict: 'user_id' });
+    .upsert(row, { onConflict: 'user_email' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

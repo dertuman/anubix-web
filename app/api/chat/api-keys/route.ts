@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { encrypt, decrypt } from '@/lib/crypto';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
@@ -12,8 +12,8 @@ import { createClerkSupabaseClient } from '@/lib/supabase/server';
  *                    Keys are returned over HTTPS to an authenticated user.
  */
 export async function GET(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await sb
       .from('chat_api_keys')
       .select('provider, encrypted_key, iv, auth_tag')
-      .eq('clerk_user_id', userId);
+      .eq('email', email);
 
     if (error) {
       console.error('[chat/api-keys GET] Supabase error:', error.message);
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     const { data: profile } = await sb
       .from('profiles')
       .select('is_admin')
-      .eq('id', userId)
+      .eq('email', email)
       .single();
 
     if (profile?.is_admin) {
@@ -78,8 +78,8 @@ export async function GET(req: NextRequest) {
  * Body: { provider: 'openai' | 'google' | 'anthropic', key: string }
  */
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -101,13 +101,13 @@ export async function POST(req: NextRequest) {
       .from('chat_api_keys')
       .upsert(
         {
-          clerk_user_id: userId,
+          email: email,
           provider,
           encrypted_key: encryptedKey,
           iv,
           auth_tag: authTag,
         },
-        { onConflict: 'clerk_user_id,provider' },
+        { onConflict: 'email,provider' },
       );
 
     if (error) {
@@ -127,8 +127,8 @@ export async function POST(req: NextRequest) {
  * Body: { provider: 'openai' | 'google' | 'anthropic' }
  */
 export async function DELETE(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -143,7 +143,7 @@ export async function DELETE(req: NextRequest) {
     const { error } = await sb
       .from('chat_api_keys')
       .delete()
-      .eq('clerk_user_id', userId)
+      .eq('email', email)
       .eq('provider', provider);
 
     if (error) {

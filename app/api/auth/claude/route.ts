@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 const CLAUDE_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
 const CLAUDE_AUTHORIZE_URL = 'https://claude.ai/oauth/authorize';
@@ -14,8 +14,8 @@ const CLAUDE_SCOPE = 'org:create_api_key user:profile user:inference';
  */
 export async function POST() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const email = await getAuthEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
 

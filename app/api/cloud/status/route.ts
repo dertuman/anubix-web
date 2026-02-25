@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 /**
  * GET /api/cloud/status
@@ -18,8 +18,8 @@ export async function GET() {
 }
 
 async function handleStatus() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -28,10 +28,11 @@ async function handleStatus() {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
+  // Query by email (works across all Clerk instances)
   const { data, error } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (error || !data) {
@@ -55,7 +56,7 @@ async function handleStatus() {
         await supabase.from('cloud_machines').update({
           status: 'running',
           last_health_check_at: new Date().toISOString(),
-        }).eq('user_id', userId);
+        }).eq('user_email', email);
       }
     } catch {
       // Bridge not reachable — keep current status

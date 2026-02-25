@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt, decrypt } from '@/lib/encryption';
@@ -11,8 +11,8 @@ import { encrypt, decrypt } from '@/lib/encryption';
  * Response includes repo_path for each var.
  */
 export async function GET(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('project_env_vars')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .order('key');
 
   if (repoPath) {
@@ -66,8 +66,8 @@ export async function GET(req: NextRequest) {
  * Body: { vars: [{key: string, value: string}], repo_path?: string }
  */
 export async function PUT(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -94,7 +94,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const rows = vars.map((v) => ({
-    user_id: userId,
+    user_email: email,
     key: v.key.trim(),
     value_encrypted: encrypt(v.value),
     repo_path: repoPath,
@@ -103,7 +103,7 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await supabase
     .from('project_env_vars')
-    .upsert(rows, { onConflict: 'user_id,repo_path,key' });
+    .upsert(rows, { onConflict: 'user_email,repo_path,key' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -118,8 +118,8 @@ export async function PUT(req: NextRequest) {
  * Body: { key: string, repo_path?: string }
  */
 export async function DELETE(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -139,7 +139,7 @@ export async function DELETE(req: NextRequest) {
   const { error } = await supabase
     .from('project_env_vars')
     .delete()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .eq('repo_path', repoPath)
     .eq('key', key);
 

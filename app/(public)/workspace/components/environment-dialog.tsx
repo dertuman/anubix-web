@@ -46,6 +46,9 @@ export function EnvironmentDialog({
           <LoginGate />
         ) : connectionError ? (
           <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Connection Error</DialogTitle>
+            </DialogHeader>
             <div className="flex size-16 items-center justify-center rounded-2xl bg-destructive/10">
               <Cloud className="size-8 text-destructive" />
             </div>
@@ -72,10 +75,15 @@ export function EnvironmentDialog({
             </button>
           </div>
         ) : (
-          <CloudProvision
-            onConnected={onConnected}
-            onManualSetup={() => setShowManualSetup(true)}
-          />
+          <>
+            <DialogHeader className="sr-only">
+              <DialogTitle>Cloud Environment Setup</DialogTitle>
+            </DialogHeader>
+            <CloudProvision
+              onConnected={onConnected}
+              onManualSetup={() => setShowManualSetup(true)}
+            />
+          </>
         )}
       </DialogContent>
     </Dialog>

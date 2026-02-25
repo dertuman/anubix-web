@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { stopFlyMachine } from '@/lib/fly-machines';
@@ -19,8 +19,8 @@ export async function POST() {
 }
 
 async function handleStop() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -32,7 +32,7 @@ async function handleStop() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (!machine) {
@@ -53,14 +53,14 @@ async function handleStop() {
   }
 
   try {
-    await supabase.from('cloud_machines').update({ status: 'stopping' }).eq('user_id', userId);
+    await supabase.from('cloud_machines').update({ status: 'stopping' }).eq('user_email', email);
 
     await stopFlyMachine(machine.fly_app_name, machine.fly_machine_id);
 
     await supabase.from('cloud_machines').update({
       status: 'stopped',
       stopped_at: new Date().toISOString(),
-    }).eq('user_id', userId);
+    }).eq('user_email', email);
 
     return NextResponse.json({ status: 'stopped' });
   } catch (err) {
@@ -68,7 +68,7 @@ async function handleStop() {
     await supabase.from('cloud_machines').update({
       status: 'error',
       error_message: message,
-    }).eq('user_id', userId);
+    }).eq('user_email', email);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 import type Anthropic from '@anthropic-ai/sdk';
 import type OpenAI from 'openai';
 
@@ -24,8 +24,8 @@ interface Params { params: Promise<{ conversationId: string }> }
  * GET /api/chat/conversations/[conversationId]/messages — Fetch messages.
  */
 export async function GET(_req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   try {
     const conversation = await getConversation(sb, conversationId);
-    if (!conversation || conversation.clerk_user_id !== userId) {
+    if (!conversation || conversation.email !== email) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -53,8 +53,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
  * Returns Server-Sent Events: data: {"content":"..."}\n\n
  */
 export async function POST(req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   try {
     const conversation = await getConversation(sb, conversationId);
-    if (!conversation || conversation.clerk_user_id !== userId) {
+    if (!conversation || conversation.email !== email) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       try {
         // Use OpenAI for title gen if available, otherwise use first 40 chars
         let titleApiKey: string | undefined;
-        try { titleApiKey = await resolveApiKey(sb, userId, 'openai'); } catch { /* ignore */ }
+        try { titleApiKey = await resolveApiKey(sb, email, 'openai'); } catch { /* ignore */ }
 
         if (titleApiKey) {
           const title = await generateTitle(content, titleApiKey);
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     // ── Resolve API key ────────────────────────────────────────
     let apiKey: string;
     try {
-      apiKey = await resolveApiKey(sb, userId, provider);
+      apiKey = await resolveApiKey(sb, email, provider);
     } catch (err) {
       return NextResponse.json({ error: (err as Error).message }, { status: 403 });
     }

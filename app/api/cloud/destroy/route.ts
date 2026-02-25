@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { teardownFlyResources } from '@/lib/fly-machines';
@@ -19,8 +19,8 @@ export async function POST() {
 }
 
 async function handleDestroy() {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -32,7 +32,7 @@ async function handleDestroy() {
   const { data: machine } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (!machine) {
@@ -40,24 +40,24 @@ async function handleDestroy() {
   }
 
   try {
-    await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('user_id', userId);
+    await supabase.from('cloud_machines').update({ status: 'destroying' }).eq('user_email', email);
 
     // Best-effort teardown of Fly.io resources
     await teardownFlyResources(machine.fly_app_name, machine.fly_machine_id);
 
     // Delete the cloud_machines row
-    await supabase.from('cloud_machines').delete().eq('user_id', userId);
+    await supabase.from('cloud_machines').delete().eq('user_email', email);
 
     // Also clean up bridge_configs if it points to this machine
     if (machine.bridge_url) {
       const { data: bridgeConfig } = await supabase
         .from('bridge_configs')
         .select()
-        .eq('user_id', userId)
+        .eq('user_email', email)
         .single();
 
       if (bridgeConfig?.bridge_url === machine.bridge_url) {
-        await supabase.from('bridge_configs').delete().eq('user_id', userId);
+        await supabase.from('bridge_configs').delete().eq('user_email', email);
       }
     }
 
@@ -67,7 +67,7 @@ async function handleDestroy() {
     console.error('Destroy failed:', message);
 
     // Still try to delete the DB row so user isn't stuck
-    await supabase.from('cloud_machines').delete().eq('user_id', userId);
+    await supabase.from('cloud_machines').delete().eq('user_email', email);
 
     return NextResponse.json({ error: message }, { status: 500 });
   }

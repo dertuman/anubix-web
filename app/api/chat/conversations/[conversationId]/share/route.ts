@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { getConversation, updateConversation } from '@/lib/chat-db';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
@@ -11,8 +11,8 @@ interface Params { params: Promise<{ conversationId: string }> }
  * POST /api/chat/conversations/[conversationId]/share — Toggle sharing.
  */
 export async function POST(_req: NextRequest, { params }: Params) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const email = await getAuthEmail();
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = await createClerkSupabaseClient();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -21,7 +21,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   try {
     const conversation = await getConversation(sb, conversationId);
-    if (!conversation || conversation.clerk_user_id !== userId) {
+    if (!conversation || conversation.email !== email) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

@@ -1,14 +1,14 @@
 import { randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 /**
  * GET /api/auth/github
  * Initiates GitHub OAuth flow — redirects user to GitHub authorization page.
  */
 export async function GET(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 

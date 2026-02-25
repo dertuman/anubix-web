@@ -15,13 +15,13 @@ type Sb = SupabaseClient<Database>;
 
 export async function createConversation(
   sb: Sb,
-  clerkUserId: string,
+  email: string,
   model: string,
   title?: string,
 ): Promise<string> {
   const { data, error } = await sb
     .from('conversations')
-    .insert({ clerk_user_id: clerkUserId, model, title: title || 'New Conversation' })
+    .insert({ email: email, model, title: title || 'New Conversation' })
     .select('id')
     .single();
 
@@ -31,13 +31,13 @@ export async function createConversation(
 
 export async function fetchConversations(
   sb: Sb,
-  clerkUserId: string,
+  email: string,
   limit = 50,
 ): Promise<ChatConversation[]> {
   const { data, error } = await sb
     .from('conversations')
     .select('*')
-    .eq('clerk_user_id', clerkUserId)
+    .eq('email', email)
     .order('updated_at', { ascending: false })
     .limit(limit);
 

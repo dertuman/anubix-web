@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
@@ -9,8 +9,8 @@ import { encrypt } from '@/lib/encryption';
  * Handles the OAuth callback from GitHub.
  */
 export async function GET(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.redirect(new URL('/sign-in', req.nextUrl.origin));
   }
 
@@ -97,14 +97,14 @@ export async function GET(req: NextRequest) {
 
   const { error: upsertErr } = await supabase.from('github_connections').upsert(
     {
-      user_id: userId,
+      user_email: email,
       github_user_id: ghUser.id,
       github_username: ghUser.login,
       access_token_encrypted: encrypt(accessToken),
       scopes,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_id' },
+    { onConflict: 'user_email' },
   );
 
   if (upsertErr) {

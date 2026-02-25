@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
@@ -13,8 +13,8 @@ import { decrypt } from '@/lib/encryption';
  */
 export async function POST() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const email = await getAuthEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
 
@@ -27,7 +27,7 @@ export async function POST() {
     const { data: claudeConn } = await supabase
       .from('claude_connections')
       .select()
-      .eq('user_id', userId)
+      .eq('user_email', email)
       .single();
 
     if (!claudeConn) {
@@ -56,7 +56,7 @@ export async function POST() {
     const { data: machine } = await supabase
       .from('cloud_machines')
       .select()
-      .eq('user_id', userId)
+      .eq('user_email', email)
       .single();
 
     if (!machine || machine.status !== 'running') {

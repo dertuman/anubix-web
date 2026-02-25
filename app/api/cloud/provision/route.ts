@@ -1,10 +1,10 @@
 import { randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { encrypt, decrypt } from '@/lib/encryption';
 import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
+import { getAuthEmail } from '@/lib/auth-utils';
 import {
   createFlyApp,
   allocateFlyIps,
@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleProvision(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const email = await getAuthEmail();
+  if (!email) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
@@ -71,9 +71,20 @@ async function handleProvision(req: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
+<<<<<<< HEAD
   // ── Check subscription (admins bypass) ─────────────────────
   const subCheck = await checkSubscriptionOrAdmin(supabase, userId);
   if (!subCheck.allowed) {
+=======
+  // ── Check active subscription ─────────────────────────────
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select()
+    .eq('email', email)
+    .single();
+
+  if (!subscription || !subscription.is_active) {
+>>>>>>> 827daf8 (Migrate to email-based authentication across entire application)
     return NextResponse.json(
       { error: subCheck.reason, code: 'SUBSCRIPTION_REQUIRED' },
       { status: 403 },
@@ -96,7 +107,7 @@ async function handleProvision(req: NextRequest) {
   const { data: claudeConn } = await supabase
     .from('claude_connections')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   // Claude credentials are optional - user can connect later from Profile > Integrations
@@ -122,7 +133,7 @@ async function handleProvision(req: NextRequest) {
   const { data: existing } = await supabase
     .from('cloud_machines')
     .select()
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .single();
 
   if (existing) {
@@ -152,7 +163,7 @@ async function handleProvision(req: NextRequest) {
     }
     // If destroyed or error, clean up the row and create fresh
     if (existing.status === 'destroyed' || existing.status === 'error') {
-      await supabase.from('cloud_machines').delete().eq('user_id', userId);
+      await supabase.from('cloud_machines').delete().eq('user_email', email);
     }
   }
 
@@ -162,7 +173,7 @@ async function handleProvision(req: NextRequest) {
     const { data: envRows } = await supabase
       .from('project_env_vars')
       .select()
-      .eq('user_id', userId);
+      .eq('user_email', email);
     if (envRows && envRows.length > 0) {
       const envMap: Record<string, string> = {};
       for (const row of envRows) {
@@ -178,7 +189,7 @@ async function handleProvision(req: NextRequest) {
     const { data: ghConn } = await supabase
       .from('github_connections')
       .select()
-      .eq('user_id', userId)
+      .eq('user_email', email)
       .single();
     if (ghConn) {
       githubToken = decrypt(ghConn.access_token_encrypted);
@@ -186,15 +197,15 @@ async function handleProvision(req: NextRequest) {
   }
 
   // ── Generate identifiers ───────────────────────────────────
-  const shortId = userId.slice(-6).toLowerCase().replace(/[^a-z0-9]/g, 'x');
+  const emailHash = email.replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 6);
   const rand = randomBytes(2).toString('hex');
-  const appName = `anubix-u-${shortId}-${rand}`;
+  const appName = `anubix-u-${emailHash}-${rand}`;
   const bridgeApiKey = randomBytes(32).toString('base64url');
   const bridgeUrl = `https://${appName}.fly.dev`;
 
   // ── Insert DB row (provisioning) ───────────────────────────
   const { error: insertErr } = await supabase.from('cloud_machines').insert({
-    user_id: userId,
+    user_email: email,
     fly_app_name: appName,
     fly_region: region,
     bridge_url: bridgeUrl,
@@ -248,7 +259,7 @@ async function handleProvision(req: NextRequest) {
       fly_machine_id: machineId,
       fly_volume_id: volumeId,
       status: 'starting',
-    }).eq('user_id', userId);
+    }).eq('user_email', email);
 
     // 4. Wait for machine to start
     await waitForMachineState(appName, machineId, 'started', 120);
@@ -260,17 +271,17 @@ async function handleProvision(req: NextRequest) {
     await supabase.from('cloud_machines').update({
       status: 'running',
       last_health_check_at: new Date().toISOString(),
-    }).eq('user_id', userId);
+    }).eq('user_email', email);
 
     // 7. Also update bridge_configs so useBridgeConfig auto-connects
     await supabase.from('bridge_configs').upsert(
       {
-        user_id: userId,
+        email: email,
         bridge_url: bridgeUrl,
         api_key_encrypted: encrypt(bridgeApiKey),
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id' },
+      { onConflict: 'email' },
     );
 
     return NextResponse.json({
@@ -289,13 +300,13 @@ async function handleProvision(req: NextRequest) {
       error_message: message,
       fly_machine_id: machineId || null,
       fly_volume_id: volumeId || null,
-    }).eq('user_id', userId);
+    }).eq('user_email', email);
 
     // Best-effort cleanup
     await teardownFlyResources(appName, machineId);
 
     // Remove the failed DB row so user can retry
-    await supabase.from('cloud_machines').delete().eq('user_id', userId);
+    await supabase.from('cloud_machines').delete().eq('user_email', email);
 
     return NextResponse.json({ error: `Provisioning failed: ${message}` }, { status: 500 });
   }
