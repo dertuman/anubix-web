@@ -17,7 +17,7 @@ export function useClerkSupabaseClient(): SupabaseClient<Database> | null {
 
     return createClient<Database>(url, publishableKey, {
       accessToken: async () => {
-        return (await session?.getToken()) ?? null;
+        return (await session?.getToken({ template: 'supabase' })) ?? null;
       },
     });
   }, [session]);

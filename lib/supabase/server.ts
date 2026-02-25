@@ -18,7 +18,7 @@ export async function createClerkSupabaseClient(): Promise<SupabaseClient<Databa
 
   // Resolve the Clerk token ONCE up front
   const { getToken } = await auth();
-  const token = await getToken();
+  const token = await getToken({ template: 'supabase' });
   if (!token) return null;
 
   return createClient<Database>(url, publishableKey, {

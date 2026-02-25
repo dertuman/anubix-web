@@ -30,8 +30,12 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   } = useQuery<Profile | null>({
     queryKey: ['userData', userEmail],
     queryFn: async () => {
-      if (!userEmail || !supabase) return null;
+      if (!userEmail || !supabase) {
+        console.log('[UserDataContext] Missing email or supabase:', { userEmail, hasSupabase: !!supabase });
+        return null;
+      }
 
+      console.log('[UserDataContext] Fetching profile for email:', userEmail);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -39,10 +43,11 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
-        console.warn('Error fetching profile:', error);
+        console.warn('[UserDataContext] Error fetching profile:', error);
         return null;
       }
 
+      console.log('[UserDataContext] Profile fetched:', { email: data?.email, isAdmin: data?.is_admin });
       return data;
     },
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
