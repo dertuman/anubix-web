@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useClaudeCodeContext } from '../context/claude-code-context';
 import { useCloudMachineContext } from '../context/cloud-machine-context';
@@ -8,6 +8,9 @@ import { useEnvironmentDialog } from '../context/environment-dialog-context';
 import { useWorkspace } from '../context/workspace-context';
 import { CodeView } from '../../code/components/code-view';
 import { ModeToggle } from './mode-toggle';
+
+const MAX_AUTO_CONNECT_ATTEMPTS = 5;
+const BASE_RETRY_DELAY_MS = 3000;
 
 /**
  * Wrapper for CodeView in workspace context
@@ -20,21 +23,51 @@ export function CodeViewWrapper() {
   const { showEnvironmentDialog } = useEnvironmentDialog();
   const { isDemoMode, incrementDemoPromptCount } = useWorkspace();
 
-  // Auto-connect when machine is running
+  const attemptCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeUrlRef = useRef<string | null>(null);
+
+  const clearRetryTimer = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+  }, []);
+
+  // Reset attempt counter when machine URL changes (new machine provisioned)
+  useEffect(() => {
+    const url = cloudMachine.machine?.bridgeUrl ?? null;
+    if (url !== activeUrlRef.current) {
+      activeUrlRef.current = url;
+      attemptCountRef.current = 0;
+      clearRetryTimer();
+    }
+  }, [cloudMachine.machine?.bridgeUrl, clearRetryTimer]);
+
+  // Auto-connect with limited retries and exponential backoff
   useEffect(() => {
     if (
       isSignedIn &&
       status === 'disconnected' &&
       cloudMachine.machine?.status === 'running' &&
       cloudMachine.machine.bridgeUrl &&
-      cloudMachine.machine.bridgeApiKey
+      cloudMachine.machine.bridgeApiKey &&
+      attemptCountRef.current < MAX_AUTO_CONNECT_ATTEMPTS &&
+      !retryTimerRef.current
     ) {
-      // Attempt background connection
-      connect(cloudMachine.machine.bridgeUrl, cloudMachine.machine.bridgeApiKey);
+      const attempt = attemptCountRef.current;
+      const delay = attempt === 0 ? 0 : BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
 
-      // Connection status changes will be tracked through the status dependency
+      const { bridgeUrl, bridgeApiKey } = cloudMachine.machine;
+      retryTimerRef.current = setTimeout(() => {
+        retryTimerRef.current = null;
+        attemptCountRef.current += 1;
+        connect(bridgeUrl, bridgeApiKey);
+      }, delay);
     }
-  }, [isSignedIn, status, cloudMachine.machine, connect, showEnvironmentDialog]);
+
+    return clearRetryTimer;
+  }, [isSignedIn, status, cloudMachine.machine, connect, clearRetryTimer]);
 
   // Show environment dialog for authenticated users without environment
   useEffect(() => {

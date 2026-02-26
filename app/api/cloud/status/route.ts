@@ -47,8 +47,9 @@ async function handleStatus() {
     data.bridge_api_key_encrypted
   ) {
     try {
+      const apiKey = decrypt(data.bridge_api_key_encrypted);
       const res = await fetch(`${data.bridge_url}/_bridge/health`, {
-        headers: { 'x-api-key': decrypt(data.bridge_api_key_encrypted) },
+        headers: { 'x-api-key': apiKey },
         signal: AbortSignal.timeout(5000),
       });
       if (res.ok) {
@@ -59,17 +60,24 @@ async function handleStatus() {
         }).eq('email', email);
       }
     } catch {
-      // Bridge not reachable — keep current status
+      // Bridge not reachable or credentials undecryptable — keep current status
     }
+  }
+
+  let bridgeApiKey: string | null = null;
+  try {
+    bridgeApiKey = data.bridge_api_key_encrypted
+      ? decrypt(data.bridge_api_key_encrypted)
+      : null;
+  } catch {
+    // Credentials undecryptable — return null so client doesn't try to connect
   }
 
   return NextResponse.json({
     machine: {
       status,
       bridgeUrl: data.bridge_url,
-      bridgeApiKey: data.bridge_api_key_encrypted
-        ? decrypt(data.bridge_api_key_encrypted)
-        : null,
+      bridgeApiKey,
       previewUrl: data.bridge_url || null,
       region: data.fly_region,
       claudeMode: data.claude_mode,

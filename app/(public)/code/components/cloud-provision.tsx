@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import {
   AlertCircle,
@@ -80,27 +80,30 @@ export function CloudProvision({ onConnected, onManualSetup }: CloudProvisionPro
   } = useCloudMachineContext();
 
   // ── Auto-connect when machine becomes running ────────────
-  if (machine?.status === 'running' && machine.bridgeUrl && machine.bridgeApiKey) {
-    // Schedule this for after render to avoid calling during render
-    setTimeout(() => {
-      // Clone any extra repos that were selected during provisioning
-      const extraReposJson = typeof window !== 'undefined' ? sessionStorage.getItem(EXTRA_REPOS_KEY) : null;
-      if (extraReposJson) {
-        sessionStorage.removeItem(EXTRA_REPOS_KEY);
-        try {
-          const urls = JSON.parse(extraReposJson) as string[];
-          for (const url of urls) {
-            fetch('/api/cloud/repos', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url }),
-            }).catch(() => { /* best effort */ });
-          }
-        } catch { /* ignore */ }
-      }
-      onConnected(machine.bridgeUrl!, machine.bridgeApiKey!);
-    }, 0);
-  }
+  const autoConnectedRef = useRef(false);
+  useEffect(() => {
+    if (autoConnectedRef.current) return;
+    if (machine?.status !== 'running' || !machine.bridgeUrl || !machine.bridgeApiKey) return;
+    autoConnectedRef.current = true;
+
+    // Clone any extra repos that were selected during provisioning
+    const extraReposJson = sessionStorage.getItem(EXTRA_REPOS_KEY);
+    if (extraReposJson) {
+      sessionStorage.removeItem(EXTRA_REPOS_KEY);
+      try {
+        const urls = JSON.parse(extraReposJson) as string[];
+        for (const url of urls) {
+          fetch('/api/cloud/repos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          }).catch(() => { /* best effort */ });
+        }
+      } catch { /* ignore */ }
+    }
+
+    onConnected(machine.bridgeUrl, machine.bridgeApiKey);
+  }, [machine?.status, machine?.bridgeUrl, machine?.bridgeApiKey, onConnected]);
 
   // ── Loading ──────────────────────────────────────────────
   if (isLoading) {
