@@ -25,7 +25,7 @@ export function ShareDialog({ conversation, onToggleShare }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
 
   const shareUrl = conversation.share_id
-    ? `${window.location.origin}/api/chat/share/${conversation.share_id}`
+    ? `${window.location.origin}/share/${conversation.share_id}`
     : null;
 
   const handleToggle = useCallback(async () => {
@@ -63,7 +63,7 @@ export function ShareDialog({ conversation, onToggleShare }: ShareDialogProps) {
             <div>
               <p className="text-sm font-medium">{t('toggle')}</p>
               <p className="text-xs text-muted-foreground">
-                {conversation.is_shared ? 'Anyone with the link can view this conversation' : 'Only you can see this conversation'}
+                {conversation.is_shared ? t('description') : t('descriptionDisabled')}
               </p>
             </div>
             <Button
@@ -72,7 +72,7 @@ export function ShareDialog({ conversation, onToggleShare }: ShareDialogProps) {
               onClick={handleToggle}
               disabled={toggling}
             >
-              {conversation.is_shared ? 'Disable' : 'Enable'}
+              {conversation.is_shared ? t('disable') : t('enable')}
             </Button>
           </div>
 

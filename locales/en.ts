@@ -659,8 +659,12 @@ export default {
     share: {
       title: 'Share Conversation',
       toggle: 'Share publicly',
+      description: 'Anyone with the link can view this conversation',
+      descriptionDisabled: 'Only you can see this conversation',
       copyLink: 'Share link',
       linkCopied: 'Link copied!',
+      enable: 'Enable',
+      disable: 'Disable',
     },
     apiKeys: {
       title: 'API Keys',
