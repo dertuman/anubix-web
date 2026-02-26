@@ -1,99 +1,96 @@
+-- ============================================================
 -- Chat Web Migration
+-- ============================================================
 -- Extends the existing chat tables (created by anubix-native) with web-specific columns.
--- Run this script in your Supabase SQL Editor.
 -- IMPORTANT: This is safe to run multiple times (idempotent with IF NOT EXISTS).
+-- ============================================================
 
 -- =============================================================================
 -- EXTEND MESSAGES TABLE
 -- =============================================================================
 
 -- Rich file attachments: [{"name":"file.pdf","mimeType":"application/pdf","size":1234,"category":"pdf"}]
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS files JSONB DEFAULT NULL;
+alter table messages add column if not exists files jsonb default null;
 
 -- Which AI model generated this response (assistant messages only)
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS model TEXT DEFAULT NULL;
+alter table messages add column if not exists model text default null;
 
 -- =============================================================================
 -- EXTEND CONVERSATIONS TABLE
 -- =============================================================================
 
 -- Sharing support
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE;
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS share_id TEXT UNIQUE;
+alter table conversations add column if not exists is_shared boolean default false;
+alter table conversations add column if not exists share_id text unique;
 
 -- =============================================================================
 -- PER-USER ENCRYPTED API KEYS
 -- =============================================================================
 
-CREATE TABLE IF NOT EXISTS chat_api_keys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+create table if not exists chat_api_keys (
+  id uuid primary key default gen_random_uuid(),
 
-  -- Clerk user ID
-  clerk_user_id TEXT NOT NULL,
+  -- User identifier (email address)
+  email text not null,
 
   -- Provider: openai, google, anthropic
-  provider TEXT NOT NULL CHECK (provider IN ('openai', 'google', 'anthropic')),
+  provider text not null check (provider in ('openai', 'google', 'anthropic')),
 
   -- AES-256-GCM encrypted key components
-  encrypted_key TEXT NOT NULL,
-  iv TEXT NOT NULL,
-  auth_tag TEXT NOT NULL,
+  encrypted_key text not null,
+  iv text not null,
+  auth_tag text not null,
 
   -- Timestamps
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
 
   -- One key per provider per user
-  UNIQUE(clerk_user_id, provider)
+  unique(email, provider)
 );
 
 -- Auto-update updated_at
-CREATE OR REPLACE FUNCTION update_chat_api_keys_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+create or replace function update_chat_api_keys_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
 
-DROP TRIGGER IF EXISTS update_chat_api_keys_updated_at ON chat_api_keys;
-CREATE TRIGGER update_chat_api_keys_updated_at
-  BEFORE UPDATE ON chat_api_keys
-  FOR EACH ROW
-  EXECUTE FUNCTION update_chat_api_keys_updated_at();
+drop trigger if exists update_chat_api_keys_updated_at on chat_api_keys;
+create trigger update_chat_api_keys_updated_at
+  before update on chat_api_keys
+  for each row
+  execute function update_chat_api_keys_updated_at();
 
 -- =============================================================================
 -- ROW LEVEL SECURITY
 -- =============================================================================
 
-ALTER TABLE chat_api_keys ENABLE ROW LEVEL SECURITY;
+alter table chat_api_keys enable row level security;
 
--- Allow all operations (Clerk handles auth at the app level)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'chat_api_keys' AND policyname = 'Allow all access to chat_api_keys'
-  ) THEN
-    CREATE POLICY "Allow all access to chat_api_keys"
-      ON chat_api_keys FOR ALL TO anon, authenticated
-      USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+-- Users can manage their own API keys
+drop policy if exists "Users can manage own api keys by email" on chat_api_keys;
+create policy "Users can manage own api keys by email"
+  on chat_api_keys for all
+  using (email = (select auth.jwt() ->> 'email'))
+  with check (email = (select auth.jwt() ->> 'email'));
 
 -- =============================================================================
 -- INDEXES
 -- =============================================================================
 
-CREATE INDEX IF NOT EXISTS idx_chat_api_keys_user ON chat_api_keys(clerk_user_id);
+create index if not exists idx_chat_api_keys_email on chat_api_keys(email);
 
 -- =============================================================================
 -- VERIFICATION
 -- =============================================================================
 
-SELECT
+select
   '✅ Chat web migration complete!' as status,
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'files') as messages_files_col,
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'model') as messages_model_col,
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'is_shared') as conversations_is_shared_col,
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'share_id') as conversations_share_id_col,
-  (SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'chat_api_keys') as chat_api_keys_table;
+  (select count(*) from information_schema.columns where table_name = 'messages' and column_name = 'files') as messages_files_col,
+  (select count(*) from information_schema.columns where table_name = 'messages' and column_name = 'model') as messages_model_col,
+  (select count(*) from information_schema.columns where table_name = 'conversations' and column_name = 'is_shared') as conversations_is_shared_col,
+  (select count(*) from information_schema.columns where table_name = 'conversations' and column_name = 'share_id') as conversations_share_id_col,
+  (select count(*) from information_schema.tables where table_name = 'chat_api_keys') as chat_api_keys_table;

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 export type WorkspaceMode = 'chat' | 'code';
 
@@ -9,6 +10,7 @@ interface WorkspaceContextValue {
   mode: WorkspaceMode;
   setMode: (_value: WorkspaceMode) => void;
   isDemoMode: boolean;
+  isDemoPreview: boolean;
   demoPromptCount: number;
   incrementDemoPromptCount: () => void;
   resetDemoPromptCount: () => void;
@@ -19,6 +21,7 @@ const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefi
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isSignedIn } = useAuth();
 
   // Get initial mode from URL param, default to 'code'
   const initialMode = (searchParams.get('mode') === 'chat' ? 'chat' : 'code') as WorkspaceMode;
@@ -27,6 +30,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // Demo mode tracking - check URL param
   const isDemoMode = searchParams.get('demo') === 'true';
   const [demoPromptCount, setDemoPromptCount] = useState(0);
+
+  // Demo preview mode - passive viewing for unauthenticated users
+  // This is different from isDemoMode (1 free interactive prompt)
+  // Demo preview shows mock data and prompts for signup
+  const isDemoPreview = !isSignedIn && !isDemoMode;
 
   // Update URL when mode changes
   const setMode = (newMode: WorkspaceMode) => {
@@ -58,6 +66,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       mode,
       setMode,
       isDemoMode,
+      isDemoPreview,
       demoPromptCount,
       incrementDemoPromptCount,
       resetDemoPromptCount
