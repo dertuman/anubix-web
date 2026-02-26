@@ -564,7 +564,7 @@ function SetupForm({
             </div>
           ) : (
             <button
-              onClick={() => github.connect('/code')}
+              onClick={() => github.connect('/workspace')}
               className="flex w-full items-center gap-2 rounded-lg border border-border/30 px-3 py-2.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
             >
               <Github className="size-4 shrink-0" />
@@ -709,7 +709,7 @@ function SetupForm({
                   />
                   {!github.isLoading && !github.isConnected && (
                     <button
-                      onClick={() => github.connect('/code')}
+                      onClick={() => github.connect('/workspace')}
                       className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       <Github className="size-3" />

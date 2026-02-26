@@ -361,7 +361,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => github.connect('/code')}
+                          onClick={() => github.connect('/workspace')}
                           className="flex-1 gap-1 text-xs"
                         >
                           <RefreshCw className="size-3" />
@@ -373,7 +373,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                 </div>
               ) : (
                 <button
-                  onClick={() => github.connect('/code')}
+                  onClick={() => github.connect('/workspace')}
                   className={cn(
                     'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
                     'text-destructive hover:bg-destructive/10'

@@ -444,7 +444,7 @@ export function SessionNewDialog({
                 </div>
               ) : (
                 <button
-                  onClick={() => github.connect('/code')}
+                  onClick={() => github.connect('/workspace')}
                   className="border-border/30 text-muted-foreground hover:border-foreground/20 hover:text-foreground flex w-full items-center gap-2.5 rounded-lg border px-4 py-3 text-sm"
                 >
                   <Github className="size-4 shrink-0" />
