@@ -119,7 +119,8 @@ export type WsClientFrame =
   | { type: 'approval'; decision: 'allow' | 'deny'; message?: string }
   | { type: 'question_answer'; answers: Record<string, string> }
   | { type: 'abort' }
-  | { type: 'ping' };
+  | { type: 'ping' }
+  | { type: 'switch_model'; model?: string };
 
 // ── WebSocket server -> client frames ────────────────────────
 

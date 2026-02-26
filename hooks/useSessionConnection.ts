@@ -62,18 +62,8 @@ function rebuildMessagesFromPayloads(
     const p = entry.payload;
 
     switch (p.type) {
-      case 'session_init': {
-        // Add model info from Claude Code as a system message
-        if (p.model && !messages.some(m => m.type === 'system')) {
-          messages.push({
-            id: makeId(),
-            ts: Date.now(),
-            type: 'system' as const,
-            text: `Using Claude Code model: ${p.model}`,
-          });
-        }
+      case 'session_init':
         break;
-      }
 
       case 'user_message': {
         currentTextId = null;
@@ -242,8 +232,7 @@ export class SessionConnection {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
     this.onChange = onChange;
-    const cached = getSessionMessages(sessionId) as CodeMessage[];
-    this.messages = cached.filter((m) => m.type !== 'system');
+    this.messages = getSessionMessages(sessionId) as CodeMessage[];
     this.seq = getSessionLastSeq(sessionId);
   }
 
@@ -309,7 +298,7 @@ export class SessionConnection {
   }
 
   switchModel(model?: string) {
-    this.send({ type: 'switch_model', model } as any);
+    this.send({ type: 'switch_model', model });
   }
 
   addUserMessage(msg: CodeMessage) {
@@ -602,24 +591,8 @@ export class SessionConnection {
         break;
       }
 
-      case 'session_init': {
-        // Store model information from Claude Code
-        if (frame.model) {
-          const model = frame.model as string;
-          // Add a system message to display the model being used
-          const existingSystemMsg = this.messages.find(m => m.type === 'system');
-          if (!existingSystemMsg) {
-            this.messages = [{
-              id: makeId(),
-              ts: Date.now(),
-              type: 'system' as const,
-              text: `Using Claude Code model: ${model}`,
-            }, ...this.messages];
-            this.onChange();
-          }
-        }
+      case 'session_init':
         break;
-      }
 
       case 'commands_available': {
         this.slashCommands = frame.commands as SlashCommand[];
