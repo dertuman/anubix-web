@@ -3,17 +3,15 @@
 -- ============================================================
 -- Kept in sync via RevenueCat webhooks.
 -- API routes check this table for fast subscription verification.
---
--- Run this migration in Supabase SQL Editor.
--- Requires: handle_updated_at() function (already exists from profiles table).
+-- One subscription record per email address.
 -- ============================================================
 
 create table public.subscriptions (
   id                      uuid primary key default gen_random_uuid(),
-  user_id                 text not null,
+  email                   text not null unique,
 
   -- RevenueCat data
-  revenuecat_customer_id  text,                          -- RevenueCat app_user_id (same as Clerk userId)
+  revenuecat_customer_id  text,                          -- RevenueCat app_user_id
   entitlement_id          text not null default 'Anubix Pro',
   product_id              text,                          -- e.g. 'anubix_pro_monthly', 'anubix_pro_annual'
   store                   text,                          -- 'app_store', 'play_store', 'stripe'
@@ -37,19 +35,21 @@ create table public.subscriptions (
   raw_webhook_event       jsonb,                         -- latest webhook payload for debugging
 
   created_at              timestamp with time zone not null default now(),
-  updated_at              timestamp with time zone not null default now(),
-
-  -- One subscription record per user
-  constraint subscriptions_user_id_key unique (user_id)
+  updated_at              timestamp with time zone not null default now()
 );
+
+-- Indexes
+create index if not exists idx_subscriptions_email on subscriptions(email);
+create index if not exists idx_subscriptions_is_active on subscriptions(is_active);
+create index if not exists idx_subscriptions_stripe_customer on subscriptions(stripe_customer_id);
 
 -- Row Level Security
 alter table subscriptions enable row level security;
 
 -- Users can read their own subscription
-create policy "Users can read own subscription"
+create policy "Users can read own subscription by email"
   on subscriptions for select
-  using (user_id = (select auth.jwt() ->> 'sub'));
+  using (email = (select auth.jwt() ->> 'email'));
 
 -- No insert/update/delete policies for regular users.
 -- Subscription data is managed exclusively by the webhook endpoint
@@ -58,9 +58,5 @@ create policy "Users can read own subscription"
 -- Auto-update updated_at
 create trigger on_subscriptions_updated
   before update on subscriptions
-  for each row execute function handle_updated_at();
-
--- Indexes
-create index idx_subscriptions_user_id on subscriptions(user_id);
-create index idx_subscriptions_is_active on subscriptions(is_active);
-create index idx_subscriptions_stripe_customer on subscriptions(stripe_customer_id);
+  for each row
+  execute function handle_updated_at();

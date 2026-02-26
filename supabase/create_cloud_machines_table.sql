@@ -1,13 +1,13 @@
 -- ============================================================
 -- cloud_machines — One Fly.io machine per user
 -- ============================================================
--- Run this migration in Supabase SQL Editor.
--- Requires: handle_updated_at() function (already exists from profiles table).
+-- Stores cloud workspace machine state and configuration.
+-- One machine per email address.
 -- ============================================================
 
 -- Status lifecycle: provisioning -> starting -> running -> stopping -> stopped -> destroying -> destroyed
 --                   Any state can transition to 'error'
-create type public.machine_status as enum (
+create type if not exists public.machine_status as enum (
   'provisioning',
   'starting',
   'running',
@@ -20,7 +20,7 @@ create type public.machine_status as enum (
 
 create table public.cloud_machines (
   id                          uuid primary key default gen_random_uuid(),
-  user_id                     text not null,
+  email                       text not null unique,
 
   -- Fly.io resource identifiers
   fly_app_name                text not null unique,
@@ -52,36 +52,23 @@ create table public.cloud_machines (
   last_health_check_at        timestamp with time zone,
   stopped_at                  timestamp with time zone,
   created_at                  timestamp with time zone not null default now(),
-  updated_at                  timestamp with time zone not null default now(),
-
-  -- One machine per user
-  constraint cloud_machines_user_id_key unique (user_id)
+  updated_at                  timestamp with time zone not null default now()
 );
 
--- Row Level Security (same pattern as bridge_configs)
+-- Indexes
+create index if not exists idx_cloud_machines_status on cloud_machines(status);
+create index if not exists idx_cloud_machines_email on cloud_machines(email);
+
+-- Row Level Security
 alter table cloud_machines enable row level security;
 
-create policy "Users can read own machine"
-  on cloud_machines for select
-  using (user_id = (select auth.jwt() ->> 'sub'));
-
-create policy "Users can insert own machine"
-  on cloud_machines for insert
-  with check (user_id = (select auth.jwt() ->> 'sub'));
-
-create policy "Users can update own machine"
-  on cloud_machines for update
-  using (user_id = (select auth.jwt() ->> 'sub'));
-
-create policy "Users can delete own machine"
-  on cloud_machines for delete
-  using (user_id = (select auth.jwt() ->> 'sub'));
+create policy "Users can manage own machines by email"
+  on cloud_machines for all
+  using (email = (select auth.jwt() ->> 'email'))
+  with check (email = (select auth.jwt() ->> 'email'));
 
 -- Auto-update updated_at
 create trigger on_cloud_machines_updated
   before update on cloud_machines
-  for each row execute function handle_updated_at();
-
--- Indexes
-create index idx_cloud_machines_status on cloud_machines(status);
-create index idx_cloud_machines_user_id on cloud_machines(user_id);
+  for each row
+  execute function handle_updated_at();
