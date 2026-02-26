@@ -308,6 +308,10 @@ export class SessionConnection {
     this.onChange();
   }
 
+  switchModel(model?: string) {
+    this.send({ type: 'switch_model', model } as any);
+  }
+
   addUserMessage(msg: CodeMessage) {
     this.messages = [...this.messages, msg];
     this.isBusy = true;

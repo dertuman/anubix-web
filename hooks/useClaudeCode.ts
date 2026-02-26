@@ -76,6 +76,7 @@ export interface UseClaudeCodeReturn {
   messages: CodeMessage[];
   sendMessage: (_text: string, _files?: FileAttachment[]) => Promise<void>;
   clearConversation: () => void;
+  switchModel: (_model?: string) => void;
   approve: () => void;
   deny: () => void;
   answerQuestion: (_answers: Record<string, string>) => void;
@@ -353,6 +354,10 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.clearConversation();
   }, [pool]);
 
+  const switchModel = useCallback((model?: string) => {
+    if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.switchModel(model);
+  }, [pool]);
+
   const retry = useCallback(() => {
     if (activeSessionRef.current) pool.getConnection(activeSessionRef.current)?.retry();
   }, [pool]);
@@ -394,7 +399,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     status, connect, disconnect, connectionError,
     sessions, activeSessionId, selectSession,
     createSession, deleteSession, updateSession, refreshSessions, pullSession,
-    fetchRepos, messages, sendMessage, clearConversation,
+    fetchRepos, messages, sendMessage, clearConversation, switchModel,
     approve, deny, answerQuestion, abort: abortAction, isBusy,
     slashCommands, connectionHealth, retry, sessionLiveStates,
     fetchLogs, execCommand, pushCredentials,
