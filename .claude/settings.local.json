@@ -20,7 +20,11 @@
       "Bash(cmd.exe:*)",
       "Bash(/c/Windows/system32/cmd.exe:*)",
       "Bash(cd:*)",
-      "Bash(/c/Windows/System32/cmd.exe:*)"
+      "Bash(/c/Windows/System32/cmd.exe:*)",
+      "Bash(fly volumes:*)",
+      "Bash(echo:*)",
+      "Bash(/c/Users/alex9/.fly/bin/flyctl volumes:*)",
+      "Bash(/c/Users/alex9/.fly/bin/flyctl auth:*)"
     ]
   }
 }
