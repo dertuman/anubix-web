@@ -62,6 +62,19 @@ function rebuildMessagesFromPayloads(
     const p = entry.payload;
 
     switch (p.type) {
+      case 'session_init': {
+        // Add model info from Claude Code as a system message
+        if (p.model && !messages.some(m => m.type === 'system')) {
+          messages.push({
+            id: makeId(),
+            ts: Date.now(),
+            type: 'system' as const,
+            text: `Using Claude Code model: ${p.model}`,
+          });
+        }
+        break;
+      }
+
       case 'user_message': {
         currentTextId = null;
         messages.push({
@@ -582,6 +595,25 @@ export class SessionConnection {
         this.currentTextId = null;
         clearSessionMessages(this.sessionId);
         this.onChange();
+        break;
+      }
+
+      case 'session_init': {
+        // Store model information from Claude Code
+        if (frame.model) {
+          const model = frame.model as string;
+          // Add a system message to display the model being used
+          const existingSystemMsg = this.messages.find(m => m.type === 'system');
+          if (!existingSystemMsg) {
+            this.messages = [{
+              id: makeId(),
+              ts: Date.now(),
+              type: 'system' as const,
+              text: `Using Claude Code model: ${model}`,
+            }, ...this.messages];
+            this.onChange();
+          }
+        }
         break;
       }
 
