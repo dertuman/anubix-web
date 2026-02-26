@@ -1,29 +1,34 @@
--- Claude credentials storage (one per user)
--- Stores encrypted Claude CLI credentials or API keys
--- so users only need to set up once, not every provision.
+-- ============================================================
+-- claude_connections — Claude credentials storage
+-- ============================================================
+-- Stores encrypted Claude CLI credentials or API keys.
+-- Users only need to set up once, not every provision.
+-- One connection per email address.
+-- ============================================================
 
-CREATE TABLE claude_connections (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id text NOT NULL REFERENCES profiles(id) UNIQUE,
-  claude_mode text NOT NULL DEFAULT 'cli',
+create table public.claude_connections (
+  id                  uuid primary key default gen_random_uuid(),
+  email               text not null unique,
+  claude_mode         text not null default 'cli',
   auth_json_encrypted text,       -- for CLI mode (credentials.json contents)
-  api_key_encrypted text,         -- for SDK mode (sk-ant-...)
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+  api_key_encrypted   text,       -- for SDK mode (sk-ant-...)
+  created_at          timestamp with time zone not null default now(),
+  updated_at          timestamp with time zone not null default now()
 );
 
-ALTER TABLE claude_connections ENABLE ROW LEVEL SECURITY;
+-- Indexes
+create index if not exists idx_claude_connections_email on claude_connections(email);
 
-CREATE POLICY "Users manage own Claude connection"
-  ON claude_connections FOR ALL
-  USING (user_id = (select auth.jwt() ->> 'sub'))
-  WITH CHECK (user_id = (select auth.jwt() ->> 'sub'));
+-- Row Level Security
+alter table claude_connections enable row level security;
+
+create policy "Users can manage own claude connections by email"
+  on claude_connections for all
+  using (email = (select auth.jwt() ->> 'email'))
+  with check (email = (select auth.jwt() ->> 'email'));
 
 -- Auto-update updated_at
-CREATE TRIGGER set_claude_connections_updated_at
-  BEFORE UPDATE ON claude_connections
-  FOR EACH ROW
-  EXECUTE FUNCTION handle_updated_at();
-
--- Index for fast lookups
-CREATE INDEX idx_claude_connections_user_id ON claude_connections(user_id);
+create trigger on_claude_connections_updated
+  before update on claude_connections
+  for each row
+  execute function handle_updated_at();
