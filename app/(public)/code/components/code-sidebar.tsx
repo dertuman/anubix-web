@@ -549,6 +549,7 @@ interface CodeSidebarProps {
   onExecCommand?: (_command: string) => Promise<ExecResult>;
   onPushCredentials?: (_opts: { claudeMode: 'cli' | 'sdk'; claudeAuthJson?: string; anthropicApiKey?: string }) => Promise<void>;
   modeToggle?: React.ReactNode;
+  isPreviewMode?: boolean;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -574,6 +575,7 @@ export const CodeSidebar = memo(function CodeSidebar({
   onExecCommand,
   onPushCredentials,
   modeToggle,
+  isPreviewMode = false,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
@@ -810,6 +812,7 @@ export const CodeSidebar = memo(function CodeSidebar({
               variant="outline"
               size="sm"
               className="border-border/30 text-foreground hover:bg-accent flex-1 gap-2 bg-transparent"
+              disabled={isPreviewMode}
             >
               <FolderPlus className="size-4" />
               {t('newSession')}
@@ -1207,12 +1210,14 @@ export const CodeSidebar = memo(function CodeSidebar({
               <div
                 key={s.id}
                 className={cn(
-                  'group flex cursor-pointer items-center gap-1 overflow-hidden rounded-lg py-2 pr-1 pl-3 text-sm transition-colors',
+                  'group flex items-center gap-1 overflow-hidden rounded-lg py-2 pr-1 pl-3 text-sm transition-colors',
+                  isPreviewMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
                   activeSessionId === s.id
                     ? 'bg-foreground/6 text-foreground'
-                    : 'text-muted-foreground hover:bg-foreground/4 hover:text-foreground'
+                    : isPreviewMode ? 'text-muted-foreground' : 'text-muted-foreground hover:bg-foreground/4 hover:text-foreground'
                 )}
                 onClick={() => {
+                  if (isPreviewMode) return;
                   onSelect(s.id);
                   onMobileClose();
                 }}
@@ -1224,7 +1229,12 @@ export const CodeSidebar = memo(function CodeSidebar({
                   )}
                 />
                 <div className="min-w-0 flex-1">
-                  <span className="block truncate">{s.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="block truncate">{s.name}</span>
+                    {isPreviewMode && (
+                      <Eye className="size-3 shrink-0 text-primary" />
+                    )}
+                  </div>
                   <span className="text-muted-foreground block truncate text-[10px]">
                     {s.repoPaths && s.repoPaths.length >= 2
                       ? s.repoPaths
@@ -1233,17 +1243,18 @@ export const CodeSidebar = memo(function CodeSidebar({
                       : s.repoPath}
                   </span>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground size-7 shrink-0 md:opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <EllipsisVertical className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                {!isPreviewMode && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground size-7 shrink-0 md:opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <EllipsisVertical className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem
                       onClick={(e) => {
@@ -1267,6 +1278,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                )}
               </div>
             ))
           )}

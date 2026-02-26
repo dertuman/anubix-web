@@ -8,6 +8,8 @@ import { useEnvironmentDialog } from '../context/environment-dialog-context';
 import { useWorkspace } from '../context/workspace-context';
 import { CodeView } from '../../code/components/code-view';
 import { ModeToggle } from './mode-toggle';
+import { DemoPreviewOverlay } from './demo-preview-overlay';
+import { MOCK_MESSAGES, MOCK_SESSION } from '@/lib/demo-data';
 
 const MAX_AUTO_CONNECT_ATTEMPTS = 5;
 const BASE_RETRY_DELAY_MS = 3000;
@@ -21,7 +23,7 @@ export function CodeViewWrapper() {
   const { status, connect } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const { showEnvironmentDialog } = useEnvironmentDialog();
-  const { isDemoMode, incrementDemoPromptCount } = useWorkspace();
+  const { isDemoMode, isDemoPreview, incrementDemoPromptCount } = useWorkspace();
 
   const attemptCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,9 +47,11 @@ export function CodeViewWrapper() {
   }, [cloudMachine.machine?.bridgeUrl, clearRetryTimer]);
 
   // Auto-connect with limited retries and exponential backoff
+  // Skip auto-connect in demo preview mode
   useEffect(() => {
     if (
       isSignedIn &&
+      !isDemoPreview &&
       status === 'disconnected' &&
       cloudMachine.machine?.status === 'running' &&
       cloudMachine.machine.bridgeUrl &&
@@ -67,12 +71,14 @@ export function CodeViewWrapper() {
     }
 
     return clearRetryTimer;
-  }, [isSignedIn, status, cloudMachine.machine, connect, clearRetryTimer]);
+  }, [isSignedIn, isDemoPreview, status, cloudMachine.machine, connect, clearRetryTimer]);
 
   // Show environment dialog for authenticated users without environment
+  // Skip in demo preview mode
   useEffect(() => {
     if (
       isSignedIn &&
+      !isDemoPreview &&
       status === 'disconnected' &&
       !cloudMachine.machine &&
       !cloudMachine.isLoading
@@ -83,7 +89,7 @@ export function CodeViewWrapper() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isSignedIn, status, cloudMachine.machine, cloudMachine.isLoading, showEnvironmentDialog]);
+  }, [isSignedIn, isDemoPreview, status, cloudMachine.machine, cloudMachine.isLoading, showEnvironmentDialog]);
 
 
   // Listen for custom event to open environment dialog
@@ -103,6 +109,22 @@ export function CodeViewWrapper() {
     }
   };
 
-  // Always render the full CodeView workspace
+  // Render CodeView with demo preview mode if applicable
+  if (isDemoPreview) {
+    return (
+      <div className="relative h-full">
+        <CodeView
+          modeToggle={<ModeToggle variant="sidebar" />}
+          onPromptSent={handlePromptSent}
+          demoPreviewMode={true}
+          mockMessages={MOCK_MESSAGES}
+          mockSession={MOCK_SESSION}
+        />
+        <DemoPreviewOverlay />
+      </div>
+    );
+  }
+
+  // Always render the full CodeView workspace for authenticated users
   return <CodeView modeToggle={<ModeToggle variant="sidebar" />} onPromptSent={handlePromptSent} />;
 }

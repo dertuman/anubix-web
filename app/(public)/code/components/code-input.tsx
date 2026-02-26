@@ -23,6 +23,7 @@ import type { SlashCommand } from '@/types/code';
 import { formatFileSize } from '@/lib/file-utils';
 import { getCategoryIcon } from '@/lib/ui-utils';
 import { getSessionDraft, setSessionDraft } from '@/lib/stores/bridge-store';
+import { cn } from '@/lib/utils';
 import { AudioWaveform } from '@/components/ui/audio-waveform';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,6 +58,7 @@ interface CodeInputProps {
   onQueue: (_text: string, _files?: FileAttachment[]) => void;
   onDequeue: (_id: string) => void;
   onBypass: (_id: string) => void;
+  isPreviewMode?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -67,6 +69,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
       onSend, onStop, isBusy, disabled, files, onAddFiles, onRemoveFile,
       slashCommands, activeSessionId,
       queuedMessages, onQueue, onDequeue, onBypass,
+      isPreviewMode = false,
     },
     ref,
   ) => {
@@ -407,7 +410,10 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
                 onInput={handleInput}
                 onPaste={handlePaste}
                 placeholder={isBusy ? 'Type to queue a message...' : 'Message Claude Code...'}
-                className="max-h-[200px] min-h-12 resize-none overflow-y-auto rounded-xl border-border/30 bg-muted/50 py-3 pl-11 pr-3 text-base scrollbar-none md:text-sm focus-visible:ring-1"
+                className={cn(
+                  'max-h-[200px] min-h-12 resize-none overflow-y-auto rounded-xl border-border/30 bg-muted/50 py-3 pl-11 pr-3 text-base scrollbar-none md:text-sm focus-visible:ring-1',
+                  isPreviewMode && 'cursor-not-allowed opacity-60'
+                )}
                 rows={1}
                 disabled={disabled}
               />

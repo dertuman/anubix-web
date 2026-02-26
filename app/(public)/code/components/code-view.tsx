@@ -8,7 +8,7 @@ import { useScopedI18n } from '@/locales/client';
 import { useClaudeCodeContext } from '../../workspace/context/claude-code-context';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useCloudMachineContext } from '../../workspace/context/cloud-machine-context';
-import type { FileAttachment } from '@/types/code';
+import type { FileAttachment, CodeMessage, BridgeSession } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
@@ -30,9 +30,13 @@ const statusBadgeClass = (status: string) =>
 interface CodeViewProps {
   modeToggle?: React.ReactNode;
   onPromptSent?: () => void;
+  // Demo preview mode props
+  demoPreviewMode?: boolean;
+  mockMessages?: CodeMessage[];
+  mockSession?: BridgeSession;
 }
 
-export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
+export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mockMessages, mockSession }: CodeViewProps = {}) {
   const t = useScopedI18n('code');
   const {
     status, disconnect, sessions, activeSessionId,
@@ -44,6 +48,12 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
   } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const claudeConnection = useClaudeConnection();
+
+  // Use mock data in preview mode
+  const displayMessages = demoPreviewMode && mockMessages ? mockMessages : messages;
+  const displaySessions = demoPreviewMode && mockSession ? [mockSession] : sessions;
+  const displayActiveSessionId = demoPreviewMode && mockSession ? mockSession.id : activeSessionId;
+  const displayActiveSession = demoPreviewMode && mockSession ? mockSession : sessions.find((s) => s.id === activeSessionId);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newSessionOpen, setNewSessionOpen] = useState(false);
@@ -89,11 +99,9 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
     }
   }, [isBusy, queuedMessages, sendMessage]);
 
-  const activeSession = sessions.find((s) => s.id === activeSessionId);
-
   useEffect(() => {
-    if (activeSessionId) setTimeout(() => codeInputRef.current?.focus(), 80);
-  }, [activeSessionId]);
+    if (activeSessionId && !demoPreviewMode) setTimeout(() => codeInputRef.current?.focus(), 80);
+  }, [activeSessionId, demoPreviewMode]);
 
   // Handle OAuth errors from GitHub redirect
   useEffect(() => {
@@ -137,25 +145,25 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
 
   // ── Send ───────────────────────────────────────────────────
   const handleSend = useCallback(async (text: string, files?: FileAttachment[]) => {
-    if (!activeSessionId) return;
+    if (!activeSessionId || demoPreviewMode) return;
     setAttachedFiles([]);
     await sendMessage(text, files);
     // Notify parent about prompt being sent (for demo mode tracking)
     onPromptSent?.();
-  }, [activeSessionId, sendMessage, onPromptSent]);
+  }, [activeSessionId, demoPreviewMode, sendMessage, onPromptSent]);
 
   // ── Cumulative token usage across all result messages ──────
   const tokenUsage = useMemo(() => {
     let input = 0;
     let output = 0;
-    for (const m of messages) {
+    for (const m of displayMessages) {
       if (m.type === 'result') {
         input += m.inputTokens ?? 0;
         output += m.outputTokens ?? 0;
       }
     }
     return { input, output, total: input + output };
-  }, [messages]);
+  }, [displayMessages]);
 
   // ── Drag overlay ───────────────────────────────────────────
   const dragOverlay = isDragging && (
@@ -182,10 +190,10 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
   const previewUrl = cloudMachine.machine?.previewUrl ?? undefined;
 
   // ── No session selected ────────────────────────────────────
-  if (!activeSessionId) {
+  if (!displayActiveSessionId) {
     return (
       <div className="relative flex h-full">
-        <CodeSidebar modeToggle={modeToggle} sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} />
+        <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
@@ -267,7 +275,7 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
   // ── Active session ─────────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <CodeSidebar modeToggle={modeToggle} sessions={sessions} activeSessionId={activeSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} />
+      <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 
@@ -299,23 +307,25 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
                 <span className="absolute inset-0 rounded-full bg-amber-400 opacity-60 blur-[3px]" />
               )}
             </span>
-            <span className="min-w-0 truncate text-sm font-medium">{activeSession?.name}</span>
-            {activeSession && connectionHealth === 'connected' && (
-              <span className={cn(statusBadgeClass(activeSession.status), 'hidden sm:inline-flex')}>{t(`status.${activeSession.status}`)}</span>
+            <span className="min-w-0 truncate text-sm font-medium">{displayActiveSession?.name}</span>
+            {displayActiveSession && connectionHealth === 'connected' && (
+              <span className={cn(statusBadgeClass(displayActiveSession.status), 'hidden sm:inline-flex')}>{t(`status.${displayActiveSession.status}`)}</span>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {/* Context usage gauge */}
             <ContextGauge input={tokenUsage.input} output={tokenUsage.output} total={tokenUsage.total} />
-            {/* Clear conversation */}
-            <button
-              onClick={() => setClearDialogOpen(true)}
-              disabled={messages.length === 0}
-              className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
-              title="Clear conversation"
-            >
-              <Trash2 className="size-3.5" />
-            </button>
+            {/* Clear conversation - hide in preview mode */}
+            {!demoPreviewMode && (
+              <button
+                onClick={() => setClearDialogOpen(true)}
+                disabled={displayMessages.length === 0}
+                className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+                title="Clear conversation"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            )}
             <ConfirmationDialog
               isOpen={clearDialogOpen}
               onOpenChange={setClearDialogOpen}
@@ -343,11 +353,11 @@ export function CodeView({ modeToggle, onPromptSent }: CodeViewProps = {}) {
           </div>
         </div>
 
-        <CodeMessageList messages={messages} isFree={activeSession?.mode === 'cli'} isBusy={isBusy} onApprove={approve} onDeny={deny} onAnswer={answerQuestion} questionSelectionsMap={questionSelectionsMap} onQuestionSelect={handleQuestionSelect} />
+        <CodeMessageList messages={displayMessages} isFree={displayActiveSession?.mode === 'cli'} isBusy={isBusy} onApprove={approve} onDeny={deny} onAnswer={answerQuestion} questionSelectionsMap={questionSelectionsMap} onQuestionSelect={handleQuestionSelect} />
 
-        <CodeInput ref={codeInputRef} onSend={handleSend} onStop={abort} isBusy={isBusy} disabled={!activeSessionId}
+        <CodeInput ref={codeInputRef} onSend={handleSend} onStop={abort} isBusy={isBusy} disabled={!displayActiveSessionId || demoPreviewMode}
           files={attachedFiles} onAddFiles={handleFilesAdded} onRemoveFile={handleRemoveFile} slashCommands={slashCommands}
-          activeSessionId={activeSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} />
+          activeSessionId={displayActiveSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={demoPreviewMode} />
       </div>
     </div>
   );
