@@ -65,7 +65,8 @@ async function safeJson(res: Response): Promise<any> {
   if (!text) return {};
   try {
     return JSON.parse(text);
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse JSON response:', err);
     return { error: text || `Request failed (${res.status})` };
   }
 }
@@ -89,7 +90,8 @@ export function useCloudMachine(): UseCloudMachineReturn {
       const data = await safeJson(res);
       setMachine(data.machine ?? null);
       return data.machine as CloudMachine | null;
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch cloud machine status:', err);
       return null;
     }
   }, []);

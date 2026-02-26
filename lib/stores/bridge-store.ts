@@ -39,7 +39,8 @@ export function getRecentRepoPaths(): string[] {
   if (!raw) return [];
   try {
     return JSON.parse(raw) as string[];
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse recent repo paths:', err);
     return [];
   }
 }
@@ -57,7 +58,8 @@ export function getSessionMessages(sessionId: string): unknown[] {
   if (!raw) return [];
   try {
     return JSON.parse(raw) as unknown[];
-  } catch {
+  } catch (err) {
+    console.error(`Failed to parse session messages for ${sessionId}:`, err);
     return [];
   }
 }

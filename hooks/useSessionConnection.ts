@@ -94,8 +94,9 @@ function rebuildMessagesFromPayloads(
       case 'tool_start': {
         currentTextId = null;
         for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].type === 'assistant_text' && !(messages[i] as any).isComplete) {
-            messages[i] = { ...messages[i], isComplete: true } as CodeMessage;
+          const m = messages[i];
+          if (m.type === 'assistant_text' && !m.isComplete) {
+            messages[i] = { ...m, isComplete: true };
           }
         }
         messages.push({
@@ -123,10 +124,11 @@ function rebuildMessagesFromPayloads(
       case 'approval_request': {
         currentTextId = null;
         for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].type === 'assistant_text' && !(messages[i] as any).isComplete)
-            messages[i] = { ...messages[i], isComplete: true } as CodeMessage;
-          if (messages[i].type === 'tool_use' && !(messages[i] as any).isComplete)
-            messages[i] = { ...messages[i], isComplete: true } as CodeMessage;
+          const m = messages[i];
+          if (m.type === 'assistant_text' && !m.isComplete)
+            messages[i] = { ...m, isComplete: true };
+          if (m.type === 'tool_use' && !m.isComplete)
+            messages[i] = { ...m, isComplete: true };
         }
         messages.push({
           id: makeId(), ts: Date.now(), type: 'approval_request' as const,
@@ -139,10 +141,11 @@ function rebuildMessagesFromPayloads(
       case 'ask_question': {
         currentTextId = null;
         for (let i = messages.length - 1; i >= 0; i--) {
-          if (messages[i].type === 'assistant_text' && !(messages[i] as any).isComplete)
-            messages[i] = { ...messages[i], isComplete: true } as CodeMessage;
-          if (messages[i].type === 'tool_use' && !(messages[i] as any).isComplete)
-            messages[i] = { ...messages[i], isComplete: true } as CodeMessage;
+          const m = messages[i];
+          if (m.type === 'assistant_text' && !m.isComplete)
+            messages[i] = { ...m, isComplete: true };
+          if (m.type === 'tool_use' && !m.isComplete)
+            messages[i] = { ...m, isComplete: true };
         }
         messages.push({
           id: makeId(), ts: Date.now(), type: 'question' as const,
@@ -187,8 +190,9 @@ function rebuildMessagesFromPayloads(
 
   // Mark trailing incomplete assistant text as complete
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].type === 'assistant_text' && !(messages[i] as any).isComplete) {
-      messages[i] = { ...messages[i], isComplete: true } as CodeMessage;
+    const m = messages[i];
+    if (m.type === 'assistant_text' && !m.isComplete) {
+      messages[i] = { ...m, isComplete: true };
       break;
     }
   }
@@ -332,7 +336,8 @@ export class SessionConnection {
           this.historyLoaded = true;
           this.persistMessages();
         }
-      } catch {
+      } catch (err) {
+        console.error('Failed to load session history:', err);
         // Fall through — still connect WS with local cache
       }
     }
@@ -370,7 +375,7 @@ export class SessionConnection {
         const frame = JSON.parse(event.data as string) as WsServerFrame;
         if (frame.type === 'pong') { this.clearPongTimeout(); return; }
         this.processFrame(frame);
-      } catch { /* parse error */ }
+      } catch (err) { console.error('Failed to parse WebSocket frame:', err); }
     };
 
     ws.onclose = (event) => {
@@ -439,7 +444,7 @@ export class SessionConnection {
   // ── Internal: Persistence ──────────────────────────────────
 
   private persistMessages() {
-    setSessionMessages(this.sessionId, this.messages as unknown[]);
+    setSessionMessages(this.sessionId, this.messages);
     setSessionLastSeq(this.sessionId, this.seq);
   }
 

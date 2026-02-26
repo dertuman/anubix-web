@@ -179,7 +179,8 @@ export async function generateTitle(content: string, openaiApiKey: string): Prom
 
     const title = response.choices[0]?.message?.content?.trim();
     return title || content.slice(0, 40).trim();
-  } catch {
+  } catch (err) {
+    console.error('Failed to generate title:', err);
     return content.slice(0, 40).trim() || 'New Conversation';
   }
 }

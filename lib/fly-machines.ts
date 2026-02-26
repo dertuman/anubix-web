@@ -366,9 +366,9 @@ export async function teardownFlyResources(
 ): Promise<void> {
   // Stop + destroy machine
   if (machineId) {
-    try { await stopFlyMachine(appName, machineId); } catch { /* ignore */ }
-    try { await destroyFlyMachine(appName, machineId); } catch { /* ignore */ }
+    try { await stopFlyMachine(appName, machineId); } catch (err) { console.error('Failed to stop Fly machine:', err); }
+    try { await destroyFlyMachine(appName, machineId); } catch (err) { console.error('Failed to destroy Fly machine:', err); }
   }
   // Destroy the app (also deletes volumes)
-  try { await destroyFlyApp(appName); } catch { /* ignore */ }
+  try { await destroyFlyApp(appName); } catch (err) { console.error('Failed to destroy Fly app:', err); }
 }

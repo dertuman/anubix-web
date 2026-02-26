@@ -11,6 +11,7 @@ import {
   getLastSessionId,
   setLastSessionId,
 } from '@/lib/stores/bridge-store';
+import { processAttachments } from '@/lib/process-attachments';
 
 import type { ConnectionHealth } from './useSessionConnection';
 import { useSessionPool, type PoolSessionState } from './useSessionPool';
@@ -137,7 +138,8 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       const list = (data.data ?? data) as BridgeSession[];
       setSessions(list);
       return list;
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch sessions:', err);
       setSessions([]);
       return [];
     }
@@ -147,7 +149,8 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     try {
       const data = await apiFetch('/sessions/repos');
       return { repos: (data.data ?? []) as BridgeRepo[], basePath: (data.basePath as string) ?? null };
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch repos:', err);
       return { repos: [], basePath: null };
     }
   }, [apiFetch]);
@@ -224,7 +227,8 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       await fetchSessions();
       selectSession(session.id);
       return session;
-    } catch {
+    } catch (err) {
+      console.error('Failed to create session:', err);
       return null;
     }
   }, [apiFetch, fetchSessions, selectSession]);
@@ -239,7 +243,9 @@ export function useClaudeCode(): UseClaudeCodeReturn {
         clearLastSessionId();
       }
       await fetchSessions();
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+    }
   }, [apiFetch, fetchSessions, pool]);
 
   const updateSession = useCallback(async (id: string, updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli'; model?: string }) => {
@@ -253,7 +259,8 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     try {
       const data = await apiFetch(`/sessions/${id}/pull`, { method: 'POST' });
       return (data.data ?? null) as PullResult[] | null;
-    } catch {
+    } catch (err) {
+      console.error('Failed to pull session:', err);
       return null;
     }
   }, [apiFetch]);
@@ -268,70 +275,39 @@ export function useClaudeCode(): UseClaudeCodeReturn {
 
     let finalContent = text.trim();
 
-    // Inject code/text files as fenced blocks
-    const textFiles = files?.filter((f) => f.category === 'text' && f.textContent) ?? [];
-    if (textFiles.length) {
-      const blocks = textFiles.map((f) => {
-        const ext = f.name.split('.').pop() || '';
-        return `\`\`\`${ext} (${f.name})\n${f.textContent}\n\`\`\``;
-      }).join('\n\n');
-      finalContent = finalContent ? `${blocks}\n\n${finalContent}` : blocks;
+    if (files?.length) {
+      const processed = await processAttachments(files);
+
+      if (processed.textPrefix) {
+        finalContent = finalContent ? `${processed.textPrefix}\n\n${finalContent}` : processed.textPrefix;
+      }
+      if (processed.transcriptions) {
+        finalContent = finalContent ? `${processed.transcriptions}\n\n${finalContent}` : processed.transcriptions;
+      }
+      if (processed.pdfText) {
+        finalContent = finalContent ? `${processed.pdfText}\n\n${finalContent}` : processed.pdfText;
+      }
+
+      const userMsg: CodeMessage = {
+        id: makeId(), ts: Date.now(), type: 'user',
+        text: finalContent,
+        images: processed.imageDataUrls.length ? processed.imageDataUrls : undefined,
+        files,
+      };
+
+      conn.addUserMessage(userMsg);
+
+      const contentToSend = !finalContent && processed.images.length ? 'See attached image(s).' : finalContent;
+      conn.sendMessage(contentToSend, processed.images.length ? processed.images : undefined);
+    } else {
+      const userMsg: CodeMessage = {
+        id: makeId(), ts: Date.now(), type: 'user',
+        text: finalContent,
+      };
+
+      conn.addUserMessage(userMsg);
+      conn.sendMessage(finalContent);
     }
-
-    // Transcribe audio/video
-    const audioFiles = files?.filter((f) => (f.category === 'audio' || f.category === 'video') && f.data) ?? [];
-    if (audioFiles.length) {
-      const transcriptions = await Promise.all(audioFiles.map(async (f) => {
-        try {
-          const blob = await (await fetch(f.data!)).blob();
-          const fd = new FormData();
-          fd.append('audio', blob, f.name);
-          const res = await fetch('/api/transcribe', { method: 'POST', body: fd });
-          if (!res.ok) return null;
-          const { transcription } = await res.json();
-          return transcription ? `[Transcription of ${f.name}]:\n${transcription}` : null;
-        } catch { return null; }
-      }));
-      const valid = transcriptions.filter(Boolean).join('\n\n');
-      if (valid) finalContent = finalContent ? `${valid}\n\n${finalContent}` : valid;
-    }
-
-    // Extract PDF text
-    const pdfFiles = files?.filter((f) => f.category === 'pdf' && f.data) ?? [];
-    if (pdfFiles.length) {
-      const pdfTexts = await Promise.all(pdfFiles.map(async (f) => {
-        try {
-          const blob = await (await fetch(f.data!)).blob();
-          const fd = new FormData();
-          fd.append('file', blob, f.name);
-          const res = await fetch('/api/extract-pdf', { method: 'POST', body: fd });
-          if (!res.ok) return null;
-          const { text, pages } = await res.json();
-          return text ? `[Content of ${f.name} (${pages} page${pages !== 1 ? 's' : ''})]:\n${text}` : null;
-        } catch { return null; }
-      }));
-      const valid = pdfTexts.filter(Boolean).join('\n\n');
-      if (valid) finalContent = finalContent ? `${valid}\n\n${finalContent}` : valid;
-    }
-
-    // Extract images for bridge
-    const imageFiles = files?.filter((f) => f.category === 'image' && f.data) ?? [];
-    const bridgeImages = imageFiles.map((f) => ({
-      base64: f.data!.includes(',') ? f.data!.split(',')[1] : f.data!,
-      mimeType: f.mimeType,
-    }));
-
-    const userMsg: CodeMessage = {
-      id: makeId(), ts: Date.now(), type: 'user',
-      text: finalContent,
-      images: imageFiles.length ? imageFiles.map((f) => f.data!) : undefined,
-      files: files?.length ? files : undefined,
-    };
-
-    conn.addUserMessage(userMsg);
-
-    const contentToSend = !finalContent && bridgeImages.length ? 'See attached image(s).' : finalContent;
-    conn.sendMessage(contentToSend, bridgeImages.length ? bridgeImages : undefined);
   }, [pool]);
 
   const approve = useCallback(() => {

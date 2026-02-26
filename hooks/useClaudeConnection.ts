@@ -8,7 +8,8 @@ async function safeJsonResponse(res: Response): Promise<any> {
   if (!text) return {};
   try {
     return JSON.parse(text);
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse JSON response:', err);
     return { error: text || `Request failed (${res.status})` };
   }
 }
@@ -36,7 +37,8 @@ export function useClaudeConnection() {
         mode: data.mode ?? null,
         isLoading: false,
       });
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch Claude connection status:', err);
       setState((prev) => ({ ...prev, isLoading: false }));
     }
   }, []);
@@ -109,8 +111,8 @@ export function useClaudeConnection() {
       if (res.ok) {
         setState({ isConnected: false, mode: null, isLoading: false });
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to disconnect Claude:', err);
     }
   }, []);
 
