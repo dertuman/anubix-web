@@ -24,6 +24,7 @@ export interface BridgeSession {
   lastActiveAt: number;
   conversationId?: string;
   mode?: 'sdk' | 'cli';
+  model?: string;
 }
 
 // ── Slash commands ──────────────────────────────────────────

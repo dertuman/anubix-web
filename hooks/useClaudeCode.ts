@@ -67,9 +67,9 @@ export interface UseClaudeCodeReturn {
   sessions: BridgeSession[];
   activeSessionId: string | null;
   selectSession: (_id: string) => void;
-  createSession: (_repoPath: string | string[], _name: string) => Promise<BridgeSession | null>;
+  createSession: (_repoPath: string | string[], _name: string, _model?: string) => Promise<BridgeSession | null>;
   deleteSession: (_id: string) => Promise<void>;
-  updateSession: (_id: string, _updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli' }) => Promise<void>;
+  updateSession: (_id: string, _updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli'; model?: string }) => Promise<void>;
   refreshSessions: () => Promise<void>;
   pullSession: (_id: string) => Promise<PullResult[] | null>;
   fetchRepos: () => Promise<FetchReposResult>;
@@ -210,10 +210,12 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     pool.connect(id);
   }, [pool]);
 
-  const createSession = useCallback(async (repoPath: string | string[], name: string): Promise<BridgeSession | null> => {
+  const createSession = useCallback(async (repoPath: string | string[], name: string, model?: string): Promise<BridgeSession | null> => {
     try {
       const isMulti = Array.isArray(repoPath);
-      const body = isMulti ? { repoPaths: repoPath, name } : { repoPath, name };
+      const body = isMulti
+        ? { repoPaths: repoPath, name, ...(model ? { model } : {}) }
+        : { repoPath, name, ...(model ? { model } : {}) };
       const data = await apiFetch('/sessions', { method: 'POST', body: JSON.stringify(body) });
       const session = (data.data ?? data) as BridgeSession;
       if (isMulti) repoPath.forEach(addRecentRepoPath);
@@ -239,7 +241,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     } catch { /* ignore */ }
   }, [apiFetch, fetchSessions, pool]);
 
-  const updateSession = useCallback(async (id: string, updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli' }) => {
+  const updateSession = useCallback(async (id: string, updates: { name?: string; repoPaths?: string[]; mode?: 'sdk' | 'cli'; model?: string }) => {
     await apiFetch(`/sessions/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
     await fetchSessions();
   }, [apiFetch, fetchSessions]);

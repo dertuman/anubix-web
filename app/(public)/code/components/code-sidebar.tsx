@@ -818,7 +818,7 @@ export const CodeSidebar = memo(function CodeSidebar({
               {t('newSession')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] overflow-y-auto overflow-x-hidden w-[95vw] sm:max-w-[95vw] md:max-w-lg">
+          <DialogContent className="max-h-[90dvh] overflow-y-auto overflow-x-hidden w-[95vw] sm:max-w-[95vw] md:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-lg">{t('newSession')}</DialogTitle>
             </DialogHeader>
