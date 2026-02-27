@@ -1,8 +1,9 @@
 import type { BridgeSession, CodeMessage } from '@/types/code';
+import type { ChatConversation, ChatMessage } from '@/types/chat';
 
 /**
  * Mock data for demo preview mode
- * Shows a realistic conversation of building a React todo component
+ * Shows realistic conversations for both Code and Chat modes
  */
 
 export const MOCK_SESSION: BridgeSession = {
@@ -153,5 +154,108 @@ export const MOCK_MESSAGES: CodeMessage[] = [
     text: "Perfect! 🎉 I've created a beautiful React todo component with the following features:\n\n**✨ Features:**\n• Clean, modern interface with gradient accents\n• Add todos with Enter key or click\n• Toggle completion status with visual feedback\n• Delete todos with smooth animations\n• Fully typed with TypeScript\n• Responsive Tailwind CSS styling\n• Hover effects and transitions\n\n**📁 Files created:**\n• `src/components/TodoList.tsx` - Main component\n• Updated `src/App.tsx` - Integrated the component\n\nThe dev server is running at **http://localhost:5173** - you can see your todo app live!\n\nWould you like me to add any additional features like filtering, local storage persistence, or priority levels?",
     isComplete: true,
     ts: Date.now() - 1000 * 60 * 4,
+  },
+];
+
+// ── Mock Chat Data ──────────────────────────────────────────────
+
+export const MOCK_CHAT_CONVERSATION: ChatConversation = {
+  id: 'preview-chat-conv',
+  email: 'demo@example.com',
+  title: 'Building a Landing Page',
+  model: 'gemini-2.5-flash',
+  message_count: 6,
+  is_shared: false,
+  share_id: null,
+  created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+  updated_at: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+};
+
+export const MOCK_CHAT_CONVERSATIONS: ChatConversation[] = [
+  MOCK_CHAT_CONVERSATION,
+  {
+    id: 'preview-chat-conv-2',
+    email: 'demo@example.com',
+    title: 'Debug API Authentication',
+    model: 'gpt-4o',
+    message_count: 4,
+    is_shared: false,
+    share_id: null,
+    created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+    updated_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+  },
+  {
+    id: 'preview-chat-conv-3',
+    email: 'demo@example.com',
+    title: 'Explain Async/Await',
+    model: 'claude-sonnet-4-20250514',
+    message_count: 2,
+    is_shared: false,
+    share_id: null,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+  },
+];
+
+export const MOCK_CHAT_MESSAGES: ChatMessage[] = [
+  {
+    id: 'chat-msg-1',
+    conversation_id: 'preview-chat-conv',
+    role: 'user',
+    content: 'Help me design a modern landing page for a SaaS product. I want it to have a hero section, features grid, pricing section, and a call-to-action. Use Next.js and Tailwind CSS.',
+    images: null,
+    files: null,
+    model: null,
+    created_at: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+  },
+  {
+    id: 'chat-msg-2',
+    conversation_id: 'preview-chat-conv',
+    role: 'assistant',
+    content: "Great choice! Here's a complete landing page structure for your SaaS product using Next.js and Tailwind CSS.\n\n## Hero Section\n```tsx\nexport function Hero() {\n  return (\n    <section className=\"relative overflow-hidden bg-gradient-to-b from-primary/5 to-background px-6 py-24\">\n      <div className=\"mx-auto max-w-4xl text-center\">\n        <h1 className=\"text-5xl font-bold tracking-tight\">\n          Ship faster with <span className=\"text-primary\">AI-powered</span> workflows\n        </h1>\n        <p className=\"mt-6 text-lg text-muted-foreground\">\n          Automate your development pipeline and deploy with confidence.\n        </p>\n        <div className=\"mt-10 flex justify-center gap-4\">\n          <Button size=\"lg\">Get Started Free</Button>\n          <Button size=\"lg\" variant=\"outline\">Watch Demo</Button>\n        </div>\n      </div>\n    </section>\n  );\n}\n```\n\n## Features Grid\nI recommend a 3-column grid with icons, titles, and descriptions:\n\n```tsx\nconst features = [\n  { icon: Zap, title: 'Lightning Fast', desc: 'Deploy in seconds, not minutes' },\n  { icon: Shield, title: 'Secure by Default', desc: 'Enterprise-grade security built in' },\n  { icon: BarChart, title: 'Analytics', desc: 'Real-time insights into your app' },\n];\n```\n\nThis gives you a clean, professional layout that converts well. Want me to add the pricing section next?",
+    images: null,
+    files: null,
+    model: 'gemini-2.5-flash',
+    created_at: new Date(Date.now() - 1000 * 60 * 17).toISOString(),
+  },
+  {
+    id: 'chat-msg-3',
+    conversation_id: 'preview-chat-conv',
+    role: 'user',
+    content: 'Yes! Add the pricing section with three tiers: Free, Pro, and Enterprise.',
+    images: null,
+    files: null,
+    model: null,
+    created_at: new Date(Date.now() - 1000 * 60 * 14).toISOString(),
+  },
+  {
+    id: 'chat-msg-4',
+    conversation_id: 'preview-chat-conv',
+    role: 'assistant',
+    content: "Here's a beautiful pricing section with three tiers:\n\n```tsx\nconst plans = [\n  {\n    name: 'Free',\n    price: '$0',\n    description: 'Perfect for side projects',\n    features: ['1 project', '100 deployments/mo', 'Community support'],\n    cta: 'Start Free',\n    highlighted: false,\n  },\n  {\n    name: 'Pro',\n    price: '$29',\n    description: 'For growing teams',\n    features: ['Unlimited projects', 'Unlimited deployments', 'Priority support', 'Custom domains', 'Analytics dashboard'],\n    cta: 'Start Pro Trial',\n    highlighted: true, // Popular badge\n  },\n  {\n    name: 'Enterprise',\n    price: 'Custom',\n    description: 'For large organizations',\n    features: ['Everything in Pro', 'SSO & SAML', 'Dedicated support', 'SLA guarantee', 'Custom integrations'],\n    cta: 'Contact Sales',\n    highlighted: false,\n  },\n];\n```\n\nThe **Pro** tier has a highlighted border and a \"Most Popular\" badge to guide users toward the best-value option. Each card uses `hover:shadow-lg` for a subtle lift effect.\n\nWant me to add animations with Framer Motion or the final CTA section?",
+    images: null,
+    files: null,
+    model: 'gemini-2.5-flash',
+    created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+  },
+  {
+    id: 'chat-msg-5',
+    conversation_id: 'preview-chat-conv',
+    role: 'user',
+    content: 'Add the CTA section and some smooth scroll animations!',
+    images: null,
+    files: null,
+    model: null,
+    created_at: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+  },
+  {
+    id: 'chat-msg-6',
+    conversation_id: 'preview-chat-conv',
+    role: 'assistant',
+    content: "Here's the final CTA section with Framer Motion animations:\n\n```tsx\nimport { motion } from 'framer-motion';\n\nexport function CTA() {\n  return (\n    <motion.section\n      initial={{ opacity: 0, y: 40 }}\n      whileInView={{ opacity: 1, y: 0 }}\n      viewport={{ once: true }}\n      className=\"bg-primary/5 px-6 py-24\"\n    >\n      <div className=\"mx-auto max-w-2xl text-center\">\n        <h2 className=\"text-3xl font-bold\">\n          Ready to supercharge your workflow?\n        </h2>\n        <p className=\"mt-4 text-muted-foreground\">\n          Join 10,000+ developers shipping faster with our platform.\n        </p>\n        <Button size=\"lg\" className=\"mt-8\">\n          Get Started — It's Free\n        </Button>\n      </div>\n    </motion.section>\n  );\n}\n```\n\nFor scroll animations on all sections, wrap each one with:\n```tsx\n<motion.div\n  initial={{ opacity: 0, y: 30 }}\n  whileInView={{ opacity: 1, y: 0 }}\n  transition={{ duration: 0.6 }}\n  viewport={{ once: true, margin: '-100px' }}\n>\n  {/* Section content */}\n</motion.div>\n```\n\nYour landing page is now complete with:\n- **Hero** with gradient background\n- **Features** grid with icons\n- **Pricing** with 3 tiers and highlighted Pro plan\n- **CTA** with scroll-triggered animations\n\nAll fully responsive and accessible! Would you like me to help with anything else?",
+    images: null,
+    files: null,
+    model: 'gemini-2.5-flash',
+    created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
   },
 ];

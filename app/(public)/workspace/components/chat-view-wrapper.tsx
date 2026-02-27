@@ -4,15 +4,17 @@ import { ChatView } from '../../chat/components/chat-view';
 import { useAuth } from '@clerk/nextjs';
 import { useWorkspace } from '../context/workspace-context';
 import { ModeToggle } from './mode-toggle';
+import { DemoPreviewOverlay } from './demo-preview-overlay';
+import { MOCK_CHAT_MESSAGES, MOCK_CHAT_CONVERSATIONS } from '@/lib/demo-data';
 
 /**
  * Wrapper for ChatView in workspace context
- * Shows blank slate for unauthenticated users in non-demo mode
+ * Shows demo preview with mock data for unauthenticated users
  * In demo mode, allows one prompt before requiring sign-in
  */
 export function ChatViewWrapper() {
   const { isSignedIn } = useAuth();
-  const { isDemoMode, incrementDemoPromptCount } = useWorkspace();
+  const { isDemoMode, isDemoPreview, incrementDemoPromptCount } = useWorkspace();
 
   // Track demo prompts for unauthenticated users
   const handlePromptSent = () => {
@@ -21,21 +23,18 @@ export function ChatViewWrapper() {
     }
   };
 
-  // For unauthenticated users NOT in demo mode, show blank slate
-  if (!isSignedIn && !isDemoMode) {
+  // For unauthenticated users NOT in demo mode, show demo preview with mock data
+  if (isDemoPreview) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex max-w-md flex-col items-center gap-4 text-center">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
-            <span className="text-2xl font-bold text-primary">A</span>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">Chat Mode</h2>
-            <p className="text-sm text-muted-foreground">
-              Sign in to start conversing with AI models like GPT, Gemini, and Claude.
-            </p>
-          </div>
-        </div>
+      <div className="relative h-full">
+        <ChatView
+          modeToggle={<ModeToggle variant="sidebar" />}
+          onPromptSent={handlePromptSent}
+          demoPreviewMode={true}
+          mockMessages={MOCK_CHAT_MESSAGES}
+          mockConversations={MOCK_CHAT_CONVERSATIONS}
+        />
+        <DemoPreviewOverlay />
       </div>
     );
   }

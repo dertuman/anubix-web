@@ -44,15 +44,21 @@ const QUERY_STALE_TIME = 30_000; // 30 seconds
 interface ChatViewProps {
   modeToggle?: React.ReactNode;
   onPromptSent?: () => void;
+  // Demo preview mode props
+  demoPreviewMode?: boolean;
+  mockMessages?: ChatMessageType[];
+  mockConversations?: ChatConversation[];
 }
 
-export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
+export function ChatView({ modeToggle, onPromptSent, demoPreviewMode = false, mockMessages, mockConversations }: ChatViewProps = {}) {
   const t = useScopedI18n('chat');
   const { userId } = useAuth();
   const queryClient = useQueryClient();
 
   // ── Core state ──────────────────────────────────────────────
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    demoPreviewMode && mockConversations?.length ? mockConversations[0].id : null
+  );
   const [selectedModel, setSelectedModel] = useState<ModelId>(DEFAULT_MODEL);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mdCopied, setMdCopied] = useState(false);
@@ -77,7 +83,7 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
     dragHandlers,
   } = useFileAttachments();
 
-  // ── Queries ─────────────────────────────────────────────────
+  // ── Queries (disabled in demo preview mode) ──────────────────
 
   const { data: conversationsData, isLoading: conversationsLoading } = useQuery({
     queryKey: ['chat-conversations'],
@@ -85,11 +91,11 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
       const res = await axios.get('/api/chat/conversations');
       return res.data.data as ChatConversation[];
     },
-    enabled: !!userId,
+    enabled: !!userId && !demoPreviewMode,
     staleTime: QUERY_STALE_TIME,
     retry: 1, // Prevent repeated 500 retries
   });
-  const conversations = conversationsData ?? [];
+  const conversations = demoPreviewMode && mockConversations ? mockConversations : (conversationsData ?? []);
 
   const { data: messagesData } = useQuery({
     queryKey: ['chat-messages', selectedId],
@@ -98,10 +104,13 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
       const res = await axios.get(`/api/chat/conversations/${selectedId}/messages`);
       return res.data.data as ChatMessageType[];
     },
-    enabled: !!selectedId,
+    enabled: !!selectedId && !demoPreviewMode,
     staleTime: QUERY_STALE_TIME,
   });
-  const messages = useMemo(() => messagesData ?? [], [messagesData]);
+  const messages = useMemo(() => {
+    if (demoPreviewMode && mockMessages) return mockMessages;
+    return messagesData ?? [];
+  }, [demoPreviewMode, mockMessages, messagesData]);
 
   const {
     data: providersData,
@@ -114,12 +123,12 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
       const res = await axios.get('/api/chat/api-keys');
       return res.data.providers as string[];
     },
-    enabled: !!userId,
+    enabled: !!userId && !demoPreviewMode,
     staleTime: 60_000, // providers rarely change — 1 minute
     retry: 1, // Only retry once — prevent repeated 500s from causing flash loops
   });
   const providers = useMemo(() => providersData ?? [], [providersData]);
-  const hasProviders = providers.length > 0;
+  const hasProviders = demoPreviewMode ? true : providers.length > 0;
 
   // ── Available models (filtered by providers with keys) ──────
   const availableModels = useMemo(
@@ -228,6 +237,9 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
 
   // ── Send message ────────────────────────────────────────────
   const handleSend = useCallback(async (text: string, files?: FileAttachment[]) => {
+    // Block sends in demo preview mode
+    if (demoPreviewMode) return;
+
     let convId = selectedId;
 
     // Auto-create conversation if none selected
@@ -246,7 +258,7 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
     await sendMessage(convId, text, selectedModel, files);
     // Notify parent about prompt being sent (for demo mode tracking)
     onPromptSent?.();
-  }, [selectedId, selectedModel, createMutation, clearFiles, sendMessage, onPromptSent]);
+  }, [demoPreviewMode, selectedId, selectedModel, createMutation, clearFiles, sendMessage, onPromptSent]);
 
   // ── Share toggle ────────────────────────────────────────────
   const handleToggleShare = useCallback(async () => {
@@ -286,7 +298,8 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
   // ── Loading state ──────────────────────────────────────────
   // Show a clean loading spinner while we figure out if the user has keys.
   // This prevents the flash between the setup prompt and the chat UI.
-  if (conversationsLoading || providersLoading) {
+  // Skip in demo preview mode — we have mock data ready.
+  if (!demoPreviewMode && (conversationsLoading || providersLoading)) {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -297,7 +310,8 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
   // ── Error state ───────────────────────────────────────────
   // If providers query errored (e.g. Supabase token issue), show a
   // recoverable error — NOT the "add your keys" prompt, which would be misleading.
-  if (providersError) {
+  // Skip in demo preview mode.
+  if (!demoPreviewMode && providersError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 px-4">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10">
@@ -364,7 +378,7 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
   if (!selectedId) {
     return (
       <div className="relative flex h-full">
-        <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={conversationsLoading} onSelect={setSelectedId} onNewChat={handleNewChat} onDelete={(id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} modeToggle={modeToggle} />
+        <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={demoPreviewMode ? false : conversationsLoading} onSelect={demoPreviewMode ? () => {} : setSelectedId} onNewChat={demoPreviewMode ? () => {} : handleNewChat} onDelete={demoPreviewMode ? () => {} : (id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} modeToggle={modeToggle} />
         <div className="relative flex flex-1 flex-col overflow-hidden" {...dragHandlers}>
           {dragOverlay}
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/20 px-4">
@@ -372,10 +386,10 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
               <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
               {modelSelector}
             </div>
-            {headerActions}
+            {!demoPreviewMode && headerActions}
           </div>
           <div className="flex flex-1 flex-col items-center justify-center px-4">
-            {!hasProviders ? (
+            {!hasProviders && !demoPreviewMode ? (
               <ApiKeySetupPrompt onKeySaved={() => refetchProviders()} />
             ) : (
               <div className="flex w-full max-w-2xl flex-col items-center gap-5">
@@ -387,7 +401,7 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
                     onSend={handleSend}
                     onStop={abortStream}
                     isStreaming={isStreaming}
-                    disabled={false}
+                    disabled={demoPreviewMode}
                     files={attachedFiles}
                     onAddFiles={addFiles}
                     onRemoveFile={removeFile}
@@ -406,7 +420,7 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
   // ── Active conversation ─────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={conversationsLoading} onSelect={setSelectedId} onNewChat={handleNewChat} onDelete={(id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} modeToggle={modeToggle} />
+      <ChatSidebar conversations={conversations} selectedId={selectedId} isLoading={demoPreviewMode ? false : conversationsLoading} onSelect={demoPreviewMode ? () => {} : setSelectedId} onNewChat={demoPreviewMode ? () => {} : handleNewChat} onDelete={demoPreviewMode ? () => {} : (id) => deleteMutation.mutate(id)} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} modeToggle={modeToggle} />
       <div className="relative flex flex-1 flex-col overflow-hidden" {...dragHandlers}>
         {dragOverlay}
 
@@ -417,14 +431,14 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
             <span className="max-w-[100px] truncate text-sm font-medium sm:max-w-[200px]">{selectedConversation?.title}</span>
             {modelSelector}
           </div>
-          {headerActions}
+          {!demoPreviewMode && headerActions}
         </div>
 
         <ChatMessageList
           messages={allMessages}
-          isStreaming={isStreaming}
-          streamingContent={streamingContent}
-          showThinkingIndicator={waitingForResponse && !isStreaming}
+          isStreaming={demoPreviewMode ? false : isStreaming}
+          streamingContent={demoPreviewMode ? '' : streamingContent}
+          showThinkingIndicator={demoPreviewMode ? false : (waitingForResponse && !isStreaming)}
         />
 
         <ChatInput
@@ -432,7 +446,7 @@ export function ChatView({ modeToggle, onPromptSent }: ChatViewProps = {}) {
           onSend={handleSend}
           onStop={abortStream}
           isStreaming={isStreaming}
-          disabled={!selectedId}
+          disabled={demoPreviewMode || !selectedId}
           files={attachedFiles}
           onAddFiles={addFiles}
           onRemoveFile={removeFile}
