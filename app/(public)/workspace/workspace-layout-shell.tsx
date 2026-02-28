@@ -6,6 +6,6 @@ interface WorkspaceLayoutShellProps {
 
 export default function WorkspaceLayoutShell({ children }: WorkspaceLayoutShellProps) {
   return (
-    <div className="fixed inset-0 overflow-hidden">{children}</div>
+    <div className="fixed inset-0 overflow-hidden font-[family-name:var(--font-geist)]">{children}</div>
   );
 }

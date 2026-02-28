@@ -1,6 +1,6 @@
 import '@/styles/globals.css';
 
-import { fontSans } from '@/lib/fonts';
+import { fontSans, fontGeist } from '@/lib/fonts';
 import { getLocale } from '@/lib/i18n';
 import { generateDefaultMetadata } from '@/lib/metadata-utils';
 import { isAppConfigured } from '@/lib/setup/config';
@@ -145,7 +145,8 @@ export default async function RootLayout({
       <body
         className={cn(
           'custom-scrollbar min-h-dvh font-sans antialiased',
-          fontSans.variable
+          fontSans.variable,
+          fontGeist.variable
         )}
       >
         {configured ? (
