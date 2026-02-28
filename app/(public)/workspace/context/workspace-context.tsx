@@ -30,9 +30,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // Demo prompt tracking
   const [demoPromptCount, setDemoPromptCount] = useState(0);
 
-  // Unauthenticated users ALWAYS see demo preview with mock data,
-  // regardless of URL params. The ?demo=true param is just how they
-  // arrive from the homepage — it doesn't change the experience.
+  // Unauthenticated users always see demo preview with mock data.
   // While Clerk is loading, default to false to avoid a flash of demo for auth users.
   const isDemoMode = authLoaded ? !isSignedIn : false;
   const isDemoPreview = authLoaded ? !isSignedIn : false;
@@ -40,9 +38,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // Update URL when mode changes
   const setMode = (newMode: WorkspaceMode) => {
     setModeState(newMode);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('mode', newMode);
-    router.replace(`/workspace?${params.toString()}`, { scroll: false });
+    router.replace(`/workspace?mode=${newMode}`, { scroll: false });
   };
 
   // Demo prompt tracking functions
