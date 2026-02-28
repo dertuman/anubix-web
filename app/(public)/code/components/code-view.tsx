@@ -145,7 +145,12 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
 
   // ── Send ───────────────────────────────────────────────────
   const handleSend = useCallback(async (text: string, files?: FileAttachment[]) => {
-    if (!activeSessionId || demoPreviewMode) return;
+    // In demo preview mode, notify parent (triggers login prompt) but don't actually send
+    if (demoPreviewMode) {
+      onPromptSent?.();
+      return;
+    }
+    if (!activeSessionId) return;
     setAttachedFiles([]);
     await sendMessage(text, files);
     // Notify parent about prompt being sent (for demo mode tracking)
@@ -355,9 +360,9 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
 
         <CodeMessageList messages={displayMessages} isFree={displayActiveSession?.mode === 'cli'} isBusy={isBusy} onApprove={approve} onDeny={deny} onAnswer={answerQuestion} questionSelectionsMap={questionSelectionsMap} onQuestionSelect={handleQuestionSelect} />
 
-        <CodeInput ref={codeInputRef} onSend={handleSend} onStop={abort} isBusy={isBusy} disabled={!displayActiveSessionId || demoPreviewMode}
+        <CodeInput ref={codeInputRef} onSend={handleSend} onStop={abort} isBusy={isBusy} disabled={!displayActiveSessionId && !demoPreviewMode}
           files={attachedFiles} onAddFiles={handleFilesAdded} onRemoveFile={handleRemoveFile} slashCommands={slashCommands}
-          activeSessionId={displayActiveSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={demoPreviewMode} />
+          activeSessionId={displayActiveSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={false} />
       </div>
     </div>
   );

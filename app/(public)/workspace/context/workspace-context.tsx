@@ -21,20 +21,21 @@ const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefi
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded: authLoaded } = useAuth();
 
   // Get initial mode from URL param, default to 'code'
   const initialMode = (searchParams.get('mode') === 'chat' ? 'chat' : 'code') as WorkspaceMode;
   const [mode, setModeState] = useState<WorkspaceMode>(initialMode);
 
-  // Demo mode tracking - check URL param
-  const isDemoMode = searchParams.get('demo') === 'true';
+  // Demo prompt tracking
   const [demoPromptCount, setDemoPromptCount] = useState(0);
 
-  // Demo preview mode - passive viewing for unauthenticated users
-  // This is different from isDemoMode (1 free interactive prompt)
-  // Demo preview shows mock data and prompts for signup
-  const isDemoPreview = !isSignedIn && !isDemoMode;
+  // Unauthenticated users ALWAYS see demo preview with mock data,
+  // regardless of URL params. The ?demo=true param is just how they
+  // arrive from the homepage — it doesn't change the experience.
+  // While Clerk is loading, default to false to avoid a flash of demo for auth users.
+  const isDemoMode = authLoaded ? !isSignedIn : false;
+  const isDemoPreview = authLoaded ? !isSignedIn : false;
 
   // Update URL when mode changes
   const setMode = (newMode: WorkspaceMode) => {

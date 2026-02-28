@@ -237,8 +237,11 @@ export function ChatView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
 
   // ── Send message ────────────────────────────────────────────
   const handleSend = useCallback(async (text: string, files?: FileAttachment[]) => {
-    // Block sends in demo preview mode
-    if (demoPreviewMode) return;
+    // In demo preview mode, notify parent (triggers login prompt) but don't actually send
+    if (demoPreviewMode) {
+      onPromptSent?.();
+      return;
+    }
 
     let convId = selectedId;
 
@@ -401,7 +404,7 @@ export function ChatView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
                     onSend={handleSend}
                     onStop={abortStream}
                     isStreaming={isStreaming}
-                    disabled={demoPreviewMode}
+                    disabled={false}
                     files={attachedFiles}
                     onAddFiles={addFiles}
                     onRemoveFile={removeFile}
@@ -446,7 +449,7 @@ export function ChatView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
           onSend={handleSend}
           onStop={abortStream}
           isStreaming={isStreaming}
-          disabled={demoPreviewMode || !selectedId}
+          disabled={!demoPreviewMode && !selectedId}
           files={attachedFiles}
           onAddFiles={addFiles}
           onRemoveFile={removeFile}

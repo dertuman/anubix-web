@@ -18,16 +18,16 @@ export function LoginPrompt({ isOpen, onClose, message, variant = 'login' }: Log
   const { signIn } = useSignIn();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Close on Escape key
+  // Close on Escape key (only for login variant — subscription is non-dismissible)
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && variant !== 'subscription') {
         onClose();
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, variant]);
 
   const handleGoogleSignIn = async () => {
     if (!signIn) return;
@@ -56,14 +56,14 @@ export function LoginPrompt({ isOpen, onClose, message, variant = 'login' }: Log
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — non-clickable for subscription variant */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
+            onClick={variant !== 'subscription' ? onClose : undefined}
           />
 
           {/* Popup - Mobile bottom sheet, Desktop center modal */}
@@ -76,13 +76,15 @@ export function LoginPrompt({ isOpen, onClose, message, variant = 'login' }: Log
               className="relative w-full max-w-md rounded-t-2xl bg-background p-6 shadow-2xl md:rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close button */}
-              <button
-                onClick={onClose}
-                className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <X className="size-5" />
-              </button>
+              {/* Close button — hidden for subscription variant (non-dismissible) */}
+              {variant !== 'subscription' && (
+                <button
+                  onClick={onClose}
+                  className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-5" />
+                </button>
+              )}
 
               {variant === 'subscription' ? (
                 /* ── Subscription Required Content ──────────────── */
@@ -107,14 +109,6 @@ export function LoginPrompt({ isOpen, onClose, message, variant = 'login' }: Log
                     >
                       <CreditCard className="size-4" />
                       View Plans & Subscribe
-                    </Button>
-                    <Button
-                      onClick={onClose}
-                      variant="outline"
-                      className="w-full"
-                      size="lg"
-                    >
-                      Maybe Later
                     </Button>
                   </div>
 

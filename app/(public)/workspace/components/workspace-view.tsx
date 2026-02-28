@@ -56,13 +56,17 @@ export function WorkspaceView() {
   const userEmail = user?.primaryEmailAddress?.emailAddress;
 
   // ── Check subscription status for logged-in users ──────────
-  const { data: hasActiveSubscription } = useQuery({
-    queryKey: ['subscription-check', userEmail],
+  // Wait for profile to load before checking — admin bypass depends on it.
+  const profileLoaded = profile !== undefined && profile !== null;
+  const isAdmin = !!profile?.is_admin;
+
+  const { data: hasActiveSubscription, isLoading: subscriptionLoading } = useQuery({
+    queryKey: ['subscription-check', userEmail, isAdmin],
     queryFn: async () => {
       if (!userEmail || !supabase) return false;
 
-      // Admins bypass subscription check
-      if (profile?.is_admin) return true;
+      // Admins always bypass subscription check
+      if (isAdmin) return true;
 
       const { data } = await supabase
         .from('subscriptions')
@@ -74,7 +78,8 @@ export function WorkspaceView() {
       if (!data.billing_interval || !['monthly', 'annual'].includes(data.billing_interval)) return false;
       return true;
     },
-    enabled: !!isSignedIn && !!userEmail && !!supabase,
+    // Only run after profile has loaded so we know admin status
+    enabled: !!isSignedIn && !!userEmail && !!supabase && profileLoaded,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -89,35 +94,11 @@ export function WorkspaceView() {
     setLoginPromptOpen(true);
   };
 
-  // Intercept interactions for unauthenticated users
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!isSignedIn && !isDemoMode) {
-      // Add click interceptor to show login when clicking on inputs/buttons
-      const handleInteraction = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        // Check if clicked element is an input, textarea, or button within workspace
-        if (
-          target.closest('textarea') ||
-          target.closest('input') ||
-          (target.closest('button') && !target.closest('[data-allow-anon]'))
-        ) {
-          e.preventDefault();
-          e.stopPropagation();
-          setLoginPromptVariant('login');
-          showLoginPrompt();
-        }
-      };
-
-      document.addEventListener('click', handleInteraction, true);
-      return () => document.removeEventListener('click', handleInteraction, true);
-    }
-  }, [isSignedIn, isLoaded, isDemoMode]);
-
   // Intercept interactions for logged-in users without subscription
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
+    // Wait for both profile and subscription check to finish loading
+    if (subscriptionLoading || !profileLoaded) return;
     // Only intercept if we've confirmed no subscription (not still loading)
     if (hasActiveSubscription !== false) return;
 
@@ -139,7 +120,7 @@ export function WorkspaceView() {
 
     document.addEventListener('click', handleInteraction, true);
     return () => document.removeEventListener('click', handleInteraction, true);
-  }, [isSignedIn, isLoaded, hasActiveSubscription]);
+  }, [isSignedIn, isLoaded, hasActiveSubscription, subscriptionLoading, profileLoaded]);
 
   // Show login prompt after first prompt in demo mode
   useEffect(() => {
