@@ -83,7 +83,7 @@ export function PricingSection() {
                     <Button
                       variant={featured ? 'default' : 'outline'}
                       size="lg"
-                      className="w-full gap-2 font-semibold"
+                      className="w-full gap-2"
                     >
                       {t(`${planKey}.cta` as 'free.cta')}
                       <ArrowRight className="size-4" />

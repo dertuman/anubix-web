@@ -63,7 +63,7 @@ export function MobileHookSection() {
             </div>
             <div className="mt-8">
               <Link href="/workspace">
-                <Button size="lg" className="gap-2 px-8 text-base font-semibold">
+                <Button size="lg" className="gap-2 px-8 text-base">
                   {t('cta')}
                   <Smartphone className="size-4" />
                 </Button>

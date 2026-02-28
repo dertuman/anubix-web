@@ -36,7 +36,7 @@ export function StickyMobileCta() {
         <Link href="/workspace" className="block">
           <Button
             size="lg"
-            className="w-full gap-2 font-semibold"
+            className="w-full gap-2"
           >
             Start building
             <ArrowRight className="size-4" />

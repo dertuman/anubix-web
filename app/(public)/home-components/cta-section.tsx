@@ -26,7 +26,7 @@ export function CtaSection() {
               <Link href="/workspace">
                 <Button
                   size="lg"
-                  className="gap-2 px-8 text-base font-semibold"
+                  className="gap-2 px-8 text-base"
                 >
                   {t('button')}
                   <ArrowRight className="size-4" />

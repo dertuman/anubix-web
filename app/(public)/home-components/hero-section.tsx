@@ -63,7 +63,7 @@ export function HeroSection() {
           <Link href="/workspace" className="w-full sm:w-auto">
             <Button
               size="lg"
-              className="w-full gap-2 px-8 text-base font-semibold sm:w-auto"
+              className="w-full gap-2 px-8 text-base sm:w-auto"
             >
               {t('cta')}
               <ArrowRight className="size-4" />
