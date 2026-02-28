@@ -6,7 +6,7 @@ import { SiteFooter } from '@/components/site-footer';
 
 export function ConditionalFooter() {
   const pathname = usePathname();
-  const footerHiddenPaths: string[] = ['/code', '/chat', '/workspace'];
+  const footerHiddenPaths: string[] = ['/workspace'];
 
   if (footerHiddenPaths.some((path) => pathname.includes(path))) {
     return null;

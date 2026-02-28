@@ -6,7 +6,7 @@ import { SiteHeader } from '@/components/site-header';
 
 export function ConditionalHeader() {
   const pathname = usePathname();
-  const headerHiddenPaths: string[] = ['/code', '/workspace'];
+  const headerHiddenPaths: string[] = ['/workspace'];
 
   if (headerHiddenPaths.some((path) => pathname.includes(path))) {
     return null;

@@ -113,7 +113,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
         variant: 'destructive'
       });
       // Clean URL
-      window.history.replaceState({}, '', '/code');
+      window.history.replaceState({}, '', '/workspace?mode=code');
     }
   }, []);
 
