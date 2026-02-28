@@ -23,101 +23,111 @@ export function DemoPreviewOverlay() {
 
   return (
     <>
-      {/* Preview badge at top */}
+      {/* Preview badge — sits below the header bar (h-14 = 56px on code, h-12 = 48px on chat)
+          Using top-[60px] to clear both. pointer-events-none so it doesn't block the header. */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="absolute left-1/2 top-4 z-50 -translate-x-1/2"
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="pointer-events-none absolute inset-x-0 top-[60px] z-50 flex justify-center"
       >
-        <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-4 py-1.5 shadow-lg backdrop-blur-md">
-          <Eye className="size-3.5 text-primary" />
-          <span className="text-xs font-medium text-muted-foreground">
+        <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-background/90 px-3 py-1 shadow-md backdrop-blur-md">
+          <Eye className="size-3 text-primary" />
+          <span className="text-[11px] font-medium text-muted-foreground">
             Preview Mode
           </span>
         </div>
       </motion.div>
 
-      {/* Bottom gradient overlay with CTA */}
+      {/* Bottom CTA — uses a short gradient fade into a solid bg section
+          so the CTA never overlaps with readable content. */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="absolute inset-x-0 bottom-0 z-40 flex items-end justify-center pb-8 pt-32"
-        style={{
-          background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 40%, hsl(var(--background) / 0.8) 60%, transparent 100%)',
-        }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="absolute inset-x-0 bottom-0 z-40"
       >
-        <div className="flex flex-col items-center gap-4 px-4">
-          {/* Main CTA */}
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="flex flex-col items-center gap-3"
-          >
-            <h3 className="text-center text-xl font-semibold tracking-tight sm:text-2xl">
-              Ready to build with Claude?
-            </h3>
-            <p className="max-w-md text-center text-sm text-muted-foreground">
-              Get instant access to Claude Code with your own cloud environment.
-              Start coding in seconds.
-            </p>
-          </motion.div>
+        {/* Gradient fade from transparent → solid */}
+        <div
+          className="h-16 sm:h-20"
+          style={{
+            background:
+              'linear-gradient(to bottom, transparent 0%, hsl(var(--background)) 100%)',
+          }}
+        />
 
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Button
-              onClick={handleCTAClick}
-              size="lg"
-              className="group relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 px-8 text-base font-semibold shadow-xl transition-all hover:shadow-2xl hover:shadow-primary/20"
+        {/* Solid background section with CTA content */}
+        <div className="bg-background px-4 pb-5 pt-1 sm:pb-8 sm:pt-2">
+          <div className="mx-auto flex max-w-md flex-col items-center gap-2.5 sm:gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="text-center"
             >
-              {/* Shine effect */}
-              <motion.div
-                className="absolute inset-0 -left-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                animate={{
-                  left: ['100%', '-100%'],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 3,
-                  ease: 'linear',
-                }}
-              />
-              <Sparkles className="mr-2 size-5" />
-              Start Building with Claude
-            </Button>
-          </motion.div>
+              <h3 className="text-base font-semibold tracking-tight sm:text-xl">
+                Ready to build with Claude?
+              </h3>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground sm:mt-1 sm:text-sm">
+                Get instant access with your own cloud environment.
+              </p>
+            </motion.div>
 
-          {/* Feature highlights */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
-          >
-            <div className="flex items-center gap-1.5">
-              <div className="size-1 rounded-full bg-emerald-500" />
-              <span>Instant setup</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="size-1 rounded-full bg-emerald-500" />
-              <span>Cloud environment</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="size-1 rounded-full bg-emerald-500" />
-              <span>Full workspace access</span>
-            </div>
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
+            >
+              <Button
+                onClick={handleCTAClick}
+                size="lg"
+                className="group relative h-10 overflow-hidden bg-gradient-to-r from-primary to-primary/80 px-6 text-sm font-semibold shadow-lg transition-all hover:shadow-xl hover:shadow-primary/20 sm:h-11 sm:px-8 sm:text-base"
+              >
+                {/* Shine effect */}
+                <motion.div
+                  className="absolute inset-0 -left-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={{
+                    left: ['100%', '-100%'],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 3,
+                    ease: 'linear',
+                  }}
+                />
+                <Sparkles className="mr-1.5 size-4 sm:mr-2 sm:size-5" />
+                Start Building with Claude
+              </Button>
+            </motion.div>
+
+            {/* Feature highlights */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.7 }}
+              className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground sm:gap-x-4 sm:text-xs"
+            >
+              <div className="flex items-center gap-1">
+                <div className="size-1 rounded-full bg-emerald-500" />
+                <span>Instant setup</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="size-1 rounded-full bg-emerald-500" />
+                <span>Cloud environment</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="size-1 rounded-full bg-emerald-500" />
+                <span>Full workspace access</span>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Click shield - prevents interaction with workspace */}
-      <div className="absolute inset-0 z-30 cursor-not-allowed" />
+      {/* Click shield — blocks interaction with the workspace content.
+          z-30 so it sits below the CTA (z-40), keeping the button clickable. */}
+      <div className="absolute inset-0 z-30" />
 
       {/* Login prompt dialog */}
       <LoginPrompt
