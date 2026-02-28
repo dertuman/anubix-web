@@ -37,11 +37,12 @@ export default function LocaleSwitcher() {
 
   const updateLocaleMutation = useMutation({
     mutationFn: async (locale: string) => {
-      if (user && supabase) {
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (userEmail && supabase) {
         await supabase
           .from('profiles')
           .update({ language: locale })
-          .eq('id', user.id);
+          .eq('email', userEmail);
       }
       return locale;
     },

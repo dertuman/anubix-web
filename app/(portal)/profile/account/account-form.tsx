@@ -76,13 +76,14 @@ export function AccountForm() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: AccountFormValues) => {
-      if (!user) throw new Error('Not authenticated');
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (!userEmail) throw new Error('Not authenticated');
       if (!supabase) throw new Error('Database not configured');
 
       await supabase
         .from('profiles')
         .update({ language: data.language })
-        .eq('id', user.id);
+        .eq('email', userEmail);
     },
     onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['userData'] });

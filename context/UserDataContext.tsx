@@ -44,7 +44,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.warn('[UserDataContext] Error fetching profile:', error);
-        return null;
+        // Throw so react-query triggers a retry — the Clerk webhook may
+        // not have created the profile row yet (race condition on sign-up).
+        throw new Error('Profile not found');
       }
 
       console.log('[UserDataContext] Profile fetched:', { email: data?.email, isAdmin: data?.is_admin });
@@ -52,6 +54,11 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     },
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
     enabled: !!isSignedIn && !!userEmail && !!supabase,
+    // Retry with back-off when profile is missing — handles the race
+    // condition where the user is redirected after sign-up before the
+    // Clerk webhook has created their profile row in Supabase.
+    retry: (failureCount) => !!isSignedIn && failureCount < 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
   const refreshUserData = () => {

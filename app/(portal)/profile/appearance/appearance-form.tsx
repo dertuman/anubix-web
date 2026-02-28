@@ -58,13 +58,14 @@ export function AppearanceForm() {
 
   const updateAppearanceMutation = useMutation({
     mutationFn: async (data: AppearanceFormValues) => {
-      if (!user) throw new Error('Not authenticated');
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (!userEmail) throw new Error('Not authenticated');
       if (!supabase) throw new Error('Database not configured');
 
       await supabase
         .from('profiles')
         .update({ font: 'inter', theme: data.theme })
-        .eq('id', user.id);
+        .eq('email', userEmail);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userData'] });

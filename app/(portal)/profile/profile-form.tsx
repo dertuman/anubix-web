@@ -125,15 +125,16 @@ export function ProfileForm() {
         });
       }
 
-      // Update bio/dob via Supabase
-      if (supabase) {
+      // Update bio/dob via Supabase (use email to match the email-based RLS policies)
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (supabase && userEmail) {
         await supabase
           .from('profiles')
           .update({
             bio: data.bio,
             dob: data.dob.toISOString().split('T')[0],
           })
-          .eq('id', user!.id);
+          .eq('email', userEmail);
       }
     },
     onSuccess: () => {

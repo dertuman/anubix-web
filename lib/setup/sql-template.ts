@@ -11,7 +11,7 @@ export const PROFILES_TABLE_SQL = `-- ==========================================
 -- 1. Create the profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id TEXT PRIMARY KEY,
-  email TEXT NOT NULL DEFAULT '',
+  email TEXT UNIQUE NOT NULL DEFAULT '',
   name TEXT NOT NULL DEFAULT '',
   bio TEXT DEFAULT '' NOT NULL,
   dob DATE,
