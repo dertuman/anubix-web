@@ -1,6 +1,8 @@
 'use client';
 
 import { memo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
 import {
   Check,
@@ -167,7 +169,11 @@ export const CodeSidebar = memo(function CodeSidebar({
   const sidebarContent = (
     <>
       <div className="flex flex-col gap-2 p-3">
-        {/* Mode toggle - only show in workspace */}
+        {/* Logo home link + mode toggle */}
+        <Link href="/" className="flex items-center gap-2 px-1 py-0.5">
+          <Image src="/logo.webp" alt="Anubix" width={22} height={22} />
+          <span className="text-sm font-medium tracking-tight text-foreground">Anubix</span>
+        </Link>
         {modeToggle && <div className="w-full">{modeToggle}</div>}
 
         <div className="flex items-center gap-1.5">
