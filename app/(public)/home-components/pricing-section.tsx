@@ -24,17 +24,16 @@ const PLANS = [
   {
     key: 'code',
     name: 'Code',
-    tagline: '\u20AC10',
+    tagline: '\u20AC10/mo',
     description: 'Unlock your cloud dev environment.',
     features: [
       'Full cloud VPS with agents, terminal, and file system',
       'Access from any device',
       'One-click deploy to Vercel and GitHub',
       'Bring your own API key (Claude, OpenAI, etc.)',
-      'Top up credits as you go via OpenRouter',
-      'No monthly subscription. Pay once, start building.',
+      'No lock-in. Cancel anytime.',
     ],
-    cta: 'Unlock Code - \u20AC10',
+    cta: 'Unlock Code - \u20AC10/mo',
     href: '/workspace?mode=code',
     featured: true,
   },
@@ -67,7 +66,7 @@ export function PricingSection() {
             Pricing
           </p>
           <h2 className="mt-3 text-3xl tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            Pay for what you use. No subscriptions. No surprises.
+            Simple pricing. No surprises.
           </h2>
         </div>
 

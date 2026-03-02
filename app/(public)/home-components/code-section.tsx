@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Cloud, Eye, Cpu, Rocket, FolderTree, Terminal, Key } from 'lucide-react';
+import { ArrowRight, Cloud, Eye, Cpu, Rocket, Terminal, Key } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -26,12 +26,7 @@ const FEATURES = [
     title: 'One-click deploy',
     description: 'Push to Vercel, push to GitHub, ship from your phone.',
   },
-  {
-    icon: FolderTree,
-    title: 'Multi-file awareness',
-    description: 'The agent understands your whole project, not just one file.',
-  },
-  {
+{
     icon: Terminal,
     title: 'Terminal access',
     description: 'Real terminal commands, dependency management, debugging.',
@@ -83,7 +78,7 @@ export function CodeSection() {
         <div className="mx-auto mt-12 max-w-3xl">
           <Link href="/workspace?mode=code">
             <Button size="lg" className="gap-2">
-              Start building - &euro;10
+              Start building - &euro;10/mo
               <ArrowRight className="size-4" />
             </Button>
           </Link>

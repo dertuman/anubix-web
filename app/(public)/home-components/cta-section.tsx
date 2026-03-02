@@ -28,7 +28,7 @@ export function CtaSection() {
               </Link>
               <Link href="/workspace?mode=code">
                 <Button size="lg" className="gap-2">
-                  Unlock Code - &euro;10
+                  Unlock Code - &euro;10/mo
                   <ArrowRight className="size-4" />
                 </Button>
               </Link>

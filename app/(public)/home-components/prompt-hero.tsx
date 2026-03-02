@@ -190,7 +190,7 @@ export function PromptHero() {
               <ArrowRight className="size-3" />
             </Link>
             <p className="text-xs text-muted-foreground/60">
-              Chat free. Code from &euro;10. You own everything you build.
+              Chat free. Code from &euro;10/mo. You own everything you build.
             </p>
           </div>
         </div>

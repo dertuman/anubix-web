@@ -17,7 +17,7 @@ export function WhatIsAnubixSection() {
           <div className="mt-8 space-y-5 text-base leading-relaxed text-muted-foreground">
             <p>
               The same agents, terminal, and file system that power tools like Cursor and Claude
-              Code — running in the cloud so it works on every device. No installs. No local
+              Code. Running in the cloud so it works on every device. No installs. No local
               environment. Just open a browser and build.
             </p>
             <p>
