@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { ArrowRight, Menu, Info, LayoutDashboard, CreditCard, LogIn } from 'lucide-react';
+
+const Dithering = lazy(() =>
+  import('@paper-design/shaders-react').then((mod) => ({ default: mod.Dithering }))
+);
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,6 +20,7 @@ import { Button } from '@/components/ui/button';
 export function PromptHero() {
   const [prompt, setPrompt] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
@@ -44,7 +49,26 @@ export function PromptHero() {
   };
 
   return (
-    <section className="relative flex min-h-svh flex-col">
+    <section
+      className="relative flex min-h-svh flex-col"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Dithering shader background */}
+      <Suspense fallback={null}>
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-30 dark:opacity-20 mix-blend-multiply dark:mix-blend-screen">
+          <Dithering
+            colorBack="#00000000"
+            colorFront="#2A9D6E"
+            shape="warp"
+            type="4x4"
+            speed={isHovered ? 0.5 : 0.15}
+            className="size-full"
+            minPixelRatio={1}
+          />
+        </div>
+      </Suspense>
+
       {/* Mini nav */}
       <nav className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
