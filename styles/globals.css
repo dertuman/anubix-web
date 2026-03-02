@@ -2,14 +2,14 @@
 @import 'tw-animate-css';
 
 :root {
-  /* ─── Core (light) ─── */
-  --background: hsl(0 0% 97%);
+  /* ─── Core (light — #faf8f5 warm off-white) ─── */
+  --background: hsl(36 33% 97%);
   --foreground: hsl(0 0% 10%);
 
   /* ─── Card / Popover ─── */
-  --card: hsl(0 0% 100%);
+  --card: hsl(36 33% 97%);
   --card-foreground: hsl(0 0% 10%);
-  --popover: hsl(0 0% 100%);
+  --popover: hsl(36 33% 97%);
   --popover-foreground: hsl(0 0% 10%);
 
   /* ─── Brand (emerald) ─── */
@@ -462,6 +462,51 @@
   animation: recording-pulse 1.6s ease-in-out infinite;
   will-change: transform, opacity;
 }
+
+/* ─── Prompt Box Border Glow ─── */
+
+@keyframes prompt-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.prompt-box-glow {
+  position: relative;
+}
+
+.prompt-box-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--primary) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.4;
+  animation: prompt-glow 4s ease-in-out infinite;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.prompt-box-glow:focus-within::before {
+  opacity: 1;
+  animation: none;
+}
+
+/* End Prompt Box Border Glow */
 
 /* Indeterminate progress bar */
 @keyframes indeterminate {

@@ -157,7 +157,7 @@ export function PromptHero() {
 
           {/* Prompt box */}
           <div className="relative mx-auto w-full max-w-xl">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-primary/5 transition-all focus-within:border-primary/40 focus-within:shadow-primary/10">
+            <div className="prompt-box-glow overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-primary/5 transition-all focus-within:border-primary/40 focus-within:shadow-primary/10">
               <textarea
                 ref={textareaRef}
                 value={prompt}
