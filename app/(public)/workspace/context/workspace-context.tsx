@@ -14,6 +14,8 @@ interface WorkspaceContextValue {
   demoPromptCount: number;
   incrementDemoPromptCount: () => void;
   resetDemoPromptCount: () => void;
+  pendingPrompt: string | null;
+  clearPendingPrompt: () => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
@@ -29,6 +31,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   // Demo prompt tracking
   const [demoPromptCount, setDemoPromptCount] = useState(0);
+
+  // Pending prompt from homepage
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   // Unauthenticated users always see demo preview with mock data.
   // While Clerk is loading, default to false to avoid a flash of demo for auth users.
@@ -58,6 +63,27 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [searchParams]);
 
+  // Check for pending prompt from homepage (URL param or sessionStorage)
+  useEffect(() => {
+    const urlPrompt = searchParams.get('prompt');
+    if (urlPrompt) {
+      setPendingPrompt(urlPrompt);
+      // Clean URL without losing other params
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('prompt');
+      router.replace(`/workspace?${params.toString()}`, { scroll: false });
+      return;
+    }
+
+    const stored = sessionStorage.getItem('anubix_pending_prompt');
+    if (stored) {
+      setPendingPrompt(stored);
+      sessionStorage.removeItem('anubix_pending_prompt');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const clearPendingPrompt = () => setPendingPrompt(null);
+
   return (
     <WorkspaceContext.Provider value={{
       mode,
@@ -66,7 +92,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       isDemoPreview,
       demoPromptCount,
       incrementDemoPromptCount,
-      resetDemoPromptCount
+      resetDemoPromptCount,
+      pendingPrompt,
+      clearPendingPrompt
     }}>
       {children}
     </WorkspaceContext.Provider>

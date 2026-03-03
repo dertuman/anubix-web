@@ -2,21 +2,21 @@
 @import 'tw-animate-css';
 
 :root {
-  /* ─── Core (light) ─── */
-  --background: hsl(0 0% 97%);
+  /* ─── Core (light — #faf8f5 warm off-white) ─── */
+  --background: hsl(36 33% 97%);
   --foreground: hsl(0 0% 10%);
 
   /* ─── Card / Popover ─── */
-  --card: hsl(0 0% 100%);
+  --card: hsl(36 33% 97%);
   --card-foreground: hsl(0 0% 10%);
-  --popover: hsl(0 0% 100%);
+  --popover: hsl(36 33% 97%);
   --popover-foreground: hsl(0 0% 10%);
 
   /* ─── Brand (emerald) ─── */
   /* --primary: hsl(12, 100%, 60%); */
-  --primary: hsl(160 84% 39%);
+  --primary: hsl(160 60% 42%);
   --primary-foreground: hsl(0 0% 100%);
-  --primary-muted: hsl(160 84% 39% / 0.12);
+  --primary-muted: hsl(160 60% 42% / 0.12);
 
   /* ─── Secondary / Muted / Accent ─── */
   --secondary: hsl(0 0% 93%);
@@ -41,7 +41,7 @@
   /* ─── Form / Input ─── */
   --border: hsl(0 0% 82%);
   --input: hsl(0 0% 82%);
-  --ring: hsl(160 84% 39%);
+  --ring: hsl(160 60% 42%);
   --radius: 0.625rem;
 
   /* ─── Code / Mono ─── */
@@ -69,21 +69,21 @@
 }
 
 .dark {
-  /* ─── Core (zinc dark) ─── */
-  --background: hsl(240 10% 3.9%);
+  /* ─── Core (#121212) ─── */
+  --background: hsl(0 0% 7%);
   --foreground: hsl(0 0% 98%);
 
   /* ─── Card / Popover ─── */
-  --card: hsl(240 10% 3.9%);
+  --card: hsl(0 0% 7%);
   --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(240 10% 3.9%);
+  --popover: hsl(0 0% 7%);
   --popover-foreground: hsl(0 0% 98%);
 
   /* ─── Brand (emerald) ─── */
   /* --primary: hsl(12, 100%, 60%); */
-  --primary: hsl(160 84% 39%);
+  --primary: hsl(160 55% 44%);
   --primary-foreground: hsl(0 0% 98%);
-  --primary-muted: hsl(160 84% 39% / 0.15);
+  --primary-muted: hsl(160 55% 44% / 0.15);
 
   /* ─── Secondary / Muted / Accent (zinc) ─── */
   --secondary: hsl(240 3.7% 15.9%);
@@ -108,7 +108,7 @@
   /* ─── Form / Input ─── */
   --border: hsl(240 3.7% 15.9%);
   --input: hsl(240 3.7% 15.9%);
-  --ring: hsl(160 84% 39%);
+  --ring: hsl(160 55% 44%);
   --radius: 0.625rem;
 
   /* ─── Code / Mono ─── */
@@ -123,9 +123,9 @@
   --tabs-foreground: hsl(240 5% 64.9%);
 
   /* ─── User Chat Bubble (original green) ─── */
-  --user-bubble: hsl(160 84% 39% / 0.15);
+  --user-bubble: hsl(160 55% 44% / 0.15);
   --user-bubble-foreground: hsl(0 0% 98%);
-  --user-bubble-ring: hsl(160 84% 39% / 0.20);
+  --user-bubble-ring: hsl(160 55% 44% / 0.20);
 
   /* ─── Extended Palette ─── */
   --orange-custom: hsl(352 73% 61%);
@@ -204,7 +204,7 @@
       'calt' 1;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 500;
+    font-weight: 400;
   }
   html {
     @apply scroll-smooth;
@@ -462,6 +462,51 @@
   animation: recording-pulse 1.6s ease-in-out infinite;
   will-change: transform, opacity;
 }
+
+/* ─── Prompt Box Border Glow ─── */
+
+@keyframes prompt-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.prompt-box-glow {
+  position: relative;
+}
+
+.prompt-box-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--primary) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.4;
+  animation: prompt-glow 4s ease-in-out infinite;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.prompt-box-glow:focus-within::before {
+  opacity: 1;
+  animation: none;
+}
+
+/* End Prompt Box Border Glow */
 
 /* Indeterminate progress bar */
 @keyframes indeterminate {

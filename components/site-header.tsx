@@ -7,9 +7,11 @@ import { useUserData } from '@/context/UserDataContext';
 import { useScopedI18n } from '@/locales/client';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import {
-  Blocks,
-  Info,
+  Code,
   LogIn,
+  MessageSquare,
+  CreditCard,
+  BookOpen,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -23,8 +25,10 @@ import { ThemeToggle } from './theme-toggle';
 import { Button, buttonVariants } from './ui/button';
 
 const NAV_ICONS: Record<string, React.ReactNode> = {
-  '/about': <Info className="size-4" />,
-  '/workspace': <Blocks className="size-4" />,
+  '/workspace?mode=code': <Code className="size-4" />,
+  '/workspace?mode=chat': <MessageSquare className="size-4" />,
+  '/#pricing': <CreditCard className="size-4" />,
+  '/docs': <BookOpen className="size-4" />,
   '/admin/users': <ShieldCheck className="size-4" />,
 };
 
@@ -36,14 +40,26 @@ export function SiteHeader() {
     description: t('description'),
     mainNav: [
       {
-        title: t('about'),
-        href: '/about',
+        title: 'Code',
+        href: '/workspace?mode=code',
         isPublic: true,
         comingSoon: false,
       },
       {
-        title: 'Workspace',
-        href: '/workspace',
+        title: 'Chat',
+        href: '/workspace?mode=chat',
+        isPublic: true,
+        comingSoon: false,
+      },
+      {
+        title: 'Pricing',
+        href: '/#pricing',
+        isPublic: true,
+        comingSoon: false,
+      },
+      {
+        title: 'Docs',
+        href: '/docs',
         isPublic: true,
         comingSoon: false,
       },

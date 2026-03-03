@@ -8,7 +8,7 @@ export function ConditionalHeader() {
   const pathname = usePathname();
   const headerHiddenPaths: string[] = ['/workspace'];
 
-  if (headerHiddenPaths.some((path) => pathname.includes(path))) {
+  if (pathname === '/' || headerHiddenPaths.some((path) => pathname.includes(path))) {
     return null;
   }
 

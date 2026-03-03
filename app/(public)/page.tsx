@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { HeroSection } from './home-components/hero-section';
-import { ScreenshotShowcase } from './home-components/screenshot-showcase';
-import { MobileHookSection } from './home-components/mobile-hook-section';
-import { MultiModelSection } from './home-components/multi-model-section';
-import { DifferentiatorSection } from './home-components/differentiator-section';
-import { ComparisonSection } from './home-components/comparison-section';
-import { SocialProofSection } from './home-components/social-proof-section';
+import { PromptHero } from './home-components/prompt-hero';
+import { WhatIsAnubixSection } from './home-components/what-is-anubix-section';
+import { CodeSection } from './home-components/code-section';
+import { ChatSection } from './home-components/chat-section';
+import { UnderTheHoodSection } from './home-components/under-the-hood-section';
+import { AnyDeviceSection } from './home-components/any-device-section';
+import { ProofSection } from './home-components/proof-section';
 import { PricingSection } from './home-components/pricing-section';
 import { FaqSection } from './home-components/faq-section';
 import { CtaSection } from './home-components/cta-section';
@@ -15,13 +15,13 @@ import { StickyMobileCta } from './home-components/sticky-mobile-cta';
 export default function HomePage() {
   return (
     <main className="w-full">
-      <HeroSection />
-      <ScreenshotShowcase />
-      <MobileHookSection />
-      <MultiModelSection />
-      <DifferentiatorSection />
-      <ComparisonSection />
-      <SocialProofSection />
+      <PromptHero />
+      <WhatIsAnubixSection />
+      <CodeSection />
+      <ChatSection />
+      <UnderTheHoodSection />
+      <AnyDeviceSection />
+      <ProofSection />
       <PricingSection />
       <FaqSection />
       <CtaSection />

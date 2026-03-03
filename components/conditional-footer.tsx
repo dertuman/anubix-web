@@ -8,7 +8,7 @@ export function ConditionalFooter() {
   const pathname = usePathname();
   const footerHiddenPaths: string[] = ['/workspace'];
 
-  if (footerHiddenPaths.some((path) => pathname.includes(path))) {
+  if (pathname === '/' || footerHiddenPaths.some((path) => pathname.includes(path))) {
     return null;
   }
 
