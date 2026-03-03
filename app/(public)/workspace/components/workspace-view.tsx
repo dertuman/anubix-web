@@ -1,36 +1,51 @@
 'use client';
 
-import { lazy, Suspense, useState, useEffect, createContext, useContext } from 'react';
-import { useAuth, useUser } from '@clerk/nextjs';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { useClerkSupabaseClient } from '@/lib/supabase/client';
-import { useWorkspace } from '../context/workspace-context';
-import { useEnvironmentDialog } from '../context/environment-dialog-context';
-import { useClaudeCodeContext } from '../context/claude-code-context';
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { useUserData } from '@/context/UserDataContext';
-import { LoginPrompt } from './login-prompt';
+import { useAuth, useClerk, useUser } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+
+import { useClerkSupabaseClient } from '@/lib/supabase/client';
+
+import { useClaudeCodeContext } from '../context/claude-code-context';
+import { useEnvironmentDialog } from '../context/environment-dialog-context';
+import { useWorkspace } from '../context/workspace-context';
 import { EnvironmentDialog } from './environment-dialog';
+import { LoginPrompt } from './login-prompt';
 
 // Lazy load the heavy mode-specific components with workspace wrappers
-const ChatViewWrapper = lazy(() => import('./chat-view-wrapper').then(m => ({ default: m.ChatViewWrapper })));
-const CodeViewWrapper = lazy(() => import('./code-view-wrapper').then(m => ({ default: m.CodeViewWrapper })));
+const ChatViewWrapper = lazy(() =>
+  import('./chat-view-wrapper').then((m) => ({ default: m.ChatViewWrapper }))
+);
+const CodeViewWrapper = lazy(() =>
+  import('./code-view-wrapper').then((m) => ({ default: m.CodeViewWrapper }))
+);
 
 function MessageListSkeleton() {
   return (
     <div className="flex h-full items-center justify-center">
-      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <Loader2 className="text-muted-foreground size-6 animate-spin" />
     </div>
   );
 }
 
 // Context to trigger login prompt from child components
 interface LoginPromptContextValue {
-  showLoginPrompt: (_message?: string) => void;
+  showLoginPrompt: () => void;
 }
 
-const LoginPromptContext = createContext<LoginPromptContextValue | undefined>(undefined);
+const LoginPromptContext = createContext<LoginPromptContextValue | undefined>(
+  undefined
+);
 
 export function useLoginPrompt() {
   const context = useContext(LoginPromptContext);
@@ -44,13 +59,15 @@ export function WorkspaceView() {
   const { mode, isDemoMode, demoPromptCount } = useWorkspace();
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
+  const clerk = useClerk();
   const { profile } = useUserData();
   const supabase = useClerkSupabaseClient();
 
-  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
-  const [loginPromptMessage, setLoginPromptMessage] = useState<string>();
-  const [loginPromptVariant, setLoginPromptVariant] = useState<'login' | 'subscription'>('login');
-  const { isOpen: isEnvironmentDialogOpen, hideEnvironmentDialog } = useEnvironmentDialog();
+  const [subscriptionPromptOpen, setSubscriptionPromptOpen] = useState(false);
+  const [subscriptionPromptMessage, setSubscriptionPromptMessage] =
+    useState<string>();
+  const { isOpen: isEnvironmentDialogOpen, hideEnvironmentDialog } =
+    useEnvironmentDialog();
   const { status, connect, connectionError } = useClaudeCodeContext();
 
   const userEmail = user?.primaryEmailAddress?.emailAddress;
@@ -60,38 +77,41 @@ export function WorkspaceView() {
   const profileLoaded = profile !== undefined && profile !== null;
   const isAdmin = !!profile?.is_admin;
 
-  const { data: hasActiveSubscription, isLoading: subscriptionLoading } = useQuery({
-    queryKey: ['subscription-check', userEmail, isAdmin],
-    queryFn: async () => {
-      if (!userEmail || !supabase) return false;
+  const { data: hasActiveSubscription, isLoading: subscriptionLoading } =
+    useQuery({
+      queryKey: ['subscription-check', userEmail, isAdmin],
+      queryFn: async () => {
+        if (!userEmail || !supabase) return false;
 
-      // Admins always bypass subscription check
-      if (isAdmin) return true;
+        // Admins always bypass subscription check
+        if (isAdmin) return true;
 
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('is_active, billing_interval')
-        .eq('email', userEmail)
-        .single();
+        const { data } = await supabase
+          .from('subscriptions')
+          .select('is_active, billing_interval')
+          .eq('email', userEmail)
+          .single();
 
-      if (!data || !data.is_active) return false;
-      if (!data.billing_interval || !['monthly', 'annual'].includes(data.billing_interval)) return false;
-      return true;
-    },
-    // Only run after profile has loaded so we know admin status
-    enabled: !!isSignedIn && !!userEmail && !!supabase && profileLoaded,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+        if (!data || !data.is_active) return false;
+        if (
+          !data.billing_interval ||
+          !['monthly', 'annual'].includes(data.billing_interval)
+        )
+          return false;
+        return true;
+      },
+      // Only run after profile has loaded so we know admin status
+      enabled: !!isSignedIn && !!userEmail && !!supabase && profileLoaded,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    });
 
-  const showLoginPrompt = (message?: string) => {
-    setLoginPromptMessage(message);
-    setLoginPromptOpen(true);
+  const showLoginPrompt = () => {
+    clerk.openSignIn({ forceRedirectUrl: '/workspace' });
   };
 
   const showSubscriptionPrompt = (message?: string) => {
-    setLoginPromptVariant('subscription');
-    setLoginPromptMessage(message);
-    setLoginPromptOpen(true);
+    setSubscriptionPromptMessage(message);
+    setSubscriptionPromptOpen(true);
   };
 
   // Intercept interactions for logged-in users without subscription
@@ -120,14 +140,20 @@ export function WorkspaceView() {
 
     document.addEventListener('click', handleInteraction, true);
     return () => document.removeEventListener('click', handleInteraction, true);
-  }, [isSignedIn, isLoaded, hasActiveSubscription, subscriptionLoading, profileLoaded]);
+  }, [
+    isSignedIn,
+    isLoaded,
+    hasActiveSubscription,
+    subscriptionLoading,
+    profileLoaded,
+  ]);
 
   // Show login prompt after first prompt in demo mode
   useEffect(() => {
     if (!isSignedIn && isDemoMode && demoPromptCount >= 1) {
-      setLoginPromptVariant('login');
-      showLoginPrompt('Sign in to continue using the workspace and send more prompts');
+      clerk.openSignIn({ forceRedirectUrl: '/workspace' });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, isDemoMode, demoPromptCount]);
 
   return (
@@ -164,12 +190,11 @@ export function WorkspaceView() {
           )}
         </AnimatePresence>
 
-        {/* Login/subscription prompt */}
+        {/* Subscription prompt */}
         <LoginPrompt
-          isOpen={loginPromptOpen}
-          onClose={() => setLoginPromptOpen(false)}
-          message={loginPromptMessage}
-          variant={loginPromptVariant}
+          isOpen={subscriptionPromptOpen}
+          onClose={() => setSubscriptionPromptOpen(false)}
+          message={subscriptionPromptMessage}
         />
 
         {/* Environment connection dialog for code mode */}
