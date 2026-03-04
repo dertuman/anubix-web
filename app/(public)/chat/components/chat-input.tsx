@@ -344,6 +344,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 className="max-h-[200px] min-h-12 resize-none overflow-y-auto rounded-xl border-border/30 bg-muted/50 py-3 pl-11 pr-3 text-base scrollbar-none md:text-sm focus-visible:ring-1"
                 rows={1}
                 disabled={disabled || isStreaming}
+                autoFocus
               />
               <div className="absolute bottom-2 left-2">
                 <Button variant="ghost" size="icon" onClick={() => { if (guardNoKeys()) return; fileInputRef.current?.click(); }} disabled={disabled || isStreaming} className="size-8 rounded-lg text-muted-foreground hover:text-primary">
