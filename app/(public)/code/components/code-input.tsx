@@ -416,6 +416,7 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
                 )}
                 rows={1}
                 disabled={disabled}
+                autoFocus
               />
               <div className="absolute bottom-2 left-2">
                 <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={disabled} className="size-8 rounded-lg text-muted-foreground hover:text-primary">
