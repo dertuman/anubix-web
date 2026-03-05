@@ -455,16 +455,9 @@ export const CodeSidebar = memo(function CodeSidebar({
                       <p className="text-[10px] text-muted-foreground">
                         Authorize in the tab, then paste the code here.
                       </p>
-                      <Input
-                        value={reauthCode}
-                        onChange={(e) => setReauthCode(e.target.value)}
-                        placeholder="Paste code here..."
-                        className="h-8 font-mono text-xs"
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        onClick={async () => {
+                      <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (reauthSaving || reauthCode.trim().length === 0) return;
                           setReauthSaving(true);
                           setReauthError(null);
                           try {
@@ -484,13 +477,24 @@ export const CodeSidebar = memo(function CodeSidebar({
                           } finally {
                             setReauthSaving(false);
                           }
-                        }}
-                        disabled={reauthSaving || reauthCode.trim().length === 0}
-                        className="w-full gap-1 text-xs"
-                      >
-                        {reauthSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
-                        {reauthSaving ? 'Connecting...' : 'Connect & Push'}
-                      </Button>
+                        }}>
+                        <Input
+                          value={reauthCode}
+                          onChange={(e) => setReauthCode(e.target.value)}
+                          placeholder="Paste code here..."
+                          className="h-8 font-mono text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={reauthSaving || reauthCode.trim().length === 0}
+                          className="mt-2 w-full gap-1 text-xs"
+                        >
+                          {reauthSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                          {reauthSaving ? 'Connecting...' : 'Connect & Push'}
+                        </Button>
+                      </form>
                       <button
                         onClick={() => { setReauthStep('idle'); setReauthCode(''); setReauthError(null); }}
                         className="w-full text-center text-[10px] text-muted-foreground hover:text-foreground"
