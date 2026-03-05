@@ -106,7 +106,7 @@ export function WorkspaceView() {
     });
 
   const showLoginPrompt = () => {
-    clerk.openSignIn({ forceRedirectUrl: '/workspace' });
+    clerk.openSignIn({ forceRedirectUrl: '/workspace', signUpForceRedirectUrl: '/workspace' });
   };
 
   const showSubscriptionPrompt = (message?: string) => {
@@ -151,7 +151,7 @@ export function WorkspaceView() {
   // Show login prompt after first prompt in demo mode
   useEffect(() => {
     if (!isSignedIn && isDemoMode && demoPromptCount >= 1) {
-      clerk.openSignIn({ forceRedirectUrl: '/workspace' });
+      clerk.openSignIn({ forceRedirectUrl: '/workspace', signUpForceRedirectUrl: '/workspace' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, isDemoMode, demoPromptCount]);

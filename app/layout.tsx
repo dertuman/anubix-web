@@ -60,7 +60,7 @@ async function ConfiguredBody({
   const { ThemeColorMeta } = await import('@/components/theme-color-meta');
 
   return (
-    <ClerkProvider>
+    <ClerkProvider signInForceRedirectUrl="/workspace" signUpForceRedirectUrl="/workspace">
       <ReactQueryProvider>
         <ThemeProvider attribute="class" defaultTheme="dark">
           <ThemeColorMeta />

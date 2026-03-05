@@ -97,7 +97,7 @@ function LoginGate({ onClose }: { onClose: () => void }) {
 
   const handleSignIn = () => {
     onClose();
-    clerk.openSignIn({ forceRedirectUrl: '/workspace' });
+    clerk.openSignIn({ forceRedirectUrl: '/workspace', signUpForceRedirectUrl: '/workspace' });
   };
 
   return (
