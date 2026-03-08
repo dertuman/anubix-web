@@ -222,7 +222,7 @@ async function handleProvision(req: NextRequest) {
     // 2. Allocate IPs + create volume in parallel (both need app, not each other)
     const [, volume] = await Promise.all([
       allocateFlyIps(appName),
-      createFlyVolume(appName, region, 3),
+      createFlyVolume(appName, region, 2),
     ]);
     volumeId = volume.id;
 
@@ -236,7 +236,7 @@ async function handleProvision(req: NextRequest) {
       region,
       templateName: templateName || undefined,
       gitRepoUrl: gitRepoUrl || undefined,
-      memoryMb: 8192, // 8GB RAM: Claude SDK + dev server + build tools (beefy test config)
+      memoryMb: 2048, // 2GB RAM: Claude SDK + dev server + build tools
       projectEnvVarsJson,
       githubToken,
     });
