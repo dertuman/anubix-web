@@ -50,7 +50,7 @@ export function ModeToggle({ variant = 'floating', className }: ModeToggleProps)
           className={cn(
             'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
             mode === 'code'
-              ? 'bg-accent text-accent-foreground shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           )}
           title="Switch to Code Mode"

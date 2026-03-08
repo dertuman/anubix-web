@@ -325,7 +325,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
               <button
                 onClick={() => setClearDialogOpen(true)}
                 disabled={displayMessages.length === 0}
-                className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+                className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
                 title="Clear conversation"
               >
                 <Trash2 className="size-3.5" />
@@ -345,7 +345,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
             {previewUrl && (
               <button
                 onClick={() => window.open(previewUrl, '_blank')}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 title="Open live preview"
               >
                 <Eye className="size-3.5" />

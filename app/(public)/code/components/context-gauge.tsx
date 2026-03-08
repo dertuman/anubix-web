@@ -79,7 +79,7 @@ export function ContextGauge({
     <>
       <button
         onClick={() => setDrawerOpen(true)}
-        className="relative inline-flex shrink-0 items-center gap-1.5 rounded-md p-1 transition-colors hover:bg-muted/50 active:bg-muted"
+        className="relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors hover:bg-muted/50 active:bg-muted"
         title="Tap for context details"
       >
         <svg
