@@ -215,7 +215,7 @@ export default {
         'Anubix runs your entire workspace in the cloud. The agent, the file system, the terminal, the preview — all of it accessible from your phone, tablet, or laptop. Start a project on the train. Review it at lunch. Deploy from your couch.',
       body3:
         "This isn't a scaled-down mobile view. The mobile experience is the primary experience.",
-      cta: 'Try it on your phone',
+      cta: 'Start building',
     },
     multiModel: {
       label: 'Every AI, one conversation',
@@ -286,7 +286,7 @@ export default {
         feature2: 'Free build minutes',
         feature3: 'All features included',
         feature4: 'No credit card required',
-        cta: 'Start free',
+        cta: 'Start building',
       },
       payg: {
         name: 'Pay as you go',
@@ -295,7 +295,7 @@ export default {
         feature2: 'Credits never expire',
         feature3: 'Auto top-up available',
         feature4: 'Most messages cost $0.01–$0.10',
-        cta: 'Add credits',
+        cta: 'Start building',
       },
       byok: {
         name: 'Bring your own key',
@@ -304,7 +304,7 @@ export default {
         feature2: 'We provide the cloud infrastructure',
         feature3: 'Full control over your costs',
         feature4: 'Use your subscriptions through Anubix',
-        cta: 'Connect your keys',
+        cta: 'Start building',
       },
     },
     faq: {
