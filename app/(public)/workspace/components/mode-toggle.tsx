@@ -34,7 +34,7 @@ export function ModeToggle({ variant = 'floating', className }: ModeToggleProps)
           onClick={() => setMode('chat')}
           data-allow-anon
           className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+            'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer',
             mode === 'chat'
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -48,7 +48,7 @@ export function ModeToggle({ variant = 'floating', className }: ModeToggleProps)
           onClick={() => setMode('code')}
           data-allow-anon
           className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+            'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer',
             mode === 'code'
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'

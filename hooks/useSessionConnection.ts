@@ -183,6 +183,15 @@ function rebuildMessagesFromPayloads(
         break;
       }
 
+      case 'system_message': {
+        currentTextId = null;
+        const text = (p.message as string) || (p.text as string) || (p.content as string) || '';
+        if (text) {
+          messages.push({ id: makeId(), ts: Date.now(), type: 'system' as const, text });
+        }
+        break;
+      }
+
       default:
         break;
     }
@@ -596,6 +605,19 @@ export class SessionConnection {
         break;
       }
 
+      case 'system_message': {
+        this.currentTextId = null;
+        const text = (frame.message as string) || (frame.text as string) || (frame.content as string) || '';
+        if (text) {
+          this.messages = [
+            ...this.messages,
+            { id: makeId(), ts: Date.now(), type: 'system' as const, text },
+          ];
+          this.onChange();
+        }
+        break;
+      }
+
       case 'session_init':
         break;
 
@@ -611,6 +633,7 @@ export class SessionConnection {
       }
 
       default:
+        console.warn('[WS] Unhandled frame type:', frame.type, frame);
         break;
     }
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Cloud, Eye, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
+import { Cloud, Eye, FileCode2, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
@@ -20,6 +20,8 @@ import { CodeInput, type CodeInputHandle, type QueuedMessage } from './code-inpu
 import { CodeMessageList } from './code-message-list';
 import { CodeSidebar, MobileSidebarTrigger } from './code-sidebar';
 import { ContextGauge } from './context-gauge';
+import { ChangesPanel } from './changes-panel';
+import { extractFileChanges } from './changes-utils';
 
 const statusBadgeClass = (status: string) =>
   cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -60,6 +62,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [changesOpen, setChangesOpen] = useState(false);
   const dragCounterRef = useRef(0);
   const codeInputRef = useRef<CodeInputHandle>(null);
 
@@ -169,6 +172,9 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     }
     return { input, output, total: input + output };
   }, [displayMessages]);
+
+  // ── File changes for Changes panel ─────────────────────────
+  const fileChanges = useMemo(() => extractFileChanges(displayMessages), [displayMessages]);
 
   // ── Drag overlay ───────────────────────────────────────────
   const dragOverlay = isDragging && (
@@ -320,6 +326,20 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {/* Context usage gauge */}
             <ContextGauge input={tokenUsage.input} output={tokenUsage.output} total={tokenUsage.total} />
+            {/* Changes panel trigger */}
+            {fileChanges.length > 0 && (
+              <button
+                onClick={() => setChangesOpen(true)}
+                className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="View all file changes"
+              >
+                <FileCode2 className="size-3.5" />
+                <span className="hidden sm:inline">Changes</span>
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/20 px-1 text-[10px] font-semibold text-primary">
+                  {fileChanges.length}
+                </span>
+              </button>
+            )}
             {/* Clear conversation - hide in preview mode */}
             {!demoPreviewMode && (
               <button
@@ -364,6 +384,9 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
           files={attachedFiles} onAddFiles={handleFilesAdded} onRemoveFile={handleRemoveFile} slashCommands={slashCommands}
           activeSessionId={displayActiveSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={false} />
       </div>
+
+      {/* Multi-file changes panel */}
+      <ChangesPanel open={changesOpen} onOpenChange={setChangesOpen} fileChanges={fileChanges} />
     </div>
   );
 }
