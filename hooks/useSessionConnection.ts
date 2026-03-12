@@ -343,6 +343,14 @@ export class SessionConnection {
             this.onChange();
           }
           this.historyLoaded = true;
+
+          // Restore currentTextId if the last message is an incomplete assistant_text
+          // so that subsequent text_delta frames from WS append instead of creating duplicates.
+          const lastMsg = this.messages[this.messages.length - 1];
+          if (lastMsg?.type === 'assistant_text' && !lastMsg.isComplete) {
+            this.currentTextId = lastMsg.id;
+          }
+
           this.persistMessages();
         }
       } catch (err) {
@@ -482,14 +490,23 @@ export class SessionConnection {
 
       case 'text_delta': {
         const text = frame.text as string;
+        const lastIdx = this.messages.length - 1;
+        const last = this.messages[lastIdx];
+
         if (this.currentTextId) {
-          const lastIdx = this.messages.length - 1;
-          const last = this.messages[lastIdx];
+          // Continue appending to the current assistant text message
           if (last?.type === 'assistant_text' && last.id === this.currentTextId) {
             const updated = [...this.messages];
             updated[lastIdx] = { ...last, text: last.text + text };
             this.messages = updated;
           }
+        } else if (last?.type === 'assistant_text' && !last.isComplete) {
+          // Reconnect recovery: last message is an incomplete assistant_text
+          // but currentTextId was lost — reattach instead of creating a duplicate.
+          this.currentTextId = last.id;
+          const updated = [...this.messages];
+          updated[lastIdx] = { ...last, text: last.text + text };
+          this.messages = updated;
         } else {
           const id = makeId();
           this.currentTextId = id;
