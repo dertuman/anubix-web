@@ -12,24 +12,15 @@ export function SiteFooter() {
     {
       title: t('product'),
       links: [
-        { label: t('features'), href: '/#features' },
-        { label: t('howItWorks'), href: '/#how-it-works' },
-        { label: t('pricing'), href: '#' },
-      ],
-    },
-    {
-      title: t('resources'),
-      links: [
-        { label: t('documentation'), href: '#' },
-        { label: t('community'), href: '#' },
-        { label: t('support'), href: '#' },
+        { label: t('pricing'), href: '/#pricing' },
+        { label: t('about'), href: '/about' },
       ],
     },
     {
       title: t('legal'),
       links: [
-        { label: t('privacy'), href: '#' },
-        { label: t('terms'), href: '#' },
+        { label: t('privacy'), href: '/privacy' },
+        { label: t('terms'), href: '/terms' },
       ],
     },
   ];

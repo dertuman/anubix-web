@@ -6,10 +6,10 @@ import { ArrowRight, Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
-const PLAN_KEYS = ['free', 'payg', 'byok'] as const;
+const PLAN_KEYS = ['free', 'byok'] as const;
 type PlanKey = (typeof PLAN_KEYS)[number];
 
-const FEATURED_PLAN: PlanKey = 'payg';
+const FEATURED_PLAN: PlanKey = 'byok';
 
 const FEATURE_KEYS = ['feature1', 'feature2', 'feature3', 'feature4'] as const;
 
@@ -33,7 +33,7 @@ export function PricingSection() {
         </div>
 
         {/* Plans */}
-        <div className="mt-16 grid gap-6 md:grid-cols-3">
+        <div className="mt-16 mx-auto max-w-3xl grid gap-6 md:grid-cols-2">
           {PLAN_KEYS.map((planKey) => {
             const featured = planKey === FEATURED_PLAN;
             return (
