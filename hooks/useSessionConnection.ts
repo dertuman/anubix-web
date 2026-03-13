@@ -161,9 +161,20 @@ function rebuildMessagesFromPayloads(
           if (m.type === 'assistant_text' && !m.isComplete) messages[i] = { ...m, isComplete: true };
           if (m.type === 'tool_use' && !m.isComplete) messages[i] = { ...m, isComplete: true };
         }
+        let resultText = (p.result as string) ?? '';
+
+        // Deduplicate: if the result text matches the immediately preceding
+        // assistant_text message, clear it so we don't render the same content twice.
+        if (resultText.trim()) {
+          const lastMsg = messages[messages.length - 1];
+          if (lastMsg?.type === 'assistant_text' && lastMsg.text.trim() === resultText.trim()) {
+            resultText = '';
+          }
+        }
+
         messages.push({
           id: makeId(), ts: Date.now(), type: 'result' as const,
-          resultText: (p.result as string) ?? '',
+          resultText,
           cost: p.cost as number | undefined,
           duration: p.duration as number | undefined,
           inputTokens: p.inputTokens as number | undefined,
@@ -575,11 +586,23 @@ export class SessionConnection {
       case 'result': {
         this.currentTextId = null;
         this.isBusy = false;
+        const completed = completeAllPending(this.messages);
+        let resultText = (frame.result as string) ?? '';
+
+        // Deduplicate: if the result text matches the immediately preceding
+        // assistant_text message, clear it so we don't render the same content twice.
+        if (resultText.trim()) {
+          const lastMsg = completed[completed.length - 1];
+          if (lastMsg?.type === 'assistant_text' && lastMsg.text.trim() === resultText.trim()) {
+            resultText = '';
+          }
+        }
+
         this.messages = [
-          ...completeAllPending(this.messages),
+          ...completed,
           {
             id: makeId(), ts: Date.now(), type: 'result' as const,
-            resultText: (frame.result as string) ?? '',
+            resultText,
             cost: frame.cost as number | undefined,
             duration: frame.duration as number | undefined,
             inputTokens: frame.inputTokens as number | undefined,

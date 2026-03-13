@@ -242,7 +242,7 @@ export async function createFlyMachine(
           internal_port: 8080,
           force_instance_key: null,
           autostart: true,
-          autostop: 'off',
+          autostop: 'stop',
           min_machines_running: 0,
         },
       ],
