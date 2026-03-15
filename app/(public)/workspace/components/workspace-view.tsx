@@ -114,9 +114,11 @@ export function WorkspaceView() {
     setSubscriptionPromptOpen(true);
   };
 
-  // Intercept interactions for logged-in users without subscription
+  // Intercept interactions for logged-in users without subscription (code mode only).
+  // Chat mode is free — users bring their own API keys, so no subscription needed.
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
+    if (mode !== 'code') return;
     // Wait for both profile and subscription check to finish loading
     if (subscriptionLoading || !profileLoaded) return;
     // Only intercept if we've confirmed no subscription (not still loading)
@@ -133,7 +135,7 @@ export function WorkspaceView() {
         e.preventDefault();
         e.stopPropagation();
         showSubscriptionPrompt(
-          'You need an active subscription to use the workspace. Subscribe to get full access to chat, code, and cloud environments.'
+          'You need an active subscription to use cloud environments. Subscribe to get full access to code and cloud environments.'
         );
       }
     };
@@ -143,6 +145,7 @@ export function WorkspaceView() {
   }, [
     isSignedIn,
     isLoaded,
+    mode,
     hasActiveSubscription,
     subscriptionLoading,
     profileLoaded,
