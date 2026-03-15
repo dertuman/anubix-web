@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
 import { useClaudeCodeContext } from '../../workspace/context/claude-code-context';
+import { useAutoSuspend } from '@/hooks/useAutoSuspend';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useCloudMachineContext } from '../../workspace/context/cloud-machine-context';
 import type { FileAttachment, CodeMessage, BridgeSession } from '@/types/code';
@@ -50,6 +51,13 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const claudeConnection = useClaudeConnection();
+
+  const autoSuspend = useAutoSuspend({
+    bridgeUrl: cloudMachine.machine?.bridgeUrl ?? null,
+    bridgeApiKey: cloudMachine.machine?.bridgeApiKey ?? null,
+    isActive: cloudMachine.machine?.status === 'running' && connectionHealth === 'connected',
+    onStop: cloudMachine.stop,
+  });
 
   // Use mock data in preview mode
   const displayMessages = demoPreviewMode && mockMessages ? mockMessages : messages;
@@ -289,6 +297,23 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
       <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
+
+        {/* Idle suspend warning */}
+        {autoSuspend.showWarning && (
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-warning/30 bg-warning/10 px-3 py-2 text-sm">
+            <span className="text-warning-foreground">
+              Suspending in <strong>{autoSuspend.countdown}s</strong> to save costs
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={autoSuspend.keepAlive}>
+                Keep Working
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground" onClick={autoSuspend.suspendNow}>
+                Suspend Now
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
