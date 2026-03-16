@@ -7,34 +7,32 @@ type CellValue = boolean | 'limited' | string;
 
 const FEATURES = [
   'Build from phone',
-  'Multi-model (100+)',
   'Real cloud VPS',
-  'One-click deploy',
   'Bring your own key',
   'AI chat (non-coding)',
-  'Pay as you go',
+  'Multi-model support',
 ];
 
 const TOOLS: { name: string; highlight: boolean; values: CellValue[] }[] = [
   {
     name: 'Anubix',
     highlight: true,
-    values: [true, true, true, true, true, true, true],
+    values: [true, true, true, true, true],
   },
   {
     name: 'Cursor',
     highlight: false,
-    values: [false, 'limited', 'Local only', false, true, false, '✗ $20/mo min'],
+    values: [false, 'Local only', true, false, 'limited'],
   },
   {
     name: 'Bolt',
     highlight: false,
-    values: ['limited', 'limited', 'Browser sandbox', true, false, false, '✗ $25/mo min'],
+    values: ['limited', 'Browser sandbox', false, false, 'limited'],
   },
   {
     name: 'Lovable',
     highlight: false,
-    values: [false, false, 'Browser sandbox', true, false, false, '✗ $20/mo min'],
+    values: [false, 'Browser sandbox', false, false, false],
   },
 ];
 

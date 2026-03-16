@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
 import { useUser } from '@clerk/nextjs';
-import { ArrowRight, Layers, Smartphone, Rocket } from 'lucide-react';
+import { ArrowRight, Bot, Smartphone, Cloud } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -85,9 +85,9 @@ export function HeroSection() {
         {/* Stats bar */}
         <div className="mt-14 flex flex-wrap items-center justify-center gap-8 sm:gap-12">
           {[
-            { icon: Layers, label: t('stat1') },
+            { icon: Bot, label: t('stat1') },
             { icon: Smartphone, label: t('stat2') },
-            { icon: Rocket, label: t('stat3') },
+            { icon: Cloud, label: t('stat3') },
           ].map(({ icon: Icon, label }) => (
             <div
               key={label}
