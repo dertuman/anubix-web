@@ -1,25 +1,34 @@
-import { expect, Page } from '@playwright/test';
+import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright';
+import { Page } from '@playwright/test';
 
 import { API_BASE_URL, TESTING_EMAIL, TESTING_PASSWORD } from '@/lib/constants';
 
+const baseURL = API_BASE_URL || 'http://localhost:3000';
+
+export async function clerkLogin(
+  page: Page,
+  email: string,
+  password: string
+) {
+  await setupClerkTestingToken({ page });
+  await page.goto(baseURL);
+  await clerk.signIn({
+    page,
+    signInParams: {
+      strategy: 'password',
+      identifier: email,
+      password,
+    },
+  });
+}
+
+export async function clerkLogout(page: Page) {
+  await clerk.signOut({ page });
+}
+
+// Backward-compatible aliases
 export async function customLogin(page: Page, email: string, password: string) {
-  if (!email || !password) {
-    throw new Error('Missing email or password for login');
-  }
-
-  // Navigate to the login page
-  await page.goto(`${API_BASE_URL}/en/login`);
-
-  // Fill in the email and password
-  await page.fill('input#email', email);
-  await page.fill('input#password', password);
-
-  // Click the login button
-  await page.click('button[type="submit"]');
-
-  // Wait for navigation to the home page
-  await page.waitForURL(`${API_BASE_URL}/en`);
-  expect(page.url()).toBe(`${API_BASE_URL}/en`);
+  await clerkLogin(page, email, password);
 }
 
 export async function login(page: Page) {
@@ -28,25 +37,5 @@ export async function login(page: Page) {
       'Missing TESTING_EMAIL or TESTING_PASSWORD environment variables'
     );
   }
-  await customLogin(page, TESTING_EMAIL, TESTING_PASSWORD);
-}
-
-export async function mobileLogin(page: Page, email: string, password: string) {
-  if (!email || !password) {
-    throw new Error('Missing email or password for login');
-  }
-
-  // Navigate to the login page
-  await page.goto(`${API_BASE_URL}/en`);
-
-  await page
-    .locator('div')
-    .filter({ hasText: /^Burger button$/ })
-    .click();
-  await page.getByRole('button', { name: 'Login' }).click();
-  await page.getByPlaceholder('Enter your email').click();
-  await page.getByPlaceholder('Enter your email').fill(email);
-  await page.getByPlaceholder('Enter your email').press('Tab');
-  await page.getByPlaceholder('Enter your password').fill(password);
-  await page.getByPlaceholder('Enter your password').press('Enter');
+  await clerkLogin(page, TESTING_EMAIL, TESTING_PASSWORD);
 }
