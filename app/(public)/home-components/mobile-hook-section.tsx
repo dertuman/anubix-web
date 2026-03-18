@@ -5,6 +5,7 @@ import { useScopedI18n } from '@/locales/client';
 import { Smartphone, Monitor, Terminal, Globe, Check, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { BrowserFrame } from './device-frames';
 
 const TOOLS = [
   {
@@ -37,10 +38,8 @@ export function MobileHookSection() {
   const t = useScopedI18n('home.mobileHook');
 
   return (
-    <section className="relative border-t border-border">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,var(--primary-muted),transparent_50%)] opacity-40" />
-
-      <div className="relative container mx-auto px-4 py-20 md:py-28">
+    <section>
+      <div className="container mx-auto px-4 pt-20 pb-10 md:pt-28 md:pb-14">
         <div className="grid gap-14 md:grid-cols-2 md:items-center">
           {/* Text column */}
           <div>
@@ -112,6 +111,23 @@ export function MobileHookSection() {
                 <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Desktop screenshot - left-aligned with content, bleeds off right edge */}
+      <div className="overflow-hidden">
+        <div className="pl-2 sm:pl-4 md:container md:mx-auto md:pl-4">
+          <div className="w-[130%] sm:w-[120%] lg:w-[110%]">
+            <BrowserFrame
+              src="/screenshots/desktop-code.jpg"
+              alt="Anubix desktop workspace - multi-repo code exploration and security review"
+              url="anubix.com/workspace"
+              width={3266}
+              height={1898}
+              bleedRight
+            />
           </div>
         </div>
       </div>

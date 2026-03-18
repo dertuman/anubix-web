@@ -1,12 +1,12 @@
 import React from 'react';
 
 import { HeroSection } from './home-components/hero-section';
-import { ScreenshotShowcase } from './home-components/screenshot-showcase';
+import { LogoStrip } from './home-components/logo-strip';
+import { WhoItsForSection } from './home-components/who-its-for-section';
+import { ProblemSection } from './home-components/problem-section';
+import { PillarsSection } from './home-components/pillars-section';
 import { MobileHookSection } from './home-components/mobile-hook-section';
-import { MultiModelSection } from './home-components/multi-model-section';
-import { DifferentiatorSection } from './home-components/differentiator-section';
 import { ComparisonSection } from './home-components/comparison-section';
-import { SocialProofSection } from './home-components/social-proof-section';
 import { PricingSection } from './home-components/pricing-section';
 import { FaqSection } from './home-components/faq-section';
 import { CtaSection } from './home-components/cta-section';
@@ -16,12 +16,12 @@ export default function HomePage() {
   return (
     <main className="w-full">
       <HeroSection />
-      <ScreenshotShowcase />
+      <LogoStrip />
+      <WhoItsForSection />
+      <ProblemSection />
+      <PillarsSection />
       <MobileHookSection />
-      <MultiModelSection />
-      <DifferentiatorSection />
       <ComparisonSection />
-      <SocialProofSection />
       <PricingSection />
       <FaqSection />
       <CtaSection />
