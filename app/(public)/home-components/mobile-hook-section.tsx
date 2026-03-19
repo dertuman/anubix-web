@@ -39,7 +39,8 @@ export function MobileHookSection() {
 
   return (
     <section>
-      <div className="container mx-auto px-4 pt-20 pb-10 md:pt-28 md:pb-14">
+      <div className="container mx-auto px-4 pt-14 pb-8 md:pt-20 md:pb-10">
+        <div className="rounded-2xl border border-border bg-card/50 p-6 sm:p-10">
         <div className="grid gap-14 md:grid-cols-2 md:items-center">
           {/* Text column */}
           <div>
@@ -113,13 +114,14 @@ export function MobileHookSection() {
             ))}
           </div>
         </div>
+        </div>
 
       </div>
 
-      {/* Desktop screenshot - left-aligned with content, bleeds off right edge */}
+      {/* Desktop screenshot - bleeds on mobile, full-width framed on desktop */}
       <div className="overflow-hidden">
-        <div className="pl-2 sm:pl-4 md:container md:mx-auto md:pl-4">
-          <div className="w-[130%] sm:w-[120%] lg:w-[110%]">
+        <div className="pl-2 sm:pl-4 md:container md:mx-auto md:px-4">
+          <div className="w-[130%] sm:w-[120%] md:w-full">
             <BrowserFrame
               src="/screenshots/desktop-code.jpg"
               alt="Anubix desktop workspace - multi-repo code exploration and security review"
@@ -127,6 +129,7 @@ export function MobileHookSection() {
               width={3266}
               height={1898}
               bleedRight
+              className="md:rounded-xl md:border-r"
             />
           </div>
         </div>

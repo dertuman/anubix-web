@@ -80,11 +80,11 @@ export function LogoStrip() {
             WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
           }}
         >
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 sm:gap-x-14">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             {INTEGRATIONS.map(({ name, Logo }) => (
               <div
                 key={name}
-                className="flex flex-col items-center gap-2.5 text-muted-foreground/40 transition-colors hover:text-muted-foreground/70"
+                className="flex flex-col items-center gap-2.5 rounded-xl border border-border bg-card/50 px-5 py-4 text-muted-foreground/40 transition-colors hover:text-muted-foreground/70"
               >
                 <Logo className="size-7 sm:size-8" />
                 <span className="text-[10px] font-medium tracking-wide">

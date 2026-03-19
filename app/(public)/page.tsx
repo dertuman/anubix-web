@@ -16,8 +16,8 @@ export default function HomePage() {
   return (
     <main className="w-full">
       <HeroSection />
-      <LogoStrip />
       <WhoItsForSection />
+      <LogoStrip />
       <ProblemSection />
       <PillarsSection />
       <MobileHookSection />

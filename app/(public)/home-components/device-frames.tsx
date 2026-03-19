@@ -8,6 +8,7 @@ export function BrowserFrame({
   width,
   height,
   bleedRight,
+  className,
 }: {
   src: string;
   alt: string;
@@ -16,6 +17,7 @@ export function BrowserFrame({
   height: number;
   /** When true, removes right border-radius and right border for viewport-bleed layouts */
   bleedRight?: boolean;
+  className?: string;
 }) {
   return (
     <div
@@ -23,7 +25,7 @@ export function BrowserFrame({
         bleedRight
           ? 'rounded-l-xl border-r-0'
           : 'rounded-xl'
-      }`}
+      } ${className ?? ''}`}
     >
       {/* Title bar */}
       <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">

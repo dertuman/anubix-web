@@ -56,100 +56,102 @@ export function ComparisonSection() {
 
   return (
     <section>
-      <div className="container mx-auto px-4 py-20 md:py-28">
-        {/* Header */}
-        <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-primary">
-            {t('label')}
-          </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            {t('title')}
-          </h2>
-        </div>
+      <div className="container mx-auto px-4 py-14 md:py-20">
+        <div className="rounded-2xl border border-border bg-card/50 p-6 sm:p-10">
+          {/* Header */}
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-primary">
+              {t('label')}
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              {t('title')}
+            </h2>
+          </div>
 
-        {/* Desktop table */}
-        <div className="mt-12 hidden overflow-x-auto rounded-xl border border-border md:block">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="p-4 text-left text-xs font-medium text-muted-foreground">
-                  Feature
-                </th>
-                {TOOLS.map((tool) => (
-                  <th
-                    key={tool.name}
-                    className={`p-4 text-center text-sm font-semibold ${
-                      tool.highlight
-                        ? 'bg-primary/5 text-primary'
-                        : 'text-foreground'
-                    }`}
-                  >
-                    {tool.highlight && (
-                      <span className="mb-1 flex items-center justify-center gap-1 text-[10px] font-normal uppercase tracking-wider text-primary/60">
-                        <Check className="size-3" /> Best pick
-                      </span>
-                    )}
-                    {tool.name}
+          {/* Desktop table */}
+          <div className="mt-12 hidden overflow-x-auto rounded-xl border border-border md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="p-4 text-left text-xs font-medium text-muted-foreground">
+                    Feature
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {FEATURES.map((feature, rowIndex) => (
-                <tr key={feature} className="border-b border-border/50 last:border-0">
-                  <td className="p-4 text-sm text-muted-foreground">{feature}</td>
                   {TOOLS.map((tool) => (
-                    <td
+                    <th
                       key={tool.name}
-                      className={`p-4 text-center ${
-                        tool.highlight ? 'bg-primary/5' : ''
+                      className={`p-4 text-center text-sm font-semibold ${
+                        tool.highlight
+                          ? 'bg-primary/5 text-primary'
+                          : 'text-foreground'
                       }`}
                     >
-                      <CellIcon value={tool.values[rowIndex]} highlight={tool.highlight} />
-                    </td>
+                      {tool.highlight && (
+                        <span className="mb-1 flex items-center justify-center gap-1 text-[10px] font-normal uppercase tracking-wider text-primary/60">
+                          <Check className="size-3" /> Best pick
+                        </span>
+                      )}
+                      {tool.name}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile cards */}
-        <div className="mt-12 space-y-4 md:hidden">
-          {TOOLS.map((tool) => (
-            <div
-              key={tool.name}
-              className={`rounded-xl border p-5 ${
-                tool.highlight
-                  ? 'border-primary/30 bg-primary/5'
-                  : 'border-border bg-card'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <p className={`text-sm font-semibold ${tool.highlight ? 'text-primary' : 'text-foreground'}`}>
-                  {tool.name}
-                </p>
-                {tool.highlight && (
-                  <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-primary/60">
-                    <Check className="size-3" /> Best pick
-                  </span>
-                )}
-              </div>
-              <div className="mt-4 space-y-2.5">
-                {FEATURES.map((feature, i) => (
-                  <div key={feature} className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-muted-foreground">{feature}</span>
-                    <CellIcon value={tool.values[i]} highlight={tool.highlight} />
-                  </div>
+              </thead>
+              <tbody>
+                {FEATURES.map((feature, rowIndex) => (
+                  <tr key={feature} className="border-b border-border/50 last:border-0">
+                    <td className="p-4 text-sm text-muted-foreground">{feature}</td>
+                    {TOOLS.map((tool) => (
+                      <td
+                        key={tool.name}
+                        className={`p-4 text-center ${
+                          tool.highlight ? 'bg-primary/5' : ''
+                        }`}
+                      >
+                        <CellIcon value={tool.values[rowIndex]} highlight={tool.highlight} />
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </div>
-            </div>
-          ))}
-        </div>
+              </tbody>
+            </table>
+          </div>
 
-        <p className="mt-4 text-xs text-muted-foreground/50">
-          {t('note')}
-        </p>
+          {/* Mobile cards */}
+          <div className="mt-12 space-y-4 md:hidden">
+            {TOOLS.map((tool) => (
+              <div
+                key={tool.name}
+                className={`rounded-xl border p-5 ${
+                  tool.highlight
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-border bg-card'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <p className={`text-sm font-semibold ${tool.highlight ? 'text-primary' : 'text-foreground'}`}>
+                    {tool.name}
+                  </p>
+                  {tool.highlight && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-primary/60">
+                      <Check className="size-3" /> Best pick
+                    </span>
+                  )}
+                </div>
+                <div className="mt-4 space-y-2.5">
+                  {FEATURES.map((feature, i) => (
+                    <div key={feature} className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">{feature}</span>
+                      <CellIcon value={tool.values[i]} highlight={tool.highlight} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-4 text-xs text-muted-foreground/50">
+            {t('note')}
+          </p>
+        </div>
       </div>
     </section>
   );
