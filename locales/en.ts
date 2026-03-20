@@ -249,6 +249,52 @@ export default {
         "This isn't a scaled-down mobile view. The mobile experience is the primary experience.",
       cta: 'Start building',
     },
+    multiModel: {
+      label: 'Every AI, one conversation',
+      title: 'Use the right model for each job.',
+      body: 'Most tools lock you into one AI. Anubix gives you all of them.',
+      claude: {
+        title: 'Claude',
+        description: 'Reasoning and complex logic',
+      },
+      gpt: {
+        title: 'GPT',
+        description: 'Quick tasks and generation',
+      },
+      gemini: {
+        title: 'Gemini',
+        description: 'Video, images, multimodal',
+      },
+      perplexity: {
+        title: 'Perplexity',
+        description: 'Research with live sources',
+      },
+      dalle: {
+        title: 'DALL-E & Flux',
+        description: 'Image generation',
+      },
+      switchNote: 'Switch models mid-conversation with one tap. Or let Anubix route automatically — it picks the best model for each task.',
+      oneliner: 'Stop paying for ChatGPT AND Claude AND Gemini separately. One app. All of them.',
+    },
+    differentiator: {
+      label: 'Under the hood',
+      title: 'A real coding agent. Not an API wrapper.',
+      body: "Most AI builders send your prompt to an API and paste the response into a file. That's fine for a landing page. It breaks the moment you need real complexity.",
+      body2:
+        'Anubix runs a full coding agent in a cloud VPS. Real file system. Multi-file awareness. Terminal access. Dependency management. Debugging. The same environment a developer uses locally — except you can access it from anywhere.',
+      othersLabel: 'API-based builders (Bolt, Lovable)',
+      anubixLabel: 'Anubix',
+      row1Others: 'Prompt in → text out → paste into file',
+      row1Anubix: 'Full agent with file system access',
+      row2Others: 'Single-file focus',
+      row2Anubix: 'Multi-file awareness',
+      row3Others: 'Limited debugging',
+      row3Anubix: 'Real terminal + error handling',
+      row4Others: 'Browser-based sandbox',
+      row4Anubix: 'Cloud VPS with full capabilities',
+      row5Others: 'Desktop-first',
+      row5Anubix: 'Any device',
+    },
     comparison: {
       label: 'Comparison',
       title: 'Honest comparison. Pick what fits.',

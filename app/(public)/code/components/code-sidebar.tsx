@@ -184,7 +184,7 @@ export const CodeSidebar = memo(function CodeSidebar({
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(true)}
-          className="text-muted-foreground hover:text-foreground hidden size-8 shrink-0 md:flex"
+          className="text-muted-foreground hover:text-foreground hidden size-9 shrink-0 md:flex"
         >
           <PanelLeftClose className="size-4" />
         </Button>
@@ -192,7 +192,7 @@ export const CodeSidebar = memo(function CodeSidebar({
           variant="ghost"
           size="icon"
           onClick={onMobileClose}
-          className="text-muted-foreground hover:text-foreground size-8 shrink-0 md:hidden"
+          className="text-muted-foreground hover:text-foreground size-9 shrink-0 md:hidden"
         >
           <X className="size-4" />
         </Button>
@@ -300,7 +300,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                     <button
                       onClick={() => setShowGitHubDisconnect(true)}
                       className={cn(
-                        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                        'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
                         'text-muted-foreground hover:bg-muted hover:text-foreground'
                       )}
                     >
@@ -394,7 +394,7 @@ export const CodeSidebar = memo(function CodeSidebar({
                 <button
                   onClick={() => setShowClaudeReauth(true)}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                    'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
                     claudeConnection.isConnected
                       ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       : 'text-destructive hover:bg-destructive/10',
@@ -455,16 +455,9 @@ export const CodeSidebar = memo(function CodeSidebar({
                       <p className="text-[10px] text-muted-foreground">
                         Authorize in the tab, then paste the code here.
                       </p>
-                      <Input
-                        value={reauthCode}
-                        onChange={(e) => setReauthCode(e.target.value)}
-                        placeholder="Paste code here..."
-                        className="h-8 font-mono text-xs"
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        onClick={async () => {
+                      <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (reauthSaving || reauthCode.trim().length === 0) return;
                           setReauthSaving(true);
                           setReauthError(null);
                           try {
@@ -484,13 +477,24 @@ export const CodeSidebar = memo(function CodeSidebar({
                           } finally {
                             setReauthSaving(false);
                           }
-                        }}
-                        disabled={reauthSaving || reauthCode.trim().length === 0}
-                        className="w-full gap-1 text-xs"
-                      >
-                        {reauthSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
-                        {reauthSaving ? 'Connecting...' : 'Connect & Push'}
-                      </Button>
+                        }}>
+                        <Input
+                          value={reauthCode}
+                          onChange={(e) => setReauthCode(e.target.value)}
+                          placeholder="Paste code here..."
+                          className="h-8 font-mono text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={reauthSaving || reauthCode.trim().length === 0}
+                          className="mt-2 w-full gap-1 text-xs"
+                        >
+                          {reauthSaving ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                          {reauthSaving ? 'Connecting...' : 'Connect & Push'}
+                        </Button>
+                      </form>
                       <button
                         onClick={() => { setReauthStep('idle'); setReauthCode(''); setReauthError(null); }}
                         className="w-full text-center text-[10px] text-muted-foreground hover:text-foreground"
@@ -513,7 +517,7 @@ export const CodeSidebar = memo(function CodeSidebar({
             <div className="space-y-1">
               <button
                 onClick={() => setShowMachineTools(!showMachineTools)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <Terminal className="size-3.5 shrink-0" />
                 <span className="flex-1 text-left">Machine Tools</span>

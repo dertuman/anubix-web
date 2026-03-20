@@ -9,25 +9,12 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from '@/components/ui/drawer';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 /**
- * Circular progress gauge showing context window usage.
- *
- * - 200k context window by default (Claude's standard context).
- * - The arc fills as tokens accumulate; the colour shifts:
- *     0-50 %  → emerald (green)
- *    50-70 %  → amber
- *    70-87.5% → orange  (≥ 700k of an 800k window, but we normalise to the ratio)
- *    87.5%+   → red
- *   The 700k → red threshold maps to 87.5% of an 800k window,
- *   so we use the *ratio* so it works for any context size.
+ * Token usage display showing context window usage.
  *
  * Tap to open detailed context breakdown drawer.
  */
-
-const CONTEXT_WINDOW = 200_000; // tokens – Claude's standard context
 
 // SVG geometry
 const SIZE = 24;
@@ -41,20 +28,8 @@ function formatTokens(n: number): string {
   return n.toLocaleString();
 }
 
-/** Returns a Tailwind-friendly colour class string based on fill ratio. */
-function arcColor(ratio: number): string {
-  if (ratio >= 0.875) return '#ef4444';  // red-500
-  if (ratio >= 0.7) return '#f97316';    // orange-500
-  if (ratio >= 0.5) return '#f59e0b';    // amber-500
-  return '#10b981';                       // emerald-500
-}
-
-function trackColor(ratio: number): string {
-  if (ratio >= 0.875) return 'rgba(239,68,68,0.15)';
-  if (ratio >= 0.7) return 'rgba(249,115,22,0.12)';
-  if (ratio >= 0.5) return 'rgba(245,158,11,0.12)';
-  return 'rgba(16,185,129,0.10)';
-}
+const GAUGE_COLOR = '#10b981';       // emerald-500
+const GAUGE_TRACK = 'rgba(16,185,129,0.10)';
 
 export function ContextGauge({
   input,
@@ -69,17 +44,16 @@ export function ContextGauge({
 
   if (total === 0) return null;
 
-  const ratio = Math.min(total / CONTEXT_WINDOW, 1);
-  const dashOffset = CIRCUMFERENCE * (1 - ratio);
-  const color = arcColor(ratio);
-  const track = trackColor(ratio);
-  const percentage = (ratio * 100).toFixed(1);
+  // Show a small arc proportional to token count (capped visually at full circle)
+  // This is purely decorative since we no longer track against a fixed limit
+  const displayRatio = Math.min(total / 1_000_000, 1);
+  const dashOffset = CIRCUMFERENCE * (1 - displayRatio);
 
   return (
     <>
       <button
         onClick={() => setDrawerOpen(true)}
-        className="relative inline-flex shrink-0 items-center gap-1.5 rounded-md p-1 transition-colors hover:bg-muted/50 active:bg-muted"
+        className="relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md p-1 transition-colors hover:bg-muted/50 active:bg-muted"
         title="Tap for context details"
       >
         <svg
@@ -94,7 +68,7 @@ export function ContextGauge({
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke={track}
+            stroke={GAUGE_TRACK}
             strokeWidth={STROKE}
           />
           {/* Filled arc */}
@@ -103,7 +77,7 @@ export function ContextGauge({
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke={color}
+            stroke={GAUGE_COLOR}
             strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
@@ -113,7 +87,7 @@ export function ContextGauge({
         </svg>
         <span
           className="hidden text-[11px] tabular-nums text-muted-foreground sm:inline"
-          style={{ color }}
+          style={{ color: GAUGE_COLOR }}
         >
           {formatTokens(total)}
         </span>
@@ -138,38 +112,16 @@ export function ContextGauge({
             <div className="space-y-4">
               {/* Overall usage card */}
               <div className="overflow-hidden rounded-lg border border-border/40 bg-muted/30 p-4">
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-sm font-medium text-foreground">Total Usage</span>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'h-6 px-2 text-xs font-semibold',
-                      ratio >= 0.875 && 'border-red-500/50 bg-red-500/15 text-red-500',
-                      ratio >= 0.7 && ratio < 0.875 && 'border-orange-500/50 bg-orange-500/15 text-orange-500',
-                      ratio >= 0.5 && ratio < 0.7 && 'border-amber-500/50 bg-amber-500/15 text-amber-500',
-                      ratio < 0.5 && 'border-emerald-500/50 bg-emerald-500/15 text-emerald-500',
-                    )}
-                  >
-                    {percentage}%
-                  </Badge>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tabular-nums" style={{ color }}>
+                  <span className="text-2xl font-bold tabular-nums" style={{ color: GAUGE_COLOR }}>
                     {formatTokens(total)}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    / {formatTokens(CONTEXT_WINDOW)} tokens
+                    tokens
                   </span>
-                </div>
-                {/* Progress bar */}
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full transition-all duration-500 ease-out"
-                    style={{
-                      width: `${ratio * 100}%`,
-                      backgroundColor: color,
-                    }}
-                  />
                 </div>
               </div>
 
@@ -212,13 +164,6 @@ export function ContextGauge({
                 </div>
               </div>
 
-              {/* Info note */}
-              <div className="rounded-lg border border-border/20 bg-muted/10 p-3">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  <span className="font-semibold text-foreground">Note:</span> Claude has a {formatTokens(CONTEXT_WINDOW)} token context window.
-                  When the context fills up, earlier messages may be truncated to stay within the limit.
-                </p>
-              </div>
             </div>
           </div>
         </DrawerContent>

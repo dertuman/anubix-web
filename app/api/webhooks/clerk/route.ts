@@ -2,6 +2,8 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
 
+import WelcomeEmail from '@/emails/welcome';
+import { sendEmail } from '@/lib/email';
 import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 interface ClerkEmailAddress {
@@ -103,6 +105,14 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    // Send welcome email (fire-and-forget, don't block the webhook)
+    sendEmail({
+      to: email,
+      subject: 'Welcome to Anubix',
+      from: 'Anubix <hello@anubix.ai>',
+      react: WelcomeEmail({ name }),
+    }).catch((err) => console.error('[webhook] Failed to send welcome email:', err));
   }
 
   if (evt.type === 'user.updated') {

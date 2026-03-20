@@ -161,9 +161,20 @@ function rebuildMessagesFromPayloads(
           if (m.type === 'assistant_text' && !m.isComplete) messages[i] = { ...m, isComplete: true };
           if (m.type === 'tool_use' && !m.isComplete) messages[i] = { ...m, isComplete: true };
         }
+        let resultText = (p.result as string) ?? '';
+
+        // Deduplicate: if the result text matches the immediately preceding
+        // assistant_text message, clear it so we don't render the same content twice.
+        if (resultText.trim()) {
+          const lastMsg = messages[messages.length - 1];
+          if (lastMsg?.type === 'assistant_text' && lastMsg.text.trim() === resultText.trim()) {
+            resultText = '';
+          }
+        }
+
         messages.push({
           id: makeId(), ts: Date.now(), type: 'result' as const,
-          resultText: (p.result as string) ?? '',
+          resultText,
           cost: p.cost as number | undefined,
           duration: p.duration as number | undefined,
           inputTokens: p.inputTokens as number | undefined,
@@ -180,6 +191,15 @@ function rebuildMessagesFromPayloads(
           error: (p.message as string) ?? 'Unknown error',
           subtype: p.subtype as string | undefined,
         });
+        break;
+      }
+
+      case 'system_message': {
+        currentTextId = null;
+        const text = (p.message as string) || (p.text as string) || (p.content as string) || '';
+        if (text) {
+          messages.push({ id: makeId(), ts: Date.now(), type: 'system' as const, text });
+        }
         break;
       }
 
@@ -334,6 +354,14 @@ export class SessionConnection {
             this.onChange();
           }
           this.historyLoaded = true;
+
+          // Restore currentTextId if the last message is an incomplete assistant_text
+          // so that subsequent text_delta frames from WS append instead of creating duplicates.
+          const lastMsg = this.messages[this.messages.length - 1];
+          if (lastMsg?.type === 'assistant_text' && !lastMsg.isComplete) {
+            this.currentTextId = lastMsg.id;
+          }
+
           this.persistMessages();
         }
       } catch (err) {
@@ -473,14 +501,23 @@ export class SessionConnection {
 
       case 'text_delta': {
         const text = frame.text as string;
+        const lastIdx = this.messages.length - 1;
+        const last = this.messages[lastIdx];
+
         if (this.currentTextId) {
-          const lastIdx = this.messages.length - 1;
-          const last = this.messages[lastIdx];
+          // Continue appending to the current assistant text message
           if (last?.type === 'assistant_text' && last.id === this.currentTextId) {
             const updated = [...this.messages];
             updated[lastIdx] = { ...last, text: last.text + text };
             this.messages = updated;
           }
+        } else if (last?.type === 'assistant_text' && !last.isComplete) {
+          // Reconnect recovery: last message is an incomplete assistant_text
+          // but currentTextId was lost — reattach instead of creating a duplicate.
+          this.currentTextId = last.id;
+          const updated = [...this.messages];
+          updated[lastIdx] = { ...last, text: last.text + text };
+          this.messages = updated;
         } else {
           const id = makeId();
           this.currentTextId = id;
@@ -549,11 +586,23 @@ export class SessionConnection {
       case 'result': {
         this.currentTextId = null;
         this.isBusy = false;
+        const completed = completeAllPending(this.messages);
+        let resultText = (frame.result as string) ?? '';
+
+        // Deduplicate: if the result text matches the immediately preceding
+        // assistant_text message, clear it so we don't render the same content twice.
+        if (resultText.trim()) {
+          const lastMsg = completed[completed.length - 1];
+          if (lastMsg?.type === 'assistant_text' && lastMsg.text.trim() === resultText.trim()) {
+            resultText = '';
+          }
+        }
+
         this.messages = [
-          ...completeAllPending(this.messages),
+          ...completed,
           {
             id: makeId(), ts: Date.now(), type: 'result' as const,
-            resultText: (frame.result as string) ?? '',
+            resultText,
             cost: frame.cost as number | undefined,
             duration: frame.duration as number | undefined,
             inputTokens: frame.inputTokens as number | undefined,
@@ -596,6 +645,19 @@ export class SessionConnection {
         break;
       }
 
+      case 'system_message': {
+        this.currentTextId = null;
+        const text = (frame.message as string) || (frame.text as string) || (frame.content as string) || '';
+        if (text) {
+          this.messages = [
+            ...this.messages,
+            { id: makeId(), ts: Date.now(), type: 'system' as const, text },
+          ];
+          this.onChange();
+        }
+        break;
+      }
+
       case 'session_init':
         break;
 
@@ -611,6 +673,7 @@ export class SessionConnection {
       }
 
       default:
+        console.warn('[WS] Unhandled frame type:', frame.type, frame);
         break;
     }
   }

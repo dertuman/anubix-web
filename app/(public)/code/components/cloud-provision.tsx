@@ -934,6 +934,15 @@ function StoppedView({
   errorCode: string | null;
 }) {
   const [confirmDestroy, setConfirmDestroy] = useState(false);
+  const autoStartedRef = useRef(false);
+
+  // Auto-start the machine when user arrives at a stopped workspace
+  useEffect(() => {
+    if (!autoStartedRef.current && !isWorking && !error) {
+      autoStartedRef.current = true;
+      onStart();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex h-full items-center justify-center p-4">
@@ -942,9 +951,9 @@ function StoppedView({
           <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-2xl bg-warning/10">
             <Cloud className="size-8 text-warning" />
           </div>
-          <h2 className="text-xl font-bold">Environment Paused</h2>
+          <h2 className="text-xl font-bold">Resuming Environment…</h2>
           <p className="text-sm text-muted-foreground">
-            Your workspace is saved. Resume to continue where you left off.
+            Your workspace is saved. Starting up automatically.
           </p>
           {machine.previewUrl && (
             <p className="text-xs text-muted-foreground/70">

@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Cloud, Eye, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
+import { Cloud, Eye, FileCode2, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
 import { useClaudeCodeContext } from '../../workspace/context/claude-code-context';
+import { useAutoSuspend } from '@/hooks/useAutoSuspend';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useCloudMachineContext } from '../../workspace/context/cloud-machine-context';
 import type { FileAttachment, CodeMessage, BridgeSession } from '@/types/code';
@@ -20,6 +21,8 @@ import { CodeInput, type CodeInputHandle, type QueuedMessage } from './code-inpu
 import { CodeMessageList } from './code-message-list';
 import { CodeSidebar, MobileSidebarTrigger } from './code-sidebar';
 import { ContextGauge } from './context-gauge';
+import { ChangesPanel } from './changes-panel';
+import { extractFileChanges } from './changes-utils';
 
 const statusBadgeClass = (status: string) =>
   cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -49,6 +52,13 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const cloudMachine = useCloudMachineContext();
   const claudeConnection = useClaudeConnection();
 
+  const autoSuspend = useAutoSuspend({
+    bridgeUrl: cloudMachine.machine?.bridgeUrl ?? null,
+    bridgeApiKey: cloudMachine.machine?.bridgeApiKey ?? null,
+    isActive: cloudMachine.machine?.status === 'running' && connectionHealth === 'connected',
+    onStop: cloudMachine.stop,
+  });
+
   // Use mock data in preview mode
   const displayMessages = demoPreviewMode && mockMessages ? mockMessages : messages;
   const displaySessions = demoPreviewMode && mockSession ? [mockSession] : sessions;
@@ -60,6 +70,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const [attachedFiles, setAttachedFiles] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [changesOpen, setChangesOpen] = useState(false);
   const dragCounterRef = useRef(0);
   const codeInputRef = useRef<CodeInputHandle>(null);
 
@@ -169,6 +180,9 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     }
     return { input, output, total: input + output };
   }, [displayMessages]);
+
+  // ── File changes for Changes panel ─────────────────────────
+  const fileChanges = useMemo(() => extractFileChanges(displayMessages), [displayMessages]);
 
   // ── Drag overlay ───────────────────────────────────────────
   const dragOverlay = isDragging && (
@@ -284,6 +298,23 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 
+        {/* Idle suspend warning */}
+        {autoSuspend.showWarning && (
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-warning/30 bg-warning/10 px-3 py-2 text-sm">
+            <span className="text-warning-foreground">
+              Suspending in <strong>{autoSuspend.countdown}s</strong> to save costs
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={autoSuspend.keepAlive}>
+                Keep Working
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground" onClick={autoSuspend.suspendNow}>
+                Suspend Now
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
@@ -320,12 +351,26 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {/* Context usage gauge */}
             <ContextGauge input={tokenUsage.input} output={tokenUsage.output} total={tokenUsage.total} />
+            {/* Changes panel trigger */}
+            {fileChanges.length > 0 && (
+              <button
+                onClick={() => setChangesOpen(true)}
+                className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="View all file changes"
+              >
+                <FileCode2 className="size-3.5" />
+                <span className="hidden sm:inline">Changes</span>
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/20 px-1 text-[10px] font-semibold text-primary">
+                  {fileChanges.length}
+                </span>
+              </button>
+            )}
             {/* Clear conversation - hide in preview mode */}
             {!demoPreviewMode && (
               <button
                 onClick={() => setClearDialogOpen(true)}
                 disabled={displayMessages.length === 0}
-                className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+                className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
                 title="Clear conversation"
               >
                 <Trash2 className="size-3.5" />
@@ -345,7 +390,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
             {previewUrl && (
               <button
                 onClick={() => window.open(previewUrl, '_blank')}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 title="Open live preview"
               >
                 <Eye className="size-3.5" />
@@ -364,6 +409,9 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
           files={attachedFiles} onAddFiles={handleFilesAdded} onRemoveFile={handleRemoveFile} slashCommands={slashCommands}
           activeSessionId={displayActiveSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={false} />
       </div>
+
+      {/* Multi-file changes panel */}
+      <ChangesPanel open={changesOpen} onOpenChange={setChangesOpen} fileChanges={fileChanges} />
     </div>
   );
 }

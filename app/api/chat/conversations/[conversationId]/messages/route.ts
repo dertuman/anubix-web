@@ -5,6 +5,7 @@ import type OpenAI from 'openai';
 
 import type { StoredFileAttachment } from '@/types/chat';
 import { AI_MODELS_MAP } from '@/types/chat';
+
 import {
   buildAnthropicParts,
   buildGoogleParts,
@@ -69,7 +70,27 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const { content, images: rawImages, files: rawFiles, model: requestModel } = await req.json();
+    const body = await req.json();
+    const { content, images: rawImages, files: rawFiles, model: requestModel } = body;
+
+    // ── Guard: reject payloads that are clearly too large ────────
+    // Estimate the total base64 image size before we do expensive work.
+    const MAX_IMAGE_PAYLOAD_BYTES = 20 * 1024 * 1024; // 20 MB aggregate
+    if (rawFiles?.length) {
+      let totalImageBytes = 0;
+      for (const f of rawFiles as StoredFileAttachment[]) {
+        if (f.category === 'image' && f.data) {
+          // data URL ≈ raw base64 length (close enough for a guard)
+          totalImageBytes += f.data.length;
+        }
+      }
+      if (totalImageBytes > MAX_IMAGE_PAYLOAD_BYTES) {
+        return NextResponse.json(
+          { error: 'Too many or too large images. Please remove some images or use smaller files.' },
+          { status: 413 },
+        );
+      }
+    }
 
     // ── Save user message ──────────────────────────────────────
     const storedFiles: StoredFileAttachment[] | null = rawFiles
