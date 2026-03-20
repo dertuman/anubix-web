@@ -10,8 +10,8 @@ export function CtaSection() {
   const t = useScopedI18n('home.cta');
 
   return (
-    <section className="border-t border-border">
-      <div className="container mx-auto px-4 py-20 md:py-28">
+    <section>
+      <div className="container mx-auto px-4 py-14 md:py-20">
         <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-border bg-card p-8 text-center sm:p-12 md:p-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary-muted),transparent_70%)]" />
 
