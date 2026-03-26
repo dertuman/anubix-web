@@ -105,8 +105,22 @@ export interface UseClaudeCodeReturn {
 
 export function useClaudeCode(): UseClaudeCodeReturn {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
-  const [sessions, setSessions] = useState<BridgeSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  // Initialize sessions from localStorage cache so sidebar shows them when machine is off
+  const [sessions, setSessions] = useState<BridgeSession[]>(() => {
+    const cached = getCachedSessions();
+    return cached.map((s) => ({
+      id: s.id,
+      name: s.name,
+      repoPath: s.repoPath,
+      repoPaths: s.repoPaths,
+      status: 'idle' as const,
+      createdAt: 0,
+      lastActiveAt: 0,
+      mode: s.mode,
+      model: s.model,
+    }));
+  });
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => getLastSessionId());
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const baseUrlRef = useRef('');
@@ -119,7 +133,9 @@ export function useClaudeCode(): UseClaudeCodeReturn {
 
   // Derived state from active connection
   const activeConn = activeSessionId ? pool.getConnection(activeSessionId) : null;
-  const messages = activeConn?.messages ?? [];
+  // Fall back to cached messages when no active connection (machine is off)
+  const messages: CodeMessage[] = activeConn?.messages
+    ?? (activeSessionId ? getSessionMessages(activeSessionId) as CodeMessage[] : []);
   const isBusy = activeConn?.isBusy ?? false;
   const connectionHealth: ConnectionHealth = activeConn?.connectionHealth ?? 'disconnected';
   const slashCommands = activeConn?.slashCommands ?? [];

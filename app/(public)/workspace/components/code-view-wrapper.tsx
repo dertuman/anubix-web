@@ -20,7 +20,7 @@ const BASE_RETRY_DELAY_MS = 3000;
  */
 export function CodeViewWrapper() {
   const { isSignedIn } = useAuth();
-  const { status, connect, connectionHealth } = useClaudeCodeContext();
+  const { status, connect, connectionHealth, connectionError } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const { showEnvironmentDialog } = useEnvironmentDialog();
   const { isDemoMode, isDemoPreview, incrementDemoPromptCount } = useWorkspace();
@@ -72,6 +72,15 @@ export function CodeViewWrapper() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionHealth]);
+
+  // Refresh machine status when connect() fails while machine is supposedly running.
+  // Catches Fly auto-suspend where our DB still says 'running' but bridge is unreachable.
+  useEffect(() => {
+    if (connectionError && cloudMachine.machine?.status === 'running') {
+      cloudMachine.refresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionError]);
 
   // Reset retry counter on unexpected disconnect (bridge crash while machine is running)
   // Gives a fresh set of auto-connect attempts
