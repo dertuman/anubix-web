@@ -1,14 +1,14 @@
 import { Space_Grotesk, Geist, Geist_Mono } from 'next/font/google';
 
-export const fontSans = Space_Grotesk({
+export const fontSans = Geist({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
 });
 
-export const fontGeist = Geist({
+export const fontDisplay = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-geist',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-display',
 });
 
 export const fontMono = Geist_Mono({

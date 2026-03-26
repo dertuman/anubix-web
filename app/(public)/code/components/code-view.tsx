@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Cloud, Eye, FileCode2, FolderPlus, Loader2, Trash2, Upload } from 'lucide-react';
+import { Cloud, Eye, FileCode2, FolderPlus, Loader2, RefreshCw, Trash2, Upload, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScopedI18n } from '@/locales/client';
@@ -16,6 +16,14 @@ import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 import { CodeInput, type CodeInputHandle, type QueuedMessage } from './code-input';
 import { CodeMessageList } from './code-message-list';
@@ -42,10 +50,10 @@ interface CodeViewProps {
 export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mockMessages, mockSession }: CodeViewProps = {}) {
   const t = useScopedI18n('code');
   const {
-    status, disconnect, sessions, activeSessionId,
+    status, disconnect, softDisconnect, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
     pullSession, messages, sendMessage, clearConversation, approve, deny, answerQuestion, abort,
-    isBusy, slashCommands, connectionHealth,
+    isBusy, slashCommands, connectionHealth, retry,
     sessionLiveStates, fetchRepos,
     fetchLogs, execCommand, pushCredentials,
   } = useClaudeCodeContext();
@@ -60,13 +68,13 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     return false;
   }, [sessionLiveStates]);
 
-  // Coordinated stop: gracefully close WebSockets before stopping machine
+  // Coordinated stop: start stop first (sets isWorking=true, blocking auto-reconnect),
+  // then close WebSockets while stop API is in flight
   const handleAutoSuspendStop = useCallback(async () => {
-    disconnect();
-    // Give close frames 200ms to flush
-    await new Promise((r) => setTimeout(r, 200));
-    await cloudMachine.stop();
-  }, [disconnect, cloudMachine]);
+    const stopPromise = cloudMachine.stop();
+    softDisconnect();
+    await stopPromise;
+  }, [softDisconnect, cloudMachine]);
 
   const autoSuspend = useAutoSuspend({
     bridgeUrl: cloudMachine.machine?.bridgeUrl ?? null,
@@ -232,6 +240,23 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
         <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
+
+          {/* Auto-suspend modal dialog (no-session branch) */}
+          <Dialog open={autoSuspend.showWarning} onOpenChange={(open) => { if (!open) autoSuspend.keepAlive(); }}>
+            <DialogContent hideClose className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+              <DialogHeader>
+                <DialogTitle>Still working?</DialogTitle>
+                <DialogDescription>
+                  Your environment will suspend in {autoSuspend.countdown}s to save costs.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button onClick={autoSuspend.keepAlive}>Keep Working</Button>
+                <Button variant="ghost" onClick={autoSuspend.suspendNow}>Suspend Now</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/20 px-2 sm:px-4">
             <div className="flex items-center gap-1.5">
               <MobileSidebarTrigger onClick={() => setSidebarOpen(true)} />
@@ -253,7 +278,32 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
             </div>
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 sm:gap-4">
-            {status === 'disconnected' || status === 'connecting' ? (
+            {cloudMachine.machine?.status === 'stopped' ? (
+              <>
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-500/10 sm:size-16">
+                  <Cloud className="size-8 text-amber-500 sm:size-10" />
+                </div>
+                <p className="text-base font-medium text-foreground sm:text-lg">Environment Suspended</p>
+                <p className="text-center text-sm text-muted-foreground">Your environment was suspended to save costs</p>
+                <Button
+                  onClick={() => cloudMachine.start()}
+                  disabled={cloudMachine.isWorking}
+                  className="mt-4 gap-2"
+                  size="lg"
+                >
+                  <RefreshCw className={cn('size-4', cloudMachine.isWorking && 'animate-spin')} />
+                  Resume Environment
+                </Button>
+              </>
+            ) : cloudMachine.machine?.status === 'starting' ? (
+              <>
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
+                  <Loader2 className="size-8 animate-spin text-primary sm:size-10" />
+                </div>
+                <p className="text-base font-medium text-foreground sm:text-lg">Resuming Environment...</p>
+                <p className="text-center text-sm text-muted-foreground">Your environment is starting up</p>
+              </>
+            ) : status === 'disconnected' || status === 'connecting' ? (
               <>
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 sm:size-16">
                   {status === 'connecting' ? (
@@ -273,7 +323,6 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
                 {status === 'disconnected' && (
                   <Button
                     onClick={() => {
-                      // Trigger environment dialog through context
                       const event = new CustomEvent('open-environment-dialog');
                       window.dispatchEvent(event);
                     }}
@@ -315,22 +364,48 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 
-        {/* Idle suspend warning */}
-        {autoSuspend.showWarning && (
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-warning/30 bg-warning/10 px-3 py-2 text-sm">
-            <span className="text-warning-foreground">
-              Suspending in <strong>{autoSuspend.countdown}s</strong> to save costs
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={autoSuspend.keepAlive}>
-                Keep Working
-              </Button>
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground" onClick={autoSuspend.suspendNow}>
-                Suspend Now
-              </Button>
-            </div>
+        {/* Auto-suspend modal dialog */}
+        <Dialog open={autoSuspend.showWarning} onOpenChange={(open) => { if (!open) autoSuspend.keepAlive(); }}>
+          <DialogContent hideClose className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>Still working?</DialogTitle>
+              <DialogDescription>
+                Your environment will suspend in {autoSuspend.countdown}s to save costs.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={autoSuspend.keepAlive}>Keep Working</Button>
+              <Button variant="ghost" onClick={autoSuspend.suspendNow}>Suspend Now</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Machine/connection status banners */}
+        {cloudMachine.machine?.status === 'stopped' ? (
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm">
+            <span className="text-amber-700 dark:text-amber-400">Environment suspended</span>
+            <Button size="sm" variant="outline" className="h-7 gap-1.5 px-2 text-xs" onClick={() => cloudMachine.start()} disabled={cloudMachine.isWorking}>
+              <RefreshCw className={cn('size-3', cloudMachine.isWorking && 'animate-spin')} />
+              Resume
+            </Button>
           </div>
-        )}
+        ) : cloudMachine.machine?.status === 'starting' ? (
+          <div className="flex shrink-0 items-center gap-2 border-b border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+            <Loader2 className="size-3.5 animate-spin text-primary" />
+            <span className="text-primary">Resuming environment...</span>
+          </div>
+        ) : connectionHealth === 'failed' && cloudMachine.machine?.status === 'running' ? (
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-destructive/30 bg-destructive/10 px-3 py-2 text-sm">
+            <span className="flex items-center gap-1.5 text-destructive">
+              <WifiOff className="size-3.5" />
+              Connection lost
+            </span>
+            <Button size="sm" variant="outline" className="h-7 gap-1.5 px-2 text-xs" onClick={retry}>
+              <RefreshCw className="size-3" />
+              Retry
+            </Button>
+          </div>
+        ) : null}
 
         {/* Header */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/20 px-2 sm:px-4">

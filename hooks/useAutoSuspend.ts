@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ── Constants ────────────────────────────────────────────────
 
-const POLL_INTERVAL_MS = 60_000; // check activity every 60s
-const WARNING_SECONDS = 120;     // 2-minute countdown before suspend
+const CHECK_INTERVAL_MS = 30_000; // check idle every 30s (no network call)
+const ACTIVITY_THROTTLE_MS = 5_000; // throttle mousemove updates to every 5s
+const WARNING_SECONDS = 120; // 2-minute countdown before suspend
 const STORAGE_KEY = 'anubix-idle-timeout';
-const DEFAULT_TIMEOUT = 900;     // 15 minutes
+const DEFAULT_TIMEOUT = 900; // 15 minutes
 
 /** Available idle timeout options in seconds. 0 = never. */
 export const IDLE_TIMEOUT_OPTIONS = [
@@ -21,10 +22,10 @@ export const IDLE_TIMEOUT_OPTIONS = [
 // ── Hook ─────────────────────────────────────────────────────
 
 interface UseAutoSuspendOptions {
-  /** Bridge URL (e.g. https://app.fly.dev) */
-  bridgeUrl: string | null;
-  /** Bridge API key for auth */
-  bridgeApiKey: string | null;
+  /** Bridge URL (e.g. https://app.fly.dev) — optional, only used for keepAlive ping */
+  bridgeUrl?: string | null;
+  /** Bridge API key for auth — optional, only used for keepAlive ping */
+  bridgeApiKey?: string | null;
   /** Whether the machine is running and connected */
   isActive: boolean;
   /** Called to stop the machine */
@@ -71,6 +72,8 @@ export function useAutoSuspend({
   const onStopRef = useRef(onStop);
   onStopRef.current = onStop;
   const stoppingRef = useRef(false);
+  const lastActivityRef = useRef(Date.now());
+  const throttleRef = useRef(0);
 
   // Load stored preference on mount
   useEffect(() => {
@@ -85,6 +88,39 @@ export function useAutoSuspend({
     setCountdown(WARNING_SECONDS);
   }, []);
 
+  // ── Track user presence via DOM events ───────────────────
+  useEffect(() => {
+    if (!isActive || idleTimeout === 0) return;
+
+    const resetActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+
+    const throttledResetActivity = () => {
+      const now = Date.now();
+      if (now - throttleRef.current >= ACTIVITY_THROTTLE_MS) {
+        throttleRef.current = now;
+        resetActivity();
+      }
+    };
+
+    // Immediate events
+    window.addEventListener('mousedown', resetActivity);
+    window.addEventListener('keydown', resetActivity);
+    window.addEventListener('scroll', resetActivity, { passive: true });
+    window.addEventListener('touchstart', resetActivity, { passive: true });
+    // Throttled event
+    window.addEventListener('mousemove', throttledResetActivity, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousedown', resetActivity);
+      window.removeEventListener('keydown', resetActivity);
+      window.removeEventListener('scroll', resetActivity);
+      window.removeEventListener('touchstart', resetActivity);
+      window.removeEventListener('mousemove', throttledResetActivity);
+    };
+  }, [isActive, idleTimeout]);
+
   // ── Auto-dismiss warning if sessions become busy ──────────
   useEffect(() => {
     if (isBusy && showWarning) {
@@ -93,34 +129,48 @@ export function useAutoSuspend({
     }
   }, [isBusy, showWarning]);
 
-  // ── Poll bridge activity ──────────────────────────────────
+  // ── Auto-dismiss warning on any user interaction ──────────
   useEffect(() => {
-    // Don't poll if disabled, not active, busy, or already warning
-    if (!isActive || !bridgeUrl || !bridgeApiKey || idleTimeout === 0 || showWarning || isBusy) return;
+    if (!showWarning) return;
 
-    const checkActivity = async () => {
-      try {
-        const res = await fetch(`${bridgeUrl}/_bridge/activity`, {
+    const dismiss = () => {
+      lastActivityRef.current = Date.now();
+      setShowWarning(false);
+      setCountdown(WARNING_SECONDS);
+      // Ping bridge to reset server-side timestamp
+      if (bridgeUrl && bridgeApiKey) {
+        fetch(`${bridgeUrl}/_bridge/health`, {
           headers: { 'x-api-key': bridgeApiKey },
-          signal: AbortSignal.timeout(10_000),
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const idle = data.idleSeconds as number;
-        if (idle >= 0 && idle >= idleTimeout) {
-          setShowWarning(true);
-          setCountdown(WARNING_SECONDS);
-        }
-      } catch {
-        // Bridge unreachable — don't trigger suspend on network errors
+        }).catch(() => {});
       }
     };
 
-    // Check immediately, then poll
-    checkActivity();
-    const interval = setInterval(checkActivity, POLL_INTERVAL_MS);
+    window.addEventListener('mousedown', dismiss);
+    window.addEventListener('keydown', dismiss);
+
+    return () => {
+      window.removeEventListener('mousedown', dismiss);
+      window.removeEventListener('keydown', dismiss);
+    };
+  }, [showWarning, bridgeUrl, bridgeApiKey]);
+
+  // ── Check idle status periodically (no network call) ──────
+  useEffect(() => {
+    if (!isActive || idleTimeout === 0 || showWarning || isBusy) return;
+
+    const checkIdle = () => {
+      const idleMs = Date.now() - lastActivityRef.current;
+      if (idleMs >= idleTimeout * 1000) {
+        setShowWarning(true);
+        setCountdown(WARNING_SECONDS);
+      }
+    };
+
+    // Check immediately, then at intervals
+    checkIdle();
+    const interval = setInterval(checkIdle, CHECK_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [isActive, bridgeUrl, bridgeApiKey, idleTimeout, showWarning, isBusy]);
+  }, [isActive, idleTimeout, showWarning, isBusy]);
 
   // ── Warning countdown ─────────────────────────────────────
   useEffect(() => {
@@ -155,6 +205,7 @@ export function useAutoSuspend({
   }, [isActive]);
 
   const keepAlive = useCallback(() => {
+    lastActivityRef.current = Date.now();
     setShowWarning(false);
     setCountdown(WARNING_SECONDS);
     // Touch the bridge to reset server-side lastActiveAt

@@ -276,6 +276,8 @@ export class SessionConnection {
       this.ws = null;
     }
     this.connectionHealth = 'disconnected';
+    this.isBusy = false;
+    this.messages = completeAllPending(this.messages);
     this.persistMessages();
     this.onChange();
   }
@@ -445,6 +447,9 @@ export class SessionConnection {
   private scheduleReconnect() {
     if (this.reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
       this.connectionHealth = 'failed';
+      this.isBusy = false;
+      this.messages = completeAllPending(this.messages);
+      this.persistMessages();
       this.onChange();
       return;
     }

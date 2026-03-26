@@ -132,6 +132,9 @@
 }
 
 @theme inline {
+  /* ─── Font families ─── */
+  --font-display: 'Space Grotesk', sans-serif;
+
   /* ─── Color tokens ─── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);

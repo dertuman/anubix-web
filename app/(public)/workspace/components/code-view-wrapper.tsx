@@ -20,7 +20,7 @@ const BASE_RETRY_DELAY_MS = 3000;
  */
 export function CodeViewWrapper() {
   const { isSignedIn } = useAuth();
-  const { status, connect } = useClaudeCodeContext();
+  const { status, connect, connectionHealth } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const { showEnvironmentDialog } = useEnvironmentDialog();
   const { isDemoMode, isDemoPreview, incrementDemoPromptCount } = useWorkspace();
@@ -62,6 +62,33 @@ export function CodeViewWrapper() {
       clearRetryTimer();
     }
   }, [cloudMachine.machine?.status, clearRetryTimer]);
+
+  // Refresh machine status when WebSocket connection fails
+  // If the machine actually stopped (Fly auto-suspend), machine.status updates to 'stopped'
+  // and the UI shows "Environment suspended" with Resume.
+  useEffect(() => {
+    if (connectionHealth === 'failed' && cloudMachine.machine?.status === 'running') {
+      cloudMachine.refresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionHealth]);
+
+  // Reset retry counter on unexpected disconnect (bridge crash while machine is running)
+  // Gives a fresh set of auto-connect attempts
+  const prevStatusRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+
+    if (
+      prev === 'connected' &&
+      status === 'disconnected' &&
+      cloudMachine.machine?.status === 'running'
+    ) {
+      attemptCountRef.current = 0;
+      clearRetryTimer();
+    }
+  }, [status, cloudMachine.machine?.status, clearRetryTimer]);
 
   // Auto-connect with limited retries and exponential backoff
   // Skip auto-connect in demo preview mode and during stop/start transitions

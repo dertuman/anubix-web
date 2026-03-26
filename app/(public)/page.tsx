@@ -14,7 +14,7 @@ import { StickyMobileCta } from './home-components/sticky-mobile-cta';
 
 export default function HomePage() {
   return (
-    <main className="w-full">
+    <main className="w-full font-display">
       <HeroSection />
       <WhoItsForSection />
       <LogoStrip />

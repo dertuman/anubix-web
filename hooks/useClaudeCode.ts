@@ -72,6 +72,7 @@ export interface UseClaudeCodeReturn {
   status: ConnectionStatus;
   connect: (_url: string, _apiKey: string) => void;
   disconnect: () => void;
+  softDisconnect: () => void;
   connectionError: string | null;
   sessions: BridgeSession[];
   activeSessionId: string | null;
@@ -299,6 +300,22 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     // NOTE: Do NOT clear cached sessions — they're needed for recovery after machine restart
   }, [pool]);
 
+  /** Close WebSockets but preserve sessions and credentials for resume. */
+  const softDisconnect = useCallback(() => {
+    pool.disconnectAll();
+    setStatus('disconnected');
+    // Do NOT clear sessions, activeSessionId, baseUrlRef, or keyRef
+  }, [pool]);
+
+  // ── Sync status with WebSocket health ─────────────────────
+  // When connection goes to 'failed' while status is 'connected',
+  // set status to 'disconnected' so auto-reconnect pipeline can fire.
+  useEffect(() => {
+    if (status === 'connected' && connectionHealth === 'failed') {
+      setStatus('disconnected');
+    }
+  }, [status, connectionHealth]);
+
   // ── Session management ────────────────────────────────────
 
   const selectSession = useCallback((id: string) => {
@@ -465,7 +482,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
   }, []);
 
   return {
-    status, connect, disconnect, connectionError,
+    status, connect, disconnect, softDisconnect, connectionError,
     sessions, activeSessionId, selectSession,
     createSession, deleteSession, updateSession, refreshSessions, pullSession,
     fetchRepos, messages, sendMessage, clearConversation, switchModel,
