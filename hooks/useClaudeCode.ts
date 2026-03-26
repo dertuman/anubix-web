@@ -191,8 +191,10 @@ export function useClaudeCode(): UseClaudeCodeReturn {
 
   // ── Session recovery ──────────────────────────────────────
 
-  const recoverSessions = useCallback(async (): Promise<BridgeSession[]> => {
-    const cached = getCachedSessions();
+  const recoverSessions = useCallback(async (
+    cachedOverride?: Array<{ id: string; name: string; repoPath: string; repoPaths?: string[]; mode?: 'sdk' | 'cli'; model?: string }>,
+  ): Promise<BridgeSession[]> => {
+    const cached = cachedOverride ?? getCachedSessions();
     if (!cached.length) return [];
 
     const recovered: BridgeSession[] = [];
@@ -278,11 +280,15 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       setStatus('connected');
       pool.setCredentials(baseUrlRef.current, apiKey);
 
+      // Save cached sessions BEFORE fetchSessions — fetchSessions overwrites
+      // the cache with whatever the bridge returns (which is [] on fresh start)
+      const savedCache = getCachedSessions();
+
       let sessions = await fetchSessions();
 
       // If bridge returned no sessions but we have cached ones, attempt recovery
-      if (sessions.length === 0) {
-        const recovered = await recoverSessions();
+      if (sessions.length === 0 && savedCache.length > 0) {
+        const recovered = await recoverSessions(savedCache);
         if (recovered.length) {
           sessions = recovered;
         }
