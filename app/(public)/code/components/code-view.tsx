@@ -52,11 +52,28 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const cloudMachine = useCloudMachineContext();
   const claudeConnection = useClaudeConnection();
 
+  // Derive whether any session is busy (agent actively working)
+  const anySessionBusy = useMemo(() => {
+    for (const [, state] of sessionLiveStates) {
+      if (state.isBusy) return true;
+    }
+    return false;
+  }, [sessionLiveStates]);
+
+  // Coordinated stop: gracefully close WebSockets before stopping machine
+  const handleAutoSuspendStop = useCallback(async () => {
+    disconnect();
+    // Give close frames 200ms to flush
+    await new Promise((r) => setTimeout(r, 200));
+    await cloudMachine.stop();
+  }, [disconnect, cloudMachine]);
+
   const autoSuspend = useAutoSuspend({
     bridgeUrl: cloudMachine.machine?.bridgeUrl ?? null,
     bridgeApiKey: cloudMachine.machine?.bridgeApiKey ?? null,
     isActive: cloudMachine.machine?.status === 'running' && connectionHealth === 'connected',
-    onStop: cloudMachine.stop,
+    onStop: handleAutoSuspendStop,
+    isBusy: anySessionBusy,
   });
 
   // Use mock data in preview mode

@@ -28,6 +28,7 @@ export function CodeViewWrapper() {
   const attemptCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeUrlRef = useRef<string | null>(null);
+  const prevMachineStatusRef = useRef<string | null>(null);
 
   const clearRetryTimer = useCallback(() => {
     if (retryTimerRef.current) {
@@ -46,13 +47,30 @@ export function CodeViewWrapper() {
     }
   }, [cloudMachine.machine?.bridgeUrl, clearRetryTimer]);
 
+  // Reset retry counter when machine transitions from stopped/starting → running
+  // (URL doesn't change on resume, so the URL-change reset doesn't fire)
+  useEffect(() => {
+    const currentStatus = cloudMachine.machine?.status ?? null;
+    const prev = prevMachineStatusRef.current;
+    prevMachineStatusRef.current = currentStatus;
+
+    if (
+      currentStatus === 'running' &&
+      (prev === 'stopped' || prev === 'starting' || prev === 'suspended')
+    ) {
+      attemptCountRef.current = 0;
+      clearRetryTimer();
+    }
+  }, [cloudMachine.machine?.status, clearRetryTimer]);
+
   // Auto-connect with limited retries and exponential backoff
-  // Skip auto-connect in demo preview mode
+  // Skip auto-connect in demo preview mode and during stop/start transitions
   useEffect(() => {
     if (
       isSignedIn &&
       !isDemoPreview &&
       status === 'disconnected' &&
+      !cloudMachine.isWorking &&
       cloudMachine.machine?.status === 'running' &&
       cloudMachine.machine.bridgeUrl &&
       cloudMachine.machine.bridgeApiKey &&
@@ -71,7 +89,7 @@ export function CodeViewWrapper() {
     }
 
     return clearRetryTimer;
-  }, [isSignedIn, isDemoPreview, status, cloudMachine.machine, connect, clearRetryTimer]);
+  }, [isSignedIn, isDemoPreview, status, cloudMachine.machine, cloudMachine.isWorking, connect, clearRetryTimer]);
 
   // Show environment dialog for authenticated users without environment
   // Skip in demo preview mode

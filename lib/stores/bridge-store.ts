@@ -51,6 +51,26 @@ export function addRecentRepoPath(path: string) {
   set('recentRepoPaths', JSON.stringify(existing.slice(0, MAX_RECENT)));
 }
 
+// ── Session list cache (survives machine restarts) ──────────
+
+export function getCachedSessions(): Array<{ id: string; name: string; repoPath: string; repoPaths?: string[]; mode?: 'sdk' | 'cli'; model?: string }> {
+  const raw = get('cachedSessions');
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function setCachedSessions(sessions: Array<{ id: string; name: string; repoPath: string; repoPaths?: string[]; mode?: 'sdk' | 'cli'; model?: string }>) {
+  set('cachedSessions', JSON.stringify(sessions));
+}
+
+export function clearCachedSessions() {
+  remove('cachedSessions');
+}
+
 // ── Per-session messages cache ──────────────────────────────
 
 export function getSessionMessages(sessionId: string): unknown[] {

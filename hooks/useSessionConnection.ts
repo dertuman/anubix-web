@@ -286,6 +286,15 @@ export class SessionConnection {
     this.loadHistoryThenConnect();
   }
 
+  /** Cancel any pending reconnect attempts without fully disconnecting. */
+  cancelReconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.reconnectAttempt = 0;
+  }
+
   destroy() {
     this.disconnect();
   }
@@ -338,6 +347,9 @@ export class SessionConnection {
       this.connectionHealth = 'connecting';
       this.onChange();
 
+      // Remember messages loaded from localStorage cache in constructor
+      const cachedMessages = this.messages;
+
       try {
         const httpBase = this.baseUrl.replace(/^ws(s?):\/\//, 'http$1://');
         const res = await fetch(`${httpBase}/_bridge/sessions/${this.sessionId}/messages`, {
@@ -351,6 +363,12 @@ export class SessionConnection {
             const rebuilt = rebuildMessagesFromPayloads(entries);
             this.messages = rebuilt.messages;
             this.seq = rebuilt.lastSeq;
+            this.onChange();
+          } else if (cachedMessages.length > 0) {
+            // Bridge returned empty history (machine restarted) but we have
+            // cached messages from localStorage — keep them and mark complete
+            this.messages = completeAllPending(cachedMessages);
+            this.isBusy = false;
             this.onChange();
           }
           this.historyLoaded = true;

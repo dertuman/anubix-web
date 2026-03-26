@@ -29,6 +29,8 @@ interface UseAutoSuspendOptions {
   isActive: boolean;
   /** Called to stop the machine */
   onStop: () => Promise<void>;
+  /** When true, any session is actively busy — skip idle checks */
+  isBusy?: boolean;
 }
 
 export interface UseAutoSuspendReturn {
@@ -59,6 +61,7 @@ export function useAutoSuspend({
   bridgeApiKey,
   isActive,
   onStop,
+  isBusy = false,
 }: UseAutoSuspendOptions): UseAutoSuspendReturn {
   const [idleTimeout, setIdleTimeoutState] = useState(DEFAULT_TIMEOUT);
   const [showWarning, setShowWarning] = useState(false);
@@ -82,10 +85,18 @@ export function useAutoSuspend({
     setCountdown(WARNING_SECONDS);
   }, []);
 
+  // ── Auto-dismiss warning if sessions become busy ──────────
+  useEffect(() => {
+    if (isBusy && showWarning) {
+      setShowWarning(false);
+      setCountdown(WARNING_SECONDS);
+    }
+  }, [isBusy, showWarning]);
+
   // ── Poll bridge activity ──────────────────────────────────
   useEffect(() => {
-    // Don't poll if disabled, not active, or already warning
-    if (!isActive || !bridgeUrl || !bridgeApiKey || idleTimeout === 0 || showWarning) return;
+    // Don't poll if disabled, not active, busy, or already warning
+    if (!isActive || !bridgeUrl || !bridgeApiKey || idleTimeout === 0 || showWarning || isBusy) return;
 
     const checkActivity = async () => {
       try {
@@ -109,7 +120,7 @@ export function useAutoSuspend({
     checkActivity();
     const interval = setInterval(checkActivity, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [isActive, bridgeUrl, bridgeApiKey, idleTimeout, showWarning]);
+  }, [isActive, bridgeUrl, bridgeApiKey, idleTimeout, showWarning, isBusy]);
 
   // ── Warning countdown ─────────────────────────────────────
   useEffect(() => {

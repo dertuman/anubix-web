@@ -8,8 +8,16 @@ import {
   addRecentRepoPath,
   clearLastSessionId,
   clearSessionMessages,
+  getCachedSessions,
   getLastSessionId,
+  getSessionDraft,
+  getSessionMessages,
+  getSessionLastSeq,
+  setCachedSessions,
   setLastSessionId,
+  setSessionDraft,
+  setSessionMessages,
+  setSessionLastSeq,
 } from '@/lib/stores/bridge-store';
 import { processAttachments } from '@/lib/process-attachments';
 
@@ -137,6 +145,15 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       const data = await apiFetch('/sessions');
       const list = (data.data ?? data) as BridgeSession[];
       setSessions(list);
+      // Cache session list so we can recover after machine restart
+      setCachedSessions(list.map((s) => ({
+        id: s.id,
+        name: s.name,
+        repoPath: s.repoPath,
+        repoPaths: s.repoPaths,
+        mode: s.mode,
+        model: s.model,
+      })));
       return list;
     } catch (err) {
       console.error('Failed to fetch sessions:', err);
@@ -153,6 +170,72 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       console.error('Failed to fetch repos:', err);
       return { repos: [], basePath: null };
     }
+  }, [apiFetch]);
+
+  // ── Session recovery ──────────────────────────────────────
+
+  const recoverSessions = useCallback(async (): Promise<BridgeSession[]> => {
+    const cached = getCachedSessions();
+    if (!cached.length) return [];
+
+    const recovered: BridgeSession[] = [];
+    const lastSid = getLastSessionId();
+
+    for (const old of cached) {
+      try {
+        const repoPaths = old.repoPaths ?? [old.repoPath];
+        const body: Record<string, unknown> = {
+          repoPaths,
+          name: old.name,
+        };
+        if (old.model) body.model = old.model;
+
+        const data = await apiFetch('/sessions', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        const newSession = (data.data ?? data) as BridgeSession;
+        recovered.push(newSession);
+
+        // Migrate cached data from old session ID to new session ID
+        if (newSession.id !== old.id) {
+          const oldMessages = getSessionMessages(old.id);
+          if (oldMessages.length) {
+            setSessionMessages(newSession.id, oldMessages);
+            clearSessionMessages(old.id);
+          }
+          const oldSeq = getSessionLastSeq(old.id);
+          if (oldSeq) {
+            setSessionLastSeq(newSession.id, oldSeq);
+          }
+          const oldDraft = getSessionDraft(old.id);
+          if (oldDraft) {
+            setSessionDraft(newSession.id, oldDraft);
+          }
+          // Update last session ID pointer if it was the old one
+          if (lastSid === old.id) {
+            setLastSessionId(newSession.id);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to recover session "${old.name}":`, err);
+      }
+    }
+
+    if (recovered.length) {
+      setSessions(recovered);
+      // Update cache with new IDs
+      setCachedSessions(recovered.map((s) => ({
+        id: s.id,
+        name: s.name,
+        repoPath: s.repoPath,
+        repoPaths: s.repoPaths,
+        mode: s.mode,
+        model: s.model,
+      })));
+    }
+
+    return recovered;
   }, [apiFetch]);
 
   // ── Connect ───────────────────────────────────────────────
@@ -178,7 +261,16 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       setStatus('connected');
       pool.setCredentials(baseUrlRef.current, apiKey);
 
-      const sessions = await fetchSessions();
+      let sessions = await fetchSessions();
+
+      // If bridge returned no sessions but we have cached ones, attempt recovery
+      if (sessions.length === 0) {
+        const recovered = await recoverSessions();
+        if (recovered.length) {
+          sessions = recovered;
+        }
+      }
+
       const lastSid = getLastSessionId();
       if (lastSid && sessions.some((s) => s.id === lastSid)) {
         setActiveSessionId(lastSid);
@@ -194,7 +286,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
       setConnectionError(msg);
       setStatus('disconnected');
     }
-  }, [fetchSessions, pool]);
+  }, [fetchSessions, recoverSessions, pool]);
 
   const disconnect = useCallback(() => {
     pool.disconnectAll();
@@ -204,6 +296,7 @@ export function useClaudeCode(): UseClaudeCodeReturn {
     setSessions([]);
     setActiveSessionId(null);
     setConnectionError(null);
+    // NOTE: Do NOT clear cached sessions — they're needed for recovery after machine restart
   }, [pool]);
 
   // ── Session management ────────────────────────────────────
