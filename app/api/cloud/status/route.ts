@@ -65,33 +65,48 @@ async function handleStatus() {
     }
   }
 
-  // Detect Fly auto-stop: if DB says 'running' but bridge is unreachable, check Fly machine state
+  // Reconcile DB status with actual Fly machine state.
+  // Handles: Fly auto-stop (DB says 'running'), failed start attempts (DB says 'error'),
+  // and any other stale DB state where the machine has a Fly resource.
   if (
-    status === 'running' &&
-    data.bridge_url &&
-    data.bridge_api_key_encrypted
+    (status === 'running' || status === 'error') &&
+    data.fly_app_name &&
+    data.fly_machine_id
   ) {
-    try {
-      const apiKey = decrypt(data.bridge_api_key_encrypted);
-      const res = await fetch(`${data.bridge_url}/_bridge/health`, {
-        headers: { 'x-api-key': apiKey },
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!res.ok) throw new Error('unhealthy');
-    } catch {
-      // Bridge unreachable — check actual Fly machine state
-      if (data.fly_app_name && data.fly_machine_id) {
-        try {
-          const flyMachine = await getMachineStatus(data.fly_app_name, data.fly_machine_id);
-          if (flyMachine.state === 'stopped') {
-            status = 'stopped';
-            await supabase.from('cloud_machines').update({
-              status: 'stopped',
-              stopped_at: new Date().toISOString(),
-            }).eq('email', email);
-          }
-        } catch { /* keep current status */ }
-      }
+    // For 'running', first check if bridge is actually healthy
+    let bridgeHealthy = false;
+    if (status === 'running' && data.bridge_url && data.bridge_api_key_encrypted) {
+      try {
+        const apiKey = decrypt(data.bridge_api_key_encrypted);
+        const res = await fetch(`${data.bridge_url}/_bridge/health`, {
+          headers: { 'x-api-key': apiKey },
+          signal: AbortSignal.timeout(5000),
+        });
+        bridgeHealthy = res.ok;
+      } catch { /* not healthy */ }
+    }
+
+    // If bridge isn't healthy (or status is 'error'), check actual Fly machine state
+    if (!bridgeHealthy) {
+      try {
+        const flyMachine = await getMachineStatus(data.fly_app_name, data.fly_machine_id);
+        if (flyMachine.state === 'stopped') {
+          status = 'stopped';
+          await supabase.from('cloud_machines').update({
+            status: 'stopped',
+            error_message: null,
+            stopped_at: new Date().toISOString(),
+          }).eq('email', email);
+        } else if (flyMachine.state === 'started' && status === 'error') {
+          // Machine is actually running but DB says error — fix it
+          status = 'running';
+          await supabase.from('cloud_machines').update({
+            status: 'running',
+            error_message: null,
+            last_health_check_at: new Date().toISOString(),
+          }).eq('email', email);
+        }
+      } catch { /* keep current status */ }
     }
   }
 

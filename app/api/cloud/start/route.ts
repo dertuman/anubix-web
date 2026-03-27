@@ -8,6 +8,7 @@ import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
 // Allow up to 60s for machine restart + health check
 export const maxDuration = 60;
 import {
+  getMachineStatus,
   startFlyMachine,
   waitForMachineState,
   waitForBridgeHealth,
@@ -80,8 +81,19 @@ async function handleStart() {
   try {
     await supabase.from('cloud_machines').update({ status: 'starting' }).eq('email', email);
 
-    await startFlyMachine(machine.fly_app_name, machine.fly_machine_id);
-    await waitForMachineState(machine.fly_app_name, machine.fly_machine_id, 'started', 60);
+    // Check actual Fly machine state before attempting start
+    const flyState = await getMachineStatus(machine.fly_app_name, machine.fly_machine_id);
+    if (flyState.state === 'started') {
+      // Already running — skip start, go straight to health check
+    } else if (flyState.state === 'stopping') {
+      // Wait for stop to complete, then start
+      await waitForMachineState(machine.fly_app_name, machine.fly_machine_id, 'stopped', 30);
+      await startFlyMachine(machine.fly_app_name, machine.fly_machine_id);
+      await waitForMachineState(machine.fly_app_name, machine.fly_machine_id, 'started', 60);
+    } else {
+      await startFlyMachine(machine.fly_app_name, machine.fly_machine_id);
+      await waitForMachineState(machine.fly_app_name, machine.fly_machine_id, 'started', 60);
+    }
 
     const bridgeApiKey = machine.bridge_api_key_encrypted
       ? decrypt(machine.bridge_api_key_encrypted)
