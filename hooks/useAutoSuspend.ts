@@ -4,8 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ── Constants ────────────────────────────────────────────────
 
-const CHECK_INTERVAL_MS = 30_000; // check idle every 30s (no network call)
-const ACTIVITY_THROTTLE_MS = 5_000; // throttle mousemove updates to every 5s
+const ACTIVITY_THROTTLE_MS = 5_000;
 const WARNING_SECONDS = 120; // 2-minute countdown before suspend
 const STORAGE_KEY = 'anubix-idle-timeout';
 const DEFAULT_TIMEOUT = 900; // 15 minutes
@@ -22,30 +21,19 @@ export const IDLE_TIMEOUT_OPTIONS = [
 // ── Hook ─────────────────────────────────────────────────────
 
 interface UseAutoSuspendOptions {
-  /** Bridge URL (e.g. https://app.fly.dev) — optional, only used for keepAlive ping */
   bridgeUrl?: string | null;
-  /** Bridge API key for auth — optional, only used for keepAlive ping */
   bridgeApiKey?: string | null;
-  /** Whether the machine is running and connected */
   isActive: boolean;
-  /** Called to stop the machine */
   onStop: () => Promise<void>;
-  /** When true, any session is actively busy — skip idle checks */
   isBusy?: boolean;
 }
 
 export interface UseAutoSuspendReturn {
-  /** Whether the idle warning is currently showing */
   showWarning: boolean;
-  /** Seconds remaining before auto-suspend */
   countdown: number;
-  /** Dismiss warning and reset idle tracking */
   keepAlive: () => void;
-  /** Stop the machine immediately */
   suspendNow: () => void;
-  /** Current idle timeout setting in seconds (0 = never) */
   idleTimeout: number;
-  /** Update the idle timeout setting */
   setIdleTimeout: (_seconds: number) => void;
 }
 
@@ -68,12 +56,15 @@ export function useAutoSuspend({
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(WARNING_SECONDS);
 
-  // Refs to avoid stale closures in intervals
   const onStopRef = useRef(onStop);
   onStopRef.current = onStop;
   const stoppingRef = useRef(false);
-  const lastActivityRef = useRef(Date.now());
   const throttleRef = useRef(0);
+
+  // Timers
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load stored preference on mount
   useEffect(() => {
@@ -83,20 +74,66 @@ export function useAutoSuspend({
   const setIdleTimeout = useCallback((seconds: number) => {
     setIdleTimeoutState(seconds);
     localStorage.setItem(STORAGE_KEY, String(seconds));
-    // Reset warning when user changes timeout
     setShowWarning(false);
     setCountdown(WARNING_SECONDS);
   }, []);
 
-  // ── Track user presence via DOM events ───────────────────
+  const clearAllTimers = useCallback(() => {
+    if (warningTimerRef.current) { clearTimeout(warningTimerRef.current); warningTimerRef.current = null; }
+    if (suspendTimerRef.current) { clearTimeout(suspendTimerRef.current); suspendTimerRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+  }, []);
+
+  const doStop = useCallback(() => {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
+    clearAllTimers();
+    setShowWarning(false);
+    setCountdown(WARNING_SECONDS);
+    onStopRef.current().finally(() => { stoppingRef.current = false; });
+  }, [clearAllTimers]);
+
+  // ── Core: schedule warning → then suspend ─────────────────
+  // Single setTimeout for warning, single setTimeout for suspend.
+  // Every activity resets both. Works in background tabs because
+  // setTimeout is guaranteed to fire (even if delayed by throttling).
+  const scheduleTimers = useCallback(() => {
+    clearAllTimers();
+    if (idleTimeout === 0) return;
+
+    // Timer 1: show warning after idle timeout
+    warningTimerRef.current = setTimeout(() => {
+      warningTimerRef.current = null;
+      setShowWarning(true);
+      setCountdown(WARNING_SECONDS);
+
+      // Start countdown display (best-effort in background tabs)
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown((prev) => Math.max(0, prev - 1));
+      }, 1000);
+
+      // Timer 2: hard suspend after warning period
+      // This fires even in background tabs — no reliance on countdown interval
+      suspendTimerRef.current = setTimeout(() => {
+        suspendTimerRef.current = null;
+        doStop();
+      }, WARNING_SECONDS * 1000);
+
+    }, idleTimeout * 1000);
+  }, [idleTimeout, clearAllTimers, doStop]);
+
+  // ── Track user activity ──────────────────────────────────
   useEffect(() => {
     if (!isActive || idleTimeout === 0) return;
 
     const resetActivity = () => {
-      lastActivityRef.current = Date.now();
+      if (stoppingRef.current) return;
+      setShowWarning(false);
+      setCountdown(WARNING_SECONDS);
+      scheduleTimers();
     };
 
-    const throttledResetActivity = () => {
+    const throttledReset = () => {
       const now = Date.now();
       if (now - throttleRef.current >= ACTIVITY_THROTTLE_MS) {
         throttleRef.current = now;
@@ -104,103 +141,59 @@ export function useAutoSuspend({
       }
     };
 
-    // Immediate events
+    // Start timers
+    scheduleTimers();
+
     window.addEventListener('mousedown', resetActivity);
     window.addEventListener('keydown', resetActivity);
     window.addEventListener('scroll', resetActivity, { passive: true });
     window.addEventListener('touchstart', resetActivity, { passive: true });
-    // Throttled event
-    window.addEventListener('mousemove', throttledResetActivity, { passive: true });
+    window.addEventListener('mousemove', throttledReset, { passive: true });
 
     return () => {
+      clearAllTimers();
       window.removeEventListener('mousedown', resetActivity);
       window.removeEventListener('keydown', resetActivity);
       window.removeEventListener('scroll', resetActivity);
       window.removeEventListener('touchstart', resetActivity);
-      window.removeEventListener('mousemove', throttledResetActivity);
+      window.removeEventListener('mousemove', throttledReset);
     };
-  }, [isActive, idleTimeout]);
+  }, [isActive, idleTimeout, scheduleTimers, clearAllTimers]);
 
-  // ── Auto-dismiss warning if sessions become busy ──────────
+  // ── Pause timers while busy, resume when idle ─────────────
   useEffect(() => {
-    if (isBusy && showWarning) {
+    if (isBusy) {
+      clearAllTimers();
       setShowWarning(false);
       setCountdown(WARNING_SECONDS);
+    } else if (isActive && idleTimeout > 0) {
+      scheduleTimers();
     }
-  }, [isBusy, showWarning]);
-
-  // ── Check idle status periodically (no network call) ──────
-  useEffect(() => {
-    if (!isActive || idleTimeout === 0 || showWarning || isBusy) return;
-
-    const checkIdle = () => {
-      const idleMs = Date.now() - lastActivityRef.current;
-      if (idleMs >= idleTimeout * 1000) {
-        setShowWarning(true);
-        setCountdown(WARNING_SECONDS);
-      }
-    };
-
-    // Check immediately, then at intervals
-    checkIdle();
-    const interval = setInterval(checkIdle, CHECK_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [isActive, idleTimeout, showWarning, isBusy]);
-
-  // ── Warning countdown ─────────────────────────────────────
-  useEffect(() => {
-    if (!showWarning) return;
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          // Time's up — stop the machine
-          if (!stoppingRef.current) {
-            stoppingRef.current = true;
-            onStopRef.current().finally(() => {
-              stoppingRef.current = false;
-            });
-          }
-          setShowWarning(false);
-          return WARNING_SECONDS;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [showWarning]);
+  }, [isBusy, isActive, idleTimeout, clearAllTimers, scheduleTimers]);
 
   // ── Reset if machine becomes inactive ─────────────────────
   useEffect(() => {
     if (!isActive) {
+      clearAllTimers();
       setShowWarning(false);
       setCountdown(WARNING_SECONDS);
     }
-  }, [isActive]);
+  }, [isActive, clearAllTimers]);
 
   const keepAlive = useCallback(() => {
-    lastActivityRef.current = Date.now();
     setShowWarning(false);
     setCountdown(WARNING_SECONDS);
-    // Touch the bridge to reset server-side lastActiveAt
+    scheduleTimers();
     if (bridgeUrl && bridgeApiKey) {
       fetch(`${bridgeUrl}/_bridge/health`, {
         headers: { 'x-api-key': bridgeApiKey },
       }).catch(() => {});
     }
-  }, [bridgeUrl, bridgeApiKey]);
+  }, [bridgeUrl, bridgeApiKey, scheduleTimers]);
 
   const suspendNow = useCallback(() => {
-    setShowWarning(false);
-    setCountdown(WARNING_SECONDS);
-    if (!stoppingRef.current) {
-      stoppingRef.current = true;
-      onStopRef.current().finally(() => {
-        stoppingRef.current = false;
-      });
-    }
-  }, []);
+    doStop();
+  }, [doStop]);
 
   return {
     showWarning,
