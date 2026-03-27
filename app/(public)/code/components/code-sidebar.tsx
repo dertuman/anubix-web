@@ -14,6 +14,7 @@ import {
   Loader2,
   LogOut,
   Menu,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -26,6 +27,7 @@ import {
 
 import type { BridgeSession } from '@/types/code';
 import type { useClaudeConnection } from '@/hooks/useClaudeConnection';
+import type { ConnectionHealth } from '@/hooks/useSessionConnection';
 import { cn } from '@/lib/utils';
 import type { BridgeLogs, ExecResult, FetchReposResult, PullResult } from '@/hooks/useClaudeCode';
 import { toast } from '@/components/ui/use-toast';
@@ -71,6 +73,7 @@ interface CodeSidebarProps {
   onRefreshSessions?: () => Promise<void>;
   previewUrl?: string;
   isBusy?: boolean;
+  onSuspend?: () => void;
   onDisconnect?: () => void;
   claudeConnection?: ReturnType<typeof useClaudeConnection>;
   onFetchLogs?: (_opts?: { last?: number; filter?: string }) => Promise<BridgeLogs>;
@@ -78,6 +81,9 @@ interface CodeSidebarProps {
   onPushCredentials?: (_opts: { claudeMode: 'cli' | 'sdk'; claudeAuthJson?: string; anthropicApiKey?: string }) => Promise<void>;
   modeToggle?: React.ReactNode;
   isPreviewMode?: boolean;
+  machineStatus?: string | null;
+  connectionHealth?: ConnectionHealth;
+  onResume?: () => void;
 }
 
 export const CodeSidebar = memo(function CodeSidebar({
@@ -97,6 +103,7 @@ export const CodeSidebar = memo(function CodeSidebar({
   onRefreshSessions,
   previewUrl,
   isBusy,
+  onSuspend,
   onDisconnect,
   claudeConnection,
   onFetchLogs,
@@ -104,6 +111,9 @@ export const CodeSidebar = memo(function CodeSidebar({
   onPushCredentials,
   modeToggle,
   isPreviewMode = false,
+  machineStatus,
+  connectionHealth: sidebarConnectionHealth,
+  onResume,
 }: CodeSidebarProps) {
   const t = useScopedI18n('code.sessions');
   const [collapsed, setCollapsed] = useState(false);
@@ -169,6 +179,33 @@ export const CodeSidebar = memo(function CodeSidebar({
       <div className="flex flex-col gap-2 p-3">
         {/* Mode toggle - only show in workspace */}
         {modeToggle && <div className="w-full">{modeToggle}</div>}
+
+        {/* Machine status indicator */}
+        {machineStatus === 'stopped' && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5">
+            <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+              <span className="size-2 rounded-full bg-amber-500" />
+              Environment Suspended
+            </div>
+            {onResume && (
+              <Button size="sm" onClick={onResume} className="mt-2 w-full gap-1.5 text-xs">
+                <RefreshCw className="size-3" /> Resume
+              </Button>
+            )}
+          </div>
+        )}
+        {machineStatus === 'starting' && (
+          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 p-2.5 text-xs text-primary">
+            <Loader2 className="size-3.5 animate-spin" />
+            Resuming environment...
+          </div>
+        )}
+        {machineStatus === 'running' && sidebarConnectionHealth === 'connected' && (
+          <div className="flex items-center gap-2 px-1 text-[10px] text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            Connected
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5">
 
@@ -577,6 +614,18 @@ export const CodeSidebar = memo(function CodeSidebar({
                 </div>
               )}
             </div>
+          )}
+
+          {onSuspend && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSuspend}
+              className="w-full gap-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Moon className="size-3.5" />
+              Suspend Environment
+            </Button>
           )}
 
           {onDisconnect && (

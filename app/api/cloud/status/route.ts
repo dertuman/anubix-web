@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
 import { getAuthEmail } from '@/lib/auth-utils';
+import { getMachineStatus } from '@/lib/fly-machines';
 
 /**
  * GET /api/cloud/status
@@ -61,6 +62,36 @@ async function handleStatus() {
       }
     } catch {
       // Bridge not reachable or credentials undecryptable — keep current status
+    }
+  }
+
+  // Detect Fly auto-stop: if DB says 'running' but bridge is unreachable, check Fly machine state
+  if (
+    status === 'running' &&
+    data.bridge_url &&
+    data.bridge_api_key_encrypted
+  ) {
+    try {
+      const apiKey = decrypt(data.bridge_api_key_encrypted);
+      const res = await fetch(`${data.bridge_url}/_bridge/health`, {
+        headers: { 'x-api-key': apiKey },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) throw new Error('unhealthy');
+    } catch {
+      // Bridge unreachable — check actual Fly machine state
+      if (data.fly_app_name && data.fly_machine_id) {
+        try {
+          const flyMachine = await getMachineStatus(data.fly_app_name, data.fly_machine_id);
+          if (flyMachine.state === 'stopped') {
+            status = 'stopped';
+            await supabase.from('cloud_machines').update({
+              status: 'stopped',
+              stopped_at: new Date().toISOString(),
+            }).eq('email', email);
+          }
+        } catch { /* keep current status */ }
+      }
     }
   }
 

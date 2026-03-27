@@ -17,13 +17,6 @@ import type {
   WsClientFrame,
   WsServerFrame,
 } from '@/types/code';
-import {
-  clearSessionMessages,
-  getSessionLastSeq,
-  getSessionMessages,
-  setSessionLastSeq,
-  setSessionMessages,
-} from '@/lib/stores/bridge-store';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -256,8 +249,8 @@ export class SessionConnection {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
     this.onChange = onChange;
-    this.messages = getSessionMessages(sessionId) as CodeMessage[];
-    this.seq = getSessionLastSeq(sessionId);
+    this.messages = [];
+    this.seq = 0;
   }
 
   // ── Lifecycle ──────────────────────────────────────────────
@@ -278,7 +271,6 @@ export class SessionConnection {
     this.connectionHealth = 'disconnected';
     this.isBusy = false;
     this.messages = completeAllPending(this.messages);
-    this.persistMessages();
     this.onChange();
   }
 
@@ -328,7 +320,6 @@ export class SessionConnection {
     this.messages = [];
     this.isBusy = false;
     this.seq = 0;
-    clearSessionMessages(this.sessionId);
     this.onChange();
   }
 
@@ -349,9 +340,6 @@ export class SessionConnection {
       this.connectionHealth = 'connecting';
       this.onChange();
 
-      // Remember messages loaded from localStorage cache in constructor
-      const cachedMessages = this.messages;
-
       try {
         const httpBase = this.baseUrl.replace(/^ws(s?):\/\//, 'http$1://');
         const res = await fetch(`${httpBase}/_bridge/sessions/${this.sessionId}/messages`, {
@@ -366,12 +354,6 @@ export class SessionConnection {
             this.messages = rebuilt.messages;
             this.seq = rebuilt.lastSeq;
             this.onChange();
-          } else if (cachedMessages.length > 0) {
-            // Bridge returned empty history (machine restarted) but we have
-            // cached messages from localStorage — keep them and mark complete
-            this.messages = completeAllPending(cachedMessages);
-            this.isBusy = false;
-            this.onChange();
           }
           this.historyLoaded = true;
 
@@ -381,12 +363,9 @@ export class SessionConnection {
           if (lastMsg?.type === 'assistant_text' && !lastMsg.isComplete) {
             this.currentTextId = lastMsg.id;
           }
-
-          this.persistMessages();
         }
       } catch (err) {
         console.error('Failed to load session history:', err);
-        // Fall through — still connect WS with local cache
       }
     }
 
@@ -449,7 +428,6 @@ export class SessionConnection {
       this.connectionHealth = 'failed';
       this.isBusy = false;
       this.messages = completeAllPending(this.messages);
-      this.persistMessages();
       this.onChange();
       return;
     }
@@ -492,19 +470,11 @@ export class SessionConnection {
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
   }
 
-  // ── Internal: Persistence ──────────────────────────────────
-
-  private persistMessages() {
-    setSessionMessages(this.sessionId, this.messages);
-    setSessionLastSeq(this.sessionId, this.seq);
-  }
-
   // ── Internal: Frame processing ─────────────────────────────
 
   private processFrame(frame: WsServerFrame) {
     if (frame.seq !== undefined) {
       this.seq = frame.seq as number;
-      setSessionLastSeq(this.sessionId, this.seq);
     }
 
     switch (frame.type) {
@@ -633,7 +603,6 @@ export class SessionConnection {
             cancelled: frame.cancelled as boolean | undefined,
           },
         ];
-        this.persistMessages();
         this.onChange();
         break;
       }
@@ -663,7 +632,6 @@ export class SessionConnection {
         this.isBusy = false;
         this.seq = 0;
         this.currentTextId = null;
-        clearSessionMessages(this.sessionId);
         this.onChange();
         break;
       }
@@ -690,10 +658,8 @@ export class SessionConnection {
         break;
       }
 
-      case 'replay_end': {
-        this.persistMessages();
+      case 'replay_end':
         break;
-      }
 
       default:
         console.warn('[WS] Unhandled frame type:', frame.type, frame);

@@ -37,67 +37,53 @@ export function CodeViewWrapper() {
     }
   }, []);
 
-  // Reset attempt counter when machine URL changes (new machine provisioned)
+  // Reset retry counter when: URL changes, machine transitions to running, or unexpected disconnect
+  const prevStatusRef = useRef<string | null>(null);
   useEffect(() => {
+    let shouldReset = false;
+
+    // URL changed (new machine provisioned)
     const url = cloudMachine.machine?.bridgeUrl ?? null;
     if (url !== activeUrlRef.current) {
       activeUrlRef.current = url;
-      attemptCountRef.current = 0;
-      clearRetryTimer();
+      shouldReset = true;
     }
-  }, [cloudMachine.machine?.bridgeUrl, clearRetryTimer]);
 
-  // Reset retry counter when machine transitions from stopped/starting → running
-  // (URL doesn't change on resume, so the URL-change reset doesn't fire)
-  useEffect(() => {
-    const currentStatus = cloudMachine.machine?.status ?? null;
-    const prev = prevMachineStatusRef.current;
-    prevMachineStatusRef.current = currentStatus;
-
+    // Machine transitioned to running from stopped/starting
+    const currentMachineStatus = cloudMachine.machine?.status ?? null;
+    const prevMachine = prevMachineStatusRef.current;
+    prevMachineStatusRef.current = currentMachineStatus;
     if (
-      currentStatus === 'running' &&
-      (prev === 'stopped' || prev === 'starting' || prev === 'suspended')
+      currentMachineStatus === 'running' &&
+      (prevMachine === 'stopped' || prevMachine === 'starting' || prevMachine === 'suspended')
     ) {
-      attemptCountRef.current = 0;
-      clearRetryTimer();
+      shouldReset = true;
     }
-  }, [cloudMachine.machine?.status, clearRetryTimer]);
 
-  // Refresh machine status when WebSocket connection fails
-  // If the machine actually stopped (Fly auto-suspend), machine.status updates to 'stopped'
-  // and the UI shows "Environment suspended" with Resume.
-  useEffect(() => {
-    if (connectionHealth === 'failed' && cloudMachine.machine?.status === 'running') {
-      cloudMachine.refresh();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionHealth]);
-
-  // Refresh machine status when connect() fails while machine is supposedly running.
-  // Catches Fly auto-suspend where our DB still says 'running' but bridge is unreachable.
-  useEffect(() => {
-    if (connectionError && cloudMachine.machine?.status === 'running') {
-      cloudMachine.refresh();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionError]);
-
-  // Reset retry counter on unexpected disconnect (bridge crash while machine is running)
-  // Gives a fresh set of auto-connect attempts
-  const prevStatusRef = useRef<string | null>(null);
-  useEffect(() => {
-    const prev = prevStatusRef.current;
+    // Unexpected disconnect while machine is running (bridge crash)
+    const prevConn = prevStatusRef.current;
     prevStatusRef.current = status;
+    if (prevConn === 'connected' && status === 'disconnected' && currentMachineStatus === 'running') {
+      shouldReset = true;
+    }
 
-    if (
-      prev === 'connected' &&
-      status === 'disconnected' &&
-      cloudMachine.machine?.status === 'running'
-    ) {
+    if (shouldReset) {
       attemptCountRef.current = 0;
       clearRetryTimer();
     }
-  }, [status, cloudMachine.machine?.status, clearRetryTimer]);
+  }, [cloudMachine.machine?.bridgeUrl, cloudMachine.machine?.status, status, clearRetryTimer]);
+
+  // Refresh machine status when connection fails or connect() errors while machine is 'running'
+  // Detects Fly auto-stop so UI can show "Environment Suspended" with Resume button
+  useEffect(() => {
+    if (
+      cloudMachine.machine?.status === 'running' &&
+      (connectionHealth === 'failed' || connectionError)
+    ) {
+      cloudMachine.refresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionHealth, connectionError]);
 
   // Auto-connect with limited retries and exponential backoff
   // Skip auto-connect in demo preview mode and during stop/start transitions
