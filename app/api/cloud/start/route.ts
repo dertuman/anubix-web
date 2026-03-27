@@ -88,6 +88,40 @@ async function handleStart() {
       : '';
     await waitForBridgeHealth(machine.bridge_url!, bridgeApiKey);
 
+    // Re-push Claude credentials from DB to bridge after resume.
+    // Credentials may have been updated since provisioning (OAuth refresh, etc.)
+    try {
+      const { data: claudeConn } = await supabase
+        .from('claude_connections')
+        .select()
+        .eq('email', email)
+        .single();
+
+      if (claudeConn) {
+        const claudeMode = claudeConn.claude_mode as 'cli' | 'sdk';
+        const credPayload: Record<string, string> = { claudeMode };
+
+        if (claudeMode === 'cli' && claudeConn.auth_json_encrypted) {
+          credPayload.claudeAuthJson = decrypt(claudeConn.auth_json_encrypted);
+        }
+        if (claudeMode === 'sdk' && claudeConn.api_key_encrypted) {
+          credPayload.anthropicApiKey = decrypt(claudeConn.api_key_encrypted);
+        }
+
+        await fetch(`${machine.bridge_url}/_bridge/credentials`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': bridgeApiKey,
+          },
+          body: JSON.stringify(credPayload),
+        });
+      }
+    } catch (credErr) {
+      // Non-fatal: machine is running, credentials can be pushed manually later
+      console.error('Failed to push credentials on resume:', credErr);
+    }
+
     await supabase.from('cloud_machines').update({
       status: 'running',
       stopped_at: null,

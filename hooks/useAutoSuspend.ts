@@ -129,31 +129,6 @@ export function useAutoSuspend({
     }
   }, [isBusy, showWarning]);
 
-  // ── Auto-dismiss warning on any user interaction ──────────
-  useEffect(() => {
-    if (!showWarning) return;
-
-    const dismiss = () => {
-      lastActivityRef.current = Date.now();
-      setShowWarning(false);
-      setCountdown(WARNING_SECONDS);
-      // Ping bridge to reset server-side timestamp
-      if (bridgeUrl && bridgeApiKey) {
-        fetch(`${bridgeUrl}/_bridge/health`, {
-          headers: { 'x-api-key': bridgeApiKey },
-        }).catch(() => {});
-      }
-    };
-
-    window.addEventListener('mousedown', dismiss);
-    window.addEventListener('keydown', dismiss);
-
-    return () => {
-      window.removeEventListener('mousedown', dismiss);
-      window.removeEventListener('keydown', dismiss);
-    };
-  }, [showWarning, bridgeUrl, bridgeApiKey]);
-
   // ── Check idle status periodically (no network call) ──────
   useEffect(() => {
     if (!isActive || idleTimeout === 0 || showWarning || isBusy) return;

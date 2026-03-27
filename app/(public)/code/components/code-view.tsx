@@ -68,12 +68,11 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     return false;
   }, [sessionLiveStates]);
 
-  // Coordinated stop: start stop first (sets isWorking=true, blocking auto-reconnect),
-  // then close WebSockets while stop API is in flight
+  // Coordinated stop: stop first, then disconnect.
+  // softDisconnect() AFTER stop completes so auto-reconnect can't race.
   const handleAutoSuspendStop = useCallback(async () => {
-    const stopPromise = cloudMachine.stop();
+    await cloudMachine.stop();
     softDisconnect();
-    await stopPromise;
   }, [softDisconnect, cloudMachine]);
 
   const autoSuspend = useAutoSuspend({
