@@ -270,6 +270,25 @@ export async function createFlyMachine(
   return res.json();
 }
 
+/**
+ * Update a machine's configuration (e.g. env vars).
+ * The machine must be stopped before updating.
+ * Uses PATCH which merges the provided config with the existing one.
+ */
+export async function updateFlyMachine(
+  appName: string,
+  machineId: string,
+  configPatch: Record<string, unknown>,
+): Promise<FlyMachine> {
+  const res = await withRetry(() =>
+    flyFetchOk(`/apps/${appName}/machines/${machineId}`, {
+      method: 'POST',
+      body: JSON.stringify({ config: configPatch }),
+    }),
+  );
+  return res.json();
+}
+
 export async function startFlyMachine(appName: string, machineId: string): Promise<void> {
   await flyFetchOk(`/apps/${appName}/machines/${machineId}/start`, { method: 'POST' });
 }

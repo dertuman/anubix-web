@@ -9,6 +9,7 @@ import { checkSubscriptionOrAdmin } from '@/lib/check-subscription';
 export const maxDuration = 60;
 import {
   getMachineStatus,
+  updateFlyMachine,
   startFlyMachine,
   waitForMachineState,
   waitForBridgeHealth,
@@ -83,6 +84,22 @@ async function handleStart() {
 
     // Check actual Fly machine state before attempting start
     const flyState = await getMachineStatus(machine.fly_app_name, machine.fly_machine_id);
+
+    // Migrate existing machines: add DATA_DIR env var so bridge data persists on volume
+    if (flyState.state === 'stopped') {
+      const existingEnv = (flyState.config?.env as Record<string, string>) ?? {};
+      if (!existingEnv.DATA_DIR) {
+        try {
+          await updateFlyMachine(machine.fly_app_name, machine.fly_machine_id, {
+            env: { ...existingEnv, DATA_DIR: '/workspace/.bridge-data' },
+          });
+        } catch (err) {
+          console.error('Failed to migrate DATA_DIR env var:', err);
+          // Non-fatal — continue with start
+        }
+      }
+    }
+
     if (flyState.state === 'started') {
       // Already running — skip start, go straight to health check
     } else if (flyState.state === 'stopping') {
