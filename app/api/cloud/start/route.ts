@@ -85,16 +85,22 @@ async function handleStart() {
     // Check actual Fly machine state before attempting start
     const flyState = await getMachineStatus(machine.fly_app_name, machine.fly_machine_id);
 
-    // Migrate existing machines: add DATA_DIR env var so bridge data persists on volume
+    // Migrate existing machines: add env vars so data persists on volume
     if (flyState.state === 'stopped') {
       const existingEnv = (flyState.config?.env as Record<string, string>) ?? {};
-      if (!existingEnv.DATA_DIR) {
+      const needsDataDir = !existingEnv.DATA_DIR;
+      const needsClaudeConfig = !existingEnv.CLAUDE_CONFIG_DIR;
+      if (needsDataDir || needsClaudeConfig) {
         try {
           await updateFlyMachine(machine.fly_app_name, machine.fly_machine_id, {
-            env: { ...existingEnv, DATA_DIR: '/workspace/.bridge-data' },
+            env: {
+              ...existingEnv,
+              ...(needsDataDir ? { DATA_DIR: '/workspace/.bridge-data' } : {}),
+              ...(needsClaudeConfig ? { CLAUDE_CONFIG_DIR: '/workspace/.claude-config' } : {}),
+            },
           });
         } catch (err) {
-          console.error('Failed to migrate DATA_DIR env var:', err);
+          console.error('Failed to migrate env vars:', err);
           // Non-fatal — continue with start
         }
       }

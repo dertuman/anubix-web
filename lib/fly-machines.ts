@@ -201,6 +201,7 @@ export async function createFlyMachine(
     REPOS_BASE_PATH: '/workspace',
     PREVIEW_FALLBACK_PORT: '3000',
     DATA_DIR: '/workspace/.bridge-data',
+    CLAUDE_CONFIG_DIR: '/workspace/.claude-config',
   };
 
   // Claude auth — inject the appropriate credential (if available)

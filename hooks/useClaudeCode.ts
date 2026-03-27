@@ -97,7 +97,7 @@ export interface UseClaudeCodeReturn {
 export function useClaudeCode(): UseClaudeCodeReturn {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [sessions, setSessions] = useState<BridgeSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => getLastSessionId());
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const baseUrlRef = useRef('');
