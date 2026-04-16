@@ -188,7 +188,7 @@ export const MOCK_CHAT_CONVERSATIONS: ChatConversation[] = [
     id: 'preview-chat-conv-3',
     email: 'demo@example.com',
     title: 'Explain Async/Await',
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     message_count: 2,
     is_shared: false,
     share_id: null,

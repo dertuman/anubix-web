@@ -86,7 +86,7 @@ export function HeroSection() {
           <div className="flex flex-col items-center gap-3">
             <div className="w-[200px] sm:w-[260px] md:w-[280px]">
               <PhoneFrame
-                src="/screenshots/mobile-code.png"
+                src="https://9f0ukjqx7iqh79mj.public.blob.vercel-storage.com/mobile-code.webp"
                 alt="Anubix code agent running a security review from a phone"
                 width={1179}
                 height={2556}
@@ -97,7 +97,7 @@ export function HeroSection() {
           <div className="flex flex-col items-center gap-3 translate-y-8 sm:translate-y-12">
             <div className="w-[180px] sm:w-[230px] md:w-[250px]">
               <PhoneFrame
-                src="/screenshots/mobile-chat.png"
+                src="https://9f0ukjqx7iqh79mj.public.blob.vercel-storage.com/mobile-chat.webp"
                 alt="Anubix AI chat with Gemini comparing React patterns"
                 width={1179}
                 height={2556}
@@ -162,7 +162,7 @@ export function HeroSection() {
         {/* Right column -- single phone */}
         <div className="w-[260px] xl:w-[300px]">
           <PhoneFrame
-            src="/screenshots/mobile-code.png"
+            src="https://9f0ukjqx7iqh79mj.public.blob.vercel-storage.com/mobile-code.webp"
             alt="Anubix code agent running a security review from a phone"
             width={1179}
             height={2556}

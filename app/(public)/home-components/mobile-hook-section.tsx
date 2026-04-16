@@ -123,7 +123,7 @@ export function MobileHookSection() {
         <div className="pl-2 sm:pl-4 md:container md:mx-auto md:px-4">
           <div className="w-[130%] sm:w-[120%] md:w-full">
             <BrowserFrame
-              src="/screenshots/desktop-code.jpg"
+              src="https://9f0ukjqx7iqh79mj.public.blob.vercel-storage.com/desktop-code.webp"
               alt="Anubix desktop workspace - multi-repo code exploration and security review"
               url="anubix.com/workspace"
               width={3266}

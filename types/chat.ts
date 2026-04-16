@@ -27,8 +27,9 @@ export const AI_MODELS: AIModel[] = [
   { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', description: 'Latest & fastest (1M context)', provider: 'google', supportsVision: true, hasSearch: true },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Fast & powerful', provider: 'google', supportsVision: true, hasSearch: true },
   // Anthropic
-  { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', description: 'Fast & intelligent', provider: 'anthropic', supportsVision: true },
-  { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', description: 'Most capable', provider: 'anthropic', supportsVision: true },
+  { id: 'claude-opus-4-7', name: 'Claude Opus 4.7', description: 'Most capable', provider: 'anthropic', supportsVision: true },
+  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', description: 'Fast & intelligent', provider: 'anthropic', supportsVision: true },
+  { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', description: 'Fastest & affordable', provider: 'anthropic', supportsVision: true },
 ] as const;
 
 export type ModelId = (typeof AI_MODELS)[number]['id'];

@@ -2,20 +2,20 @@
 @import 'tw-animate-css';
 
 :root {
-  /* ─── Core (light — #faf8f5 warm off-white) ─── */
-  --background: hsl(36 33% 97%);
+  /* ─── Core (light) ─── */
+  --background: hsl(0 0% 97%);
   --foreground: hsl(0 0% 10%);
 
   /* ─── Card / Popover ─── */
-  --card: hsl(36 33% 97%);
+  --card: hsl(0 0% 100%);
   --card-foreground: hsl(0 0% 10%);
-  --popover: hsl(36 33% 97%);
+  --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(0 0% 10%);
 
   /* ─── Brand (emerald) ─── */
-  --primary: hsl(160 60% 42%);
+  --primary: hsl(160 84% 39%);
   --primary-foreground: hsl(0 0% 100%);
-  --primary-muted: hsl(160 60% 42% / 0.12);
+  --primary-muted: hsl(160 84% 39% / 0.12);
 
   /* ─── Secondary / Muted / Accent ─── */
   --secondary: hsl(0 0% 93%);
@@ -40,7 +40,7 @@
   /* ─── Form / Input ─── */
   --border: hsl(0 0% 82%);
   --input: hsl(0 0% 82%);
-  --ring: hsl(160 60% 42%);
+  --ring: hsl(160 84% 39%);
   --radius: 0.625rem;
 
   /* ─── Code / Mono ─── */
@@ -68,20 +68,20 @@
 }
 
 .dark {
-  /* ─── Core (#121212) ─── */
-  --background: hsl(0 0% 7%);
+  /* ─── Core (zinc dark) ─── */
+  --background: hsl(240 10% 3.9%);
   --foreground: hsl(0 0% 98%);
 
   /* ─── Card / Popover ─── */
-  --card: hsl(0 0% 7%);
+  --card: hsl(240 10% 3.9%);
   --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(0 0% 7%);
+  --popover: hsl(240 10% 3.9%);
   --popover-foreground: hsl(0 0% 98%);
 
   /* ─── Brand (emerald) ─── */
-  --primary: hsl(160 55% 44%);
+  --primary: hsl(160 84% 39%);
   --primary-foreground: hsl(0 0% 98%);
-  --primary-muted: hsl(160 55% 44% / 0.15);
+  --primary-muted: hsl(160 84% 39% / 0.15);
 
   /* ─── Secondary / Muted / Accent (zinc) ─── */
   --secondary: hsl(240 3.7% 15.9%);
@@ -106,7 +106,7 @@
   /* ─── Form / Input ─── */
   --border: hsl(240 3.7% 15.9%);
   --input: hsl(240 3.7% 15.9%);
-  --ring: hsl(160 55% 44%);
+  --ring: hsl(160 84% 39%);
   --radius: 0.625rem;
 
   /* ─── Code / Mono ─── */
@@ -120,10 +120,10 @@
   --tabs: hsl(240 3.7% 15.9%);
   --tabs-foreground: hsl(240 5% 64.9%);
 
-  /* ─── User Chat Bubble ─── */
-  --user-bubble: hsl(160 55% 44% / 0.15);
+  /* ─── User Chat Bubble (original green) ─── */
+  --user-bubble: hsl(160 84% 39% / 0.15);
   --user-bubble-foreground: hsl(0 0% 98%);
-  --user-bubble-ring: hsl(160 55% 44% / 0.20);
+  --user-bubble-ring: hsl(160 84% 39% / 0.20);
 
   /* ─── Extended Palette ─── */
   --orange-custom: hsl(352 73% 61%);

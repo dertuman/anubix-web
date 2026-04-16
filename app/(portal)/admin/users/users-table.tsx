@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Check,
+  Download,
   Loader2,
   RefreshCw,
   Search,
@@ -153,6 +154,12 @@ export function UsersTable() {
   });
   const [deleting, setDeleting] = useState(false);
 
+  // Update machine dialog
+  const [updateDialog, setUpdateDialog] = useState<{ open: boolean; userId: string; flyApp: string | null }>({
+    open: false, userId: '', flyApp: null,
+  });
+  const [updating, setUpdating] = useState(false);
+
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -227,6 +234,28 @@ export function UsersTable() {
     } finally {
       setDeleting(false);
       setDeleteDialog({ open: false, userId: '', flyApp: null });
+    }
+  };
+
+  const handleUpdateMachine = async () => {
+    setUpdating(true);
+    try {
+      const res = await fetch('/api/admin/update-machine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: updateDialog.userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Update failed');
+      } else {
+        await fetchUsers();
+      }
+    } catch {
+      setError('Update failed');
+    } finally {
+      setUpdating(false);
+      setUpdateDialog({ open: false, userId: '', flyApp: null });
     }
   };
 
@@ -396,6 +425,23 @@ export function UsersTable() {
                         )}
                       </Button>
 
+                      {/* Update machine image (keeps volume/data) */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs"
+                        title="Update machine to latest bridge image (keeps all data)"
+                        disabled={
+                          !user.machine_status ||
+                          user.machine_status === 'destroying' ||
+                          user.machine_status === 'destroyed'
+                        }
+                        onClick={() => setUpdateDialog({ open: true, userId: user.id, flyApp: user.fly_app_name })}
+                      >
+                        <Download className="size-3.5 text-muted-foreground" />
+                        Update
+                      </Button>
+
                       {/* Reset machine */}
                       <Button
                         variant="ghost"
@@ -456,6 +502,20 @@ export function UsersTable() {
         loading={togglingAdmin}
         onConfirm={handleToggleAdmin}
         onCancel={() => setAdminDialog({ open: false, userId: '', currentValue: false })}
+      />
+
+      {/* Update machine confirmation */}
+      <ConfirmDialog
+        open={updateDialog.open}
+        title="Update Machine Image"
+        description={
+          `This will stop the machine${updateDialog.flyApp ? ` (${updateDialog.flyApp})` : ''}, pull the latest bridge image, and restart it. ` +
+          'All sessions, repositories, and data on the volume are preserved. ' +
+          'Any active WebSocket connection will drop and reconnect (~1-3 min).'
+        }
+        loading={updating}
+        onConfirm={handleUpdateMachine}
+        onCancel={() => setUpdateDialog({ open: false, userId: '', flyApp: null })}
       />
 
       {/* Delete user confirmation */}
