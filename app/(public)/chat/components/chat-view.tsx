@@ -287,13 +287,23 @@ export function ChatView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   );
 
   // ── Build combined messages (with deduplication) ────────────
-  // Server messages take priority; only keep optimistic messages
-  // that don't have a server counterpart yet. This prevents
-  // duplicates during the bridge → server data handoff.
+  // Server is source of truth. Optimistic ids are local (`optimistic-…`)
+  // and never match server UUIDs, so we dedup by (role, content) using
+  // a remaining-count map — that way sending the same text twice in a
+  // row still renders both copies during the second send.
   const allMessages = useMemo(() => {
     if (optimisticMessages.length === 0) return messages;
-    const serverIds = new Set(messages.map((m) => m.id));
-    const uniqueOptimistic = optimisticMessages.filter((m) => !serverIds.has(m.id));
+    const remaining = new Map<string, number>();
+    for (const m of messages) {
+      const k = `${m.role}|${m.content}`;
+      remaining.set(k, (remaining.get(k) ?? 0) + 1);
+    }
+    const uniqueOptimistic = optimisticMessages.filter((m) => {
+      const k = `${m.role}|${m.content}`;
+      const c = remaining.get(k) ?? 0;
+      if (c > 0) { remaining.set(k, c - 1); return false; }
+      return true;
+    });
     return [...messages, ...uniqueOptimistic];
   }, [messages, optimisticMessages]);
   const totalMessages = allMessages.length;
