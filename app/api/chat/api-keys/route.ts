@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     if (profile?.is_admin) {
       if (process.env.OPENAI_API_KEY && !providers.includes('openai')) providers.push('openai');
-      if (process.env.GOOGLE_AI_API_KEY && !providers.includes('google')) providers.push('google');
+      if (process.env.GOOGLE_GENAI_API_KEY && !providers.includes('google')) providers.push('google');
       if (process.env.ANTHROPIC_API_KEY && !providers.includes('anthropic')) providers.push('anthropic');
     }
 

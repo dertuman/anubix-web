@@ -426,6 +426,123 @@ export interface Database {
         };
         Relationships: [];
       };
+      blogs: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          excerpt: string | null;
+          content: string;
+          category: string;
+          tags: string[];
+          featured_image_url: string | null;
+          featured_image_alt: string | null;
+          featured_image_caption: string | null;
+          meta_title: string | null;
+          meta_description: string | null;
+          keywords: string[];
+          og_image_alt: string | null;
+          author_name: string;
+          author_email: string;
+          author_avatar: string | null;
+          author_role: string | null;
+          author_bio: string | null;
+          reading_time: number;
+          featured: boolean;
+          is_draft: boolean;
+          published_at: string | null;
+          views: number;
+          likes: number;
+          shares: number;
+          generation_metadata: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          excerpt?: string | null;
+          content: string;
+          category: string;
+          tags?: string[];
+          featured_image_url?: string | null;
+          featured_image_alt?: string | null;
+          featured_image_caption?: string | null;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          keywords?: string[];
+          og_image_alt?: string | null;
+          author_name: string;
+          author_email: string;
+          author_avatar?: string | null;
+          author_role?: string | null;
+          author_bio?: string | null;
+          reading_time?: number;
+          featured?: boolean;
+          is_draft?: boolean;
+          published_at?: string | null;
+          views?: number;
+          likes?: number;
+          shares?: number;
+          generation_metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          excerpt?: string | null;
+          content?: string;
+          category?: string;
+          tags?: string[];
+          featured_image_url?: string | null;
+          featured_image_alt?: string | null;
+          featured_image_caption?: string | null;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          keywords?: string[];
+          og_image_alt?: string | null;
+          author_name?: string;
+          author_email?: string;
+          author_avatar?: string | null;
+          author_role?: string | null;
+          author_bio?: string | null;
+          reading_time?: number;
+          featured?: boolean;
+          is_draft?: boolean;
+          published_at?: string | null;
+          views?: number;
+          likes?: number;
+          shares?: number;
+          generation_metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      blog_likes: {
+        Row: {
+          id: string;
+          blog_id: string;
+          user_email: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          blog_id: string;
+          user_email: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          blog_id?: string;
+          user_email?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -470,3 +587,10 @@ export type ClaudeConnectionUpdate = Database['public']['Tables']['claude_connec
 export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
 export type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert'];
 export type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update'];
+
+export type Blog = Database['public']['Tables']['blogs']['Row'];
+export type BlogInsert = Database['public']['Tables']['blogs']['Insert'];
+export type BlogUpdate = Database['public']['Tables']['blogs']['Update'];
+
+export type BlogLike = Database['public']['Tables']['blog_likes']['Row'];
+export type BlogLikeInsert = Database['public']['Tables']['blog_likes']['Insert'];

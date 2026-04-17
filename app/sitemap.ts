@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 
 import { API_BASE_URL } from '@/lib/constants';
+import { listAllPublishedSlugs } from '@/lib/blog-data';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // revalidate every hour
@@ -19,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '', priority: 1.0, changeFrequency: 'daily' },
     { path: '/about', priority: 0.8, changeFrequency: 'weekly' },
     { path: '/workspace', priority: 0.9, changeFrequency: 'daily' },
+    { path: '/blog', priority: 0.9, changeFrequency: 'daily' },
   ];
 
   const urls: MetadataRoute.Sitemap = routes.map((route) => ({
@@ -27,6 +29,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
+
+  // Append published blog posts so Google can crawl them.
+  try {
+    const blogs = await listAllPublishedSlugs();
+    for (const b of blogs) {
+      urls.push({
+        url: `${baseUrl}/blog/${b.slug}`,
+        lastModified: new Date(b.updated_at),
+        changeFrequency: 'weekly',
+        priority: 0.7,
+      });
+    }
+  } catch {
+    // If Supabase isn't reachable at build time, fall back silently.
+  }
 
   return urls;
 }

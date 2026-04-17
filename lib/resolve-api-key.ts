@@ -54,7 +54,7 @@ export async function resolveApiKey(
 function getEnvKey(provider: AIProvider): string | undefined {
   switch (provider) {
     case 'openai': return process.env.OPENAI_API_KEY;
-    case 'google': return process.env.GOOGLE_AI_API_KEY;
+    case 'google': return process.env.GOOGLE_GENAI_API_KEY;
     case 'anthropic': return process.env.ANTHROPIC_API_KEY;
     default: return undefined;
   }

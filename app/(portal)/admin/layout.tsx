@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DatabaseZap, Loader2, ShieldCheck, Users } from 'lucide-react';
+import { BookOpen, DatabaseZap, Loader2, ShieldCheck, Users } from 'lucide-react';
 
 import { useUserData } from '@/context/UserDataContext';
 import { Loader } from '@/components/ui/loader';
@@ -17,6 +17,7 @@ interface AdminLayoutProps {
 
 const NAV_ITEMS = [
   { title: 'Users', href: '/admin/users', icon: Users },
+  { title: 'Blog', href: '/admin/blog', icon: BookOpen },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
