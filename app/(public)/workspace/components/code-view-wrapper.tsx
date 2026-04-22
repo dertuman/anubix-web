@@ -13,15 +13,6 @@ import { ModeToggle } from './mode-toggle';
 import { DemoPreviewOverlay } from './demo-preview-overlay';
 import { MOCK_MESSAGES, MOCK_SESSION } from '@/lib/demo-data';
 
-/** Bridge is considered "online" if it heartbeated within this window. */
-const LOCAL_BRIDGE_ONLINE_WINDOW_MS = 2 * 60 * 1000;
-
-function isRecent(iso: string | null | undefined): boolean {
-  if (!iso) return false;
-  const t = Date.parse(iso);
-  return !Number.isNaN(t) && Date.now() - t < LOCAL_BRIDGE_ONLINE_WINDOW_MS;
-}
-
 const MAX_AUTO_CONNECT_ATTEMPTS = 5;
 const BASE_RETRY_DELAY_MS = 3000;
 
@@ -78,18 +69,19 @@ export function CodeViewWrapper() {
     return null;
   }, [effectivePreferred, bridgeConfig.config, cloudMachine.machine]);
 
-  // Poll bridge_configs while local is preferred but not yet reachable, so the
-  // workspace flips to connected as soon as the laptop heartbeats.
-  const localPreferredButOffline =
-    effectivePreferred === 'local' &&
-    !isRecent(bridgeConfig.config?.lastSeenAt);
+  // Poll bridge_configs whenever local is preferred AND we're not actually
+  // connected to it (WebSocket health = 'connected'). When the WebSocket is
+  // alive the connection itself proves the bridge is reachable, so polling
+  // would be redundant. When it's down, we need to keep polling so lastSeenAt
+  // in the UI doesn't go artificially stale.
   useEffect(() => {
-    if (localPreferredButOffline) {
+    const shouldPoll = effectivePreferred === 'local' && connectionHealth !== 'connected';
+    if (shouldPoll) {
       bridgeConfig.startPolling();
       return bridgeConfig.stopPolling;
     }
     bridgeConfig.stopPolling();
-  }, [localPreferredButOffline, bridgeConfig]);
+  }, [effectivePreferred, connectionHealth, bridgeConfig]);
 
   const attemptCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,21 +157,23 @@ export function CodeViewWrapper() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionHealth, connectionError, target?.source]);
 
-  // Auto-switch: if we're connected to one URL and the resolved target has a
-  // different URL (local bridge just came online, or cloud machine was
-  // reprovisioned), disconnect so the auto-connect effect below can reconnect
-  // to the new target. This is what flips the user from cloud → local the
-  // moment their laptop heartbeats.
-  const connectedUrlRef = useRef<string | null>(null);
+  // Auto-switch: track the URL we last asked the pool to connect to. When the
+  // resolved target's URL differs (user picked a different env, or local
+  // bridge came online while we were on cloud), tear down the old connection
+  // so the auto-connect effect below takes us to the new target.
+  const lastRequestedUrlRef = useRef<string | null>(null);
   useEffect(() => {
-    if (status === 'connected' && target && target.bridgeUrl !== connectedUrlRef.current) {
+    if (
+      (status === 'connected' || status === 'connecting') &&
+      lastRequestedUrlRef.current &&
+      target &&
+      target.bridgeUrl !== lastRequestedUrlRef.current
+    ) {
       disconnect();
-    }
-    if (status === 'connecting' || status === 'connected') {
-      connectedUrlRef.current = target?.bridgeUrl ?? null;
+      lastRequestedUrlRef.current = null;
     }
     if (status === 'disconnected') {
-      connectedUrlRef.current = null;
+      lastRequestedUrlRef.current = null;
     }
   }, [status, target, disconnect]);
 
@@ -202,6 +196,7 @@ export function CodeViewWrapper() {
       retryTimerRef.current = setTimeout(() => {
         retryTimerRef.current = null;
         attemptCountRef.current += 1;
+        lastRequestedUrlRef.current = bridgeUrl;
         connect(bridgeUrl, bridgeApiKey);
       }, delay);
     }

@@ -141,7 +141,10 @@ export function LocalBridgeSetup({ onConnected }: LocalBridgeSetupProps) {
           <code className="bg-muted rounded px-1 py-0.5 text-xs">npm install</code>.
         </li>
         <li>
-          <strong className="text-foreground">3.</strong> Generate credentials below → paste into <code className="bg-muted rounded px-1 py-0.5 text-xs">.env</code> →{' '}
+          <strong className="text-foreground">3.</strong> Generate credentials below and put them in{' '}
+          <code className="bg-muted rounded px-1 py-0.5 text-xs">.env</code> (replace any existing{' '}
+          <code className="bg-muted rounded px-1 py-0.5 text-xs">BRIDGE_API_KEY</code> — don&apos;t keep both).
+          Then{' '}
           <code className="bg-muted rounded px-1 py-0.5 text-xs">npm run dev</code>.
         </li>
       </ol>
@@ -225,9 +228,11 @@ function WaitingPanel({
             {envTemplate}
           </pre>
           <p className="text-muted-foreground text-xs">
-            Paste this into <code className="bg-muted rounded px-1">.env</code> in your{' '}
-            <code className="bg-muted rounded px-1">anubix-bridge</code> checkout, then{' '}
-            <code className="bg-muted rounded px-1">npm run dev</code>.
+            Put these in <code className="bg-muted rounded px-1">.env</code> in your{' '}
+            <code className="bg-muted rounded px-1">anubix-bridge</code> checkout. If a{' '}
+            <code className="bg-muted rounded px-1">BRIDGE_API_KEY</code> already exists there,{' '}
+            <strong>replace</strong> it — having two lines with the same name silently uses the wrong one.
+            Then <code className="bg-muted rounded px-1">npm run dev</code>.
           </p>
         </div>
       )}

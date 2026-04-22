@@ -28,7 +28,9 @@ export function useBridgeConfig() {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/bridge-config');
+      // no-store: we poll this specifically to detect lastSeenAt changes; a
+      // cached response here would make the sidebar lie.
+      const res = await fetch('/api/bridge-config', { cache: 'no-store' });
       if (!res.ok) { setConfig(null); return; }
       const data = await res.json();
       setConfig(data.config ?? null);

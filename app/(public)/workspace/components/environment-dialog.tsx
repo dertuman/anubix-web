@@ -47,14 +47,13 @@ export function EnvironmentDialog({
     if (isOpen) setMode('picker');
   }, [isOpen]);
 
-  // Close dialog when connection succeeds — but NOT while the user is in the
-  // local-setup flow, otherwise a stale cloud connection slams the dialog shut
-  // before they can paste their .env or "Start over". LocalBridgeSetup calls
-  // onConnected itself when the local bridge heartbeats, which closes the
-  // dialog through the onConnected prop wired in workspace-view.
-  useEffect(() => {
-    if (connectionStatus === 'connected' && mode !== 'local') onClose();
-  }, [connectionStatus, mode, onClose]);
+  // NOTE: we deliberately do NOT auto-close on global connectionStatus here.
+  // That would slam the dialog shut the moment the user opens "Change
+  // environment" while a cloud WebSocket happens to be live. CloudProvision
+  // and LocalBridgeSetup each call onConnected() themselves when they're
+  // satisfied, which closes the dialog via workspace-view's onConnected prop.
+  // `connectionStatus` is kept in the props so the sub-flows can still read it.
+  void connectionStatus;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
