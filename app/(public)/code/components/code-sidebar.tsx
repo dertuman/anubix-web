@@ -6,11 +6,13 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Cloud,
   EllipsisVertical,
   ExternalLink,
   Eye,
   Github,
   Key,
+  Laptop,
   Loader2,
   LogOut,
   Menu,
@@ -19,6 +21,7 @@ import {
   PanelLeftOpen,
   Pencil,
   RefreshCw,
+  Repeat,
   ScrollText,
   Terminal,
   Trash2,
@@ -75,6 +78,11 @@ interface CodeSidebarProps {
   isBusy?: boolean;
   onSuspend?: () => void;
   onDisconnect?: () => void;
+  /** Open the environment picker (cloud / local). Exposed always so users can
+   *  add or switch between environments even after one is already set up. */
+  onChangeEnvironment?: () => void;
+  /** Which environment is currently active, for the sidebar label. */
+  activeEnvironment?: 'local' | 'cloud' | null;
   claudeConnection?: ReturnType<typeof useClaudeConnection>;
   onFetchLogs?: (_opts?: { last?: number; filter?: string }) => Promise<BridgeLogs>;
   onExecCommand?: (_command: string) => Promise<ExecResult>;
@@ -105,6 +113,8 @@ export const CodeSidebar = memo(function CodeSidebar({
   isBusy,
   onSuspend,
   onDisconnect,
+  onChangeEnvironment,
+  activeEnvironment,
   claudeConnection,
   onFetchLogs,
   onExecCommand,
@@ -321,7 +331,7 @@ export const CodeSidebar = memo(function CodeSidebar({
           )}
         </div>
       </ScrollArea>
-      {(onDisconnect || claudeConnection) && (
+      {(onDisconnect || claudeConnection || onChangeEnvironment) && (
         <div className="border-t border-border/20 p-3 space-y-2">
           {/* GitHub connection status */}
           {github && (
@@ -613,6 +623,28 @@ export const CodeSidebar = memo(function CodeSidebar({
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {onChangeEnvironment && (
+            <div className="space-y-1.5">
+              {activeEnvironment && (
+                <div className="flex items-center gap-2 px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {activeEnvironment === 'local' ? <Laptop className="size-3" /> : <Cloud className="size-3" />}
+                  <span>
+                    Environment: {activeEnvironment === 'local' ? 'My Computer' : 'Cloud'}
+                  </span>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onChangeEnvironment}
+                className="w-full gap-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Repeat className="size-3.5" />
+                Change Environment
+              </Button>
             </div>
           )}
 

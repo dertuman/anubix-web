@@ -53,8 +53,6 @@ export function EnvironmentDialog({
 
         {!isSignedIn ? (
           <LoginGate onClose={onClose} />
-        ) : connectionError ? (
-          <ErrorPanel message={connectionError} />
         ) : mode === 'picker' ? (
           <EnvironmentPicker onPick={setMode} />
         ) : mode === 'cloud' ? (
@@ -161,23 +159,6 @@ function WithBack({ onBack, children }: { onBack: () => void; children: React.Re
         Back
       </button>
       {children}
-    </div>
-  );
-}
-
-function ErrorPanel({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8">
-      <DialogHeader className="sr-only">
-        <DialogTitle>Connection Error</DialogTitle>
-      </DialogHeader>
-      <div className="bg-destructive/10 flex size-16 items-center justify-center rounded-2xl">
-        <Cloud className="text-destructive size-8" />
-      </div>
-      <div className="text-center">
-        <h3 className="text-lg font-semibold">Connection Failed</h3>
-        <p className="text-destructive text-sm">{message}</p>
-      </div>
     </div>
   );
 }
