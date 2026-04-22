@@ -267,17 +267,6 @@ async function handleProvision(req: NextRequest) {
       })
       .eq('email', email);
 
-    // 7. Also update bridge_configs so useBridgeConfig auto-connects
-    await supabase.from('bridge_configs').upsert(
-      {
-        email: email,
-        bridge_url: bridgeUrl,
-        api_key_encrypted: encrypt(bridgeApiKey),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'email' }
-    );
-
     return NextResponse.json({
       bridgeUrl,
       bridgeApiKey,

@@ -13,24 +13,30 @@ export interface Database {
         Row: {
           id: string;
           email: string;
-          bridge_url: string;
+          bridge_url: string | null;
           api_key_encrypted: string;
+          install_token_hash: string | null;
+          last_seen_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           email?: string;
-          bridge_url: string;
+          bridge_url?: string | null;
           api_key_encrypted: string;
+          install_token_hash?: string | null;
+          last_seen_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           email?: string;
-          bridge_url?: string;
+          bridge_url?: string | null;
           api_key_encrypted?: string;
+          install_token_hash?: string | null;
+          last_seen_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

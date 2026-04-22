@@ -29,6 +29,8 @@ export async function GET() {
     config: {
       bridgeUrl: data.bridge_url,
       apiKey: decrypt(data.api_key_encrypted),
+      lastSeenAt: data.last_seen_at,
+      hasInstallToken: !!data.install_token_hash,
     },
   });
 }
