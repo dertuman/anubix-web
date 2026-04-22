@@ -2,14 +2,15 @@
  * Shared AI types for the blog generation pipeline.
  */
 
-export type AIProvider = 'openai' | 'google';
+export type AIProvider = 'openai' | 'google' | 'perplexity';
 
 export type AIModel =
   | 'gpt-4o'
   | 'gpt-4o-mini'
   | 'gemini-3-pro-preview'
   | 'gemini-2-5-pro'
-  | 'gemini-2-5-flash';
+  | 'gemini-2-5-flash'
+  | 'sonar-pro';
 
 export type AITask = 'article' | 'excerpt' | 'seo' | 'polish' | 'humanize' | 'image-prompt';
 
@@ -32,6 +33,7 @@ export interface AICompleteOptions {
   model?: AIModel;
   temperature?: number;
   maxTokens?: number;
+  jsonMode?: boolean;
 }
 
 export const BLOG_CATEGORIES = [

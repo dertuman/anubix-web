@@ -8,6 +8,7 @@ import { useScopedI18n } from '@/locales/client';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import {
   Blocks,
+  BookOpen,
   Info,
   LogIn,
   ShieldCheck,
@@ -25,6 +26,7 @@ import { Button, buttonVariants } from './ui/button';
 const NAV_ICONS: Record<string, React.ReactNode> = {
   '/about': <Info className="size-4" />,
   '/workspace': <Blocks className="size-4" />,
+  '/blog': <BookOpen className="size-4" />,
   '/admin/users': <ShieldCheck className="size-4" />,
 };
 
@@ -44,6 +46,12 @@ export function SiteHeader() {
       {
         title: 'Workspace',
         href: '/workspace',
+        isPublic: true,
+        comingSoon: false,
+      },
+      {
+        title: t('blog'),
+        href: '/blog',
         isPublic: true,
         comingSoon: false,
       },

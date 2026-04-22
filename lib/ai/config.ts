@@ -9,6 +9,7 @@ export const MODEL_PROVIDER: Record<AIModel, AIProvider> = {
   'gemini-3-pro-preview': 'google',
   'gemini-2-5-pro': 'google',
   'gemini-2-5-flash': 'google',
+  'sonar-pro': 'perplexity',
 };
 
 /**
@@ -20,6 +21,7 @@ export const MODEL_SDK_ID: Record<AIModel, string> = {
   'gemini-3-pro-preview': 'gemini-3-pro-preview',
   'gemini-2-5-pro': 'gemini-2.5-pro',
   'gemini-2-5-flash': 'gemini-2.5-flash',
+  'sonar-pro': 'sonar-pro',
 };
 
 interface TaskConfig {
@@ -89,5 +91,7 @@ export function getProviderApiKey(provider: AIProvider): string | undefined {
       return process.env.OPENAI_API_KEY;
     case 'google':
       return process.env.GOOGLE_GENAI_API_KEY;
+    case 'perplexity':
+      return process.env.PERPLEXITY_API_KEY;
   }
 }

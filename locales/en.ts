@@ -122,6 +122,7 @@ export default {
     login: 'Login',
     about: 'About',
     admin: 'Admin',
+    blog: 'Blog',
     profile: 'Profile',
     comingSoon: 'Coming soon',
     description:
@@ -140,6 +141,7 @@ export default {
     howItWorks: 'How it works',
     pricing: 'Pricing',
     resources: 'Resources',
+    blog: 'Blog',
     documentation: 'Documentation',
     community: 'Community',
     support: 'Support',

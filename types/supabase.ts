@@ -455,6 +455,7 @@ export interface Database {
           likes: number;
           shares: number;
           generation_metadata: Json | null;
+          source_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -486,6 +487,7 @@ export interface Database {
           likes?: number;
           shares?: number;
           generation_metadata?: Json | null;
+          source_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -517,6 +519,7 @@ export interface Database {
           likes?: number;
           shares?: number;
           generation_metadata?: Json | null;
+          source_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };

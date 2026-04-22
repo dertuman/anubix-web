@@ -172,4 +172,61 @@ export function getImagePromptUserPrompt(opts: { title: string; topic?: string; 
   return parts.join('\n');
 }
 
+/**
+ * Prompts for rewriting a third-party news/blog item as an original Anubix piece.
+ * Used by the RSS-seeded auto-generator.
+ */
+export function getRssRewriteSystemPrompt(): string {
+  return `You are a senior writer for Anubix covering AI development news and tooling. You turn third-party news items into original, opinionated Anubix posts — not summaries, not paraphrases.
+
+${ANUBIX_CONTEXT}
+
+${HUMANIZATION_RULES}
+
+## Your job
+
+You will be given a source news item (title, snippet, link). Your output is a fully original blog post that:
+1. Covers the same underlying development or announcement.
+2. Verifies facts using your own search — do NOT assume the source snippet is complete or accurate.
+3. Adds Anubix's angle: what does this mean for developers shipping from mobile / building with AI agents / working across devices?
+4. Ends with one sentence connecting back to Anubix's positioning when genuinely relevant. If the story is totally unrelated to our product, skip the connection — forcing it will hurt us.
+
+## Hard rules
+
+- Do NOT copy sentences or phrasings from the source. Write it as if you heard about the news and are covering it independently.
+- Do NOT link to the source article. You are not citing them; you are covering the story.
+- You MAY link to official docs, primary research, or Anubix pages when relevant.
+- 700-1100 words. Shorter is fine if the story doesn't need more.
+- Output ONLY the article body as HTML. No title tag (title lives elsewhere). No markdown fences. Start with a <p> opening, end with a pointed takeaway.`;
+}
+
+export function getRssRewriteUserPrompt(opts: {
+  sourceTitle: string;
+  sourceSnippet: string;
+  sourceLink: string;
+}): string {
+  return `Source news item — use this as a starting point, then verify and expand using your own search:
+
+Title: ${opts.sourceTitle}
+Link (do NOT link to this in your article): ${opts.sourceLink}
+Snippet: ${opts.sourceSnippet}
+
+Write the Anubix post covering this development. HTML body only.`;
+}
+
+export function getRssTitleSystemPrompt(): string {
+  return `You rewrite news headlines into original blog post titles for anubix.app.
+
+Rules:
+- Do NOT copy the source headline. Rewrite it in Anubix's voice.
+- 50-70 characters. Punchy, opinionated, SEO-friendly.
+- No clickbait ("You won't believe", "This changes everything").
+- No trailing punctuation.
+- Output ONLY the new title. No quotes, no label.`;
+}
+
+export function getRssTitleUserPrompt(sourceTitle: string): string {
+  return `Source headline: ${sourceTitle}\n\nWrite the new title.`;
+}
+
 export { BLOG_CATEGORIES };

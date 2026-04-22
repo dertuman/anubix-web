@@ -51,6 +51,10 @@ create table public.blogs (
   -- Generation metadata (for debugging / audit)
   generation_metadata     jsonb,                          -- { seedTopic, models[], humanizePasses, tokensUsed }
 
+  -- Source of seed content for RSS-auto-generated posts (null for manual posts).
+  -- Unique when set, used by the admin UI to hide already-processed RSS items.
+  source_url              text,
+
   created_at              timestamp with time zone not null default now(),
   updated_at              timestamp with time zone not null default now()
 );
@@ -62,6 +66,7 @@ create index if not exists idx_blogs_published_at on blogs(published_at desc);
 create index if not exists idx_blogs_featured on blogs(featured) where featured = true;
 create index if not exists idx_blogs_is_draft on blogs(is_draft);
 create index if not exists idx_blogs_tags on blogs using gin(tags);
+create unique index if not exists idx_blogs_source_url on blogs(source_url) where source_url is not null;
 
 -- Full-text search on title + excerpt + content
 create index if not exists idx_blogs_fts on blogs using gin(

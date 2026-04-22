@@ -20,6 +20,7 @@ export function SiteFooter() {
     {
       title: t('resources'),
       links: [
+        { label: t('blog'), href: '/blog' },
         { label: t('documentation'), href: '#' },
         { label: t('community'), href: '#' },
         { label: t('support'), href: '#' },

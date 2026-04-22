@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { BookOpen, FilePlus, Library } from 'lucide-react';
+import { BookOpen, FilePlus, Library, Newspaper } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
 import { ArticleForm } from './components/article-form';
 import { ArticleLibrary } from './components/article-library';
+import { AiNewsTab } from './components/ai-news-tab';
 
-type Tab = 'editor' | 'library';
+type Tab = 'editor' | 'library' | 'news';
 
 export default function AdminBlogPage() {
   const [tab, setTab] = useState<Tab>('editor');
@@ -29,6 +30,11 @@ export default function AdminBlogPage() {
     setEditingId(null);
     setTab('library');
     setRefreshKey((k) => k + 1);
+  };
+
+  const handleGenerated = (blogId: string) => {
+    setEditingId(blogId);
+    setTab('editor');
   };
 
   return (
@@ -61,6 +67,15 @@ export default function AdminBlogPage() {
           {editingId ? 'Edit' : 'Create'}
         </button>
         <button
+          onClick={() => setTab('news')}
+          className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium ${
+            tab === 'news' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+          }`}
+        >
+          <Newspaper className="size-3.5" />
+          AI News
+        </button>
+        <button
           onClick={() => setTab('library')}
           className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium ${
             tab === 'library' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
@@ -81,6 +96,8 @@ export default function AdminBlogPage() {
           }}
         />
       )}
+
+      {tab === 'news' && <AiNewsTab onGenerated={handleGenerated} />}
 
       {tab === 'library' && <ArticleLibrary onEdit={handleEdit} refreshKey={refreshKey} />}
     </div>
