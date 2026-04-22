@@ -7,7 +7,7 @@ import {
   hashInstallToken,
 } from '@/lib/bridge-tokens';
 import { encrypt } from '@/lib/encryption';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 /**
  * POST /api/bridge-config/generate
@@ -28,7 +28,10 @@ export async function POST() {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const supabase = await createClerkSupabaseClient();
+  // Admin client — we already validated the caller via Clerk and we scope the
+  // write to `email` derived from the authenticated session. RLS isn't helping
+  // here, and some setups have JWT-email mismatches that block the insert.
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json(
       { error: 'Database not configured' },
