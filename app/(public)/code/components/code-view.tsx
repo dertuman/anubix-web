@@ -56,7 +56,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     status, disconnect, softDisconnect, sessions, activeSessionId,
     selectSession, createSession, deleteSession, updateSession, refreshSessions,
     pullSession, messages, sendMessage, clearConversation, approve, deny, answerQuestion, abort,
-    isBusy, slashCommands, connectionHealth, retry,
+    isBusy, slashCommands, connectionHealth, connectionError, retry,
     sessionLiveStates, fetchRepos,
     fetchLogs, execCommand, pushCredentials,
   } = useClaudeCodeContext();
@@ -69,6 +69,11 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   // Simple: user's preference is the source. If they haven't picked, fall
   // back to whatever exists. Label shows connected state + a status hint when
   // the chosen environment isn't reachable yet.
+  //
+  // NOTE: use `status` (bridge reachability — /_bridge/health succeeded) not
+  // `connectionHealth` (per-session WebSocket). Users commonly have no active
+  // session after switching bridges, and connectionHealth is 'disconnected'
+  // when no session is selected even though the bridge is fine.
   const activeEnvironment = useMemo(() => {
     const source: 'local' | 'cloud' | null =
       preferred
@@ -76,17 +81,22 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
       ?? (cloudMachine.machine ? 'cloud' : null);
     if (!source) return null;
 
-    const connected = connectionHealth === 'connected';
+    const connected = status === 'connected';
 
     let statusHint: string | undefined;
-    if (source === 'local' && !connected) {
+    if (!connected && status === 'connecting') {
+      statusHint = 'connecting';
+    } else if (!connected && connectionError) {
+      // Trim long error strings so the sidebar stays tidy
+      statusHint = connectionError.length > 40 ? `${connectionError.slice(0, 40)}…` : connectionError;
+    } else if (source === 'local' && !connected) {
       statusHint = bridgeConfig.config?.lastSeenAt ? 'laptop offline' : 'waiting for bridge';
     } else if (source === 'cloud' && !connected) {
       const s = cloudMachine.machine?.status;
       statusHint = s === 'stopped' ? 'suspended' : s === 'starting' ? 'starting' : s === 'provisioning' ? 'provisioning' : undefined;
     }
     return { source, connected, statusHint };
-  }, [preferred, bridgeConfig.config, cloudMachine.machine, connectionHealth]);
+  }, [preferred, bridgeConfig.config, cloudMachine.machine, status, connectionError]);
 
   // Derive whether any session is busy (agent actively working)
   const anySessionBusy = useMemo(() => {
@@ -270,7 +280,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   if (!displayActiveSessionId) {
     return (
       <div className="relative flex h-full">
-        <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onSuspend={cloudMachine.machine?.status === 'running' ? handleSuspend : undefined} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} machineStatus={cloudMachine.machine?.status ?? null} connectionHealth={connectionHealth} onResume={() => cloudMachine.start()} onChangeEnvironment={showEnvironmentDialog} activeEnvironment={activeEnvironment} />
+        <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onSuspend={preferred !== 'local' && cloudMachine.machine?.status === 'running' ? handleSuspend : undefined} onDisconnect={preferred !== 'local' ? handleDisconnect : undefined} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} machineStatus={cloudMachine.machine?.status ?? null} connectionHealth={connectionHealth} onResume={() => cloudMachine.start()} onChangeEnvironment={showEnvironmentDialog} activeEnvironment={activeEnvironment} />
         <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           {dragOverlay}
 
@@ -393,7 +403,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   // ── Active session ─────────────────────────────────────────
   return (
     <div className="relative flex h-full">
-      <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onSuspend={cloudMachine.machine?.status === 'running' ? handleSuspend : undefined} onDisconnect={handleDisconnect} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} machineStatus={cloudMachine.machine?.status ?? null} connectionHealth={connectionHealth} onResume={() => cloudMachine.start()} onChangeEnvironment={showEnvironmentDialog} activeEnvironment={activeEnvironment} />
+      <CodeSidebar modeToggle={modeToggle} sessions={displaySessions} activeSessionId={displayActiveSessionId} onSelect={selectSession} onCreate={createSession} onDelete={deleteSession} onEdit={updateSession} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} sessionLiveStates={sessionLiveStates} fetchRepos={fetchRepos} newSessionOpen={newSessionOpen} onNewSessionOpenChange={setNewSessionOpen} onPullSession={pullSession} onRefreshSessions={refreshSessions} previewUrl={previewUrl} isBusy={isBusy} onSuspend={preferred !== 'local' && cloudMachine.machine?.status === 'running' ? handleSuspend : undefined} onDisconnect={preferred !== 'local' ? handleDisconnect : undefined} claudeConnection={claudeConnection} onFetchLogs={fetchLogs} onExecCommand={execCommand} onPushCredentials={pushCredentials} isPreviewMode={demoPreviewMode} machineStatus={cloudMachine.machine?.status ?? null} connectionHealth={connectionHealth} onResume={() => cloudMachine.start()} onChangeEnvironment={showEnvironmentDialog} activeEnvironment={activeEnvironment} />
       <div className="relative flex flex-1 flex-col overflow-hidden" onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {dragOverlay}
 
