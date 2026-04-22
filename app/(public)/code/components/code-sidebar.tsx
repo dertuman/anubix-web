@@ -81,8 +81,14 @@ interface CodeSidebarProps {
   /** Open the environment picker (cloud / local). Exposed always so users can
    *  add or switch between environments even after one is already set up. */
   onChangeEnvironment?: () => void;
-  /** Which environment is currently active, for the sidebar label. */
-  activeEnvironment?: 'local' | 'cloud' | null;
+  /** Currently active environment + status, for the sidebar label. */
+  activeEnvironment?: {
+    source: 'local' | 'cloud';
+    /** true if we're actually connected to this environment right now */
+    connected: boolean;
+    /** Extra qualifier ("offline", "suspended", "starting") shown in parens. */
+    statusHint?: string;
+  } | null;
   claudeConnection?: ReturnType<typeof useClaudeConnection>;
   onFetchLogs?: (_opts?: { last?: number; filter?: string }) => Promise<BridgeLogs>;
   onExecCommand?: (_command: string) => Promise<ExecResult>;
@@ -630,9 +636,18 @@ export const CodeSidebar = memo(function CodeSidebar({
             <div className="space-y-1.5">
               {activeEnvironment && (
                 <div className="flex items-center gap-2 px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {activeEnvironment === 'local' ? <Laptop className="size-3" /> : <Cloud className="size-3" />}
-                  <span>
-                    Environment: {activeEnvironment === 'local' ? 'My Computer' : 'Cloud'}
+                  {activeEnvironment.source === 'local' ? <Laptop className="size-3" /> : <Cloud className="size-3" />}
+                  <span className="flex items-center gap-1">
+                    <span
+                      className={cn(
+                        'size-1.5 rounded-full',
+                        activeEnvironment.connected ? 'bg-emerald-500' : 'bg-amber-500',
+                      )}
+                    />
+                    <span>
+                      {activeEnvironment.source === 'local' ? 'My Computer' : 'Cloud'}
+                      {activeEnvironment.statusHint ? ` · ${activeEnvironment.statusHint}` : ''}
+                    </span>
                   </span>
                 </div>
               )}

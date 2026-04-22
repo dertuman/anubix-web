@@ -7,6 +7,7 @@ import { useCloudMachineContext } from '../context/cloud-machine-context';
 import { useEnvironmentDialog } from '../context/environment-dialog-context';
 import { useWorkspace } from '../context/workspace-context';
 import { useBridgeConfig } from '@/hooks/useBridgeConfig';
+import { usePreferredEnvironment } from '@/hooks/usePreferredEnvironment';
 import { CodeView } from '../../code/components/code-view';
 import { ModeToggle } from './mode-toggle';
 import { DemoPreviewOverlay } from './demo-preview-overlay';
@@ -30,56 +31,65 @@ const BASE_RETRY_DELAY_MS = 3000;
  */
 export function CodeViewWrapper() {
   const { isSignedIn } = useAuth();
-  const { status, connect, connectionHealth, connectionError } = useClaudeCodeContext();
+  const { status, connect, disconnect, connectionHealth, connectionError } = useClaudeCodeContext();
   const cloudMachine = useCloudMachineContext();
   const { showEnvironmentDialog } = useEnvironmentDialog();
   const { isDemoMode, isDemoPreview, incrementDemoPromptCount } = useWorkspace();
   const bridgeConfig = useBridgeConfig();
+  const { preferred } = usePreferredEnvironment();
 
-  // Resolve which environment to connect to. Local wins over cloud when
-  // configured — we don't want to auto-boot a cloud machine behind the user's
-  // back if they've set up a laptop bridge.
+  // Effective preference: explicit pick wins. If none, fall back to whichever
+  // environment is already set up (so existing users aren't forced into the
+  // picker). If both exist and no preference, default to cloud (pre-existing
+  // behavior).
+  const effectivePreferred: 'local' | 'cloud' | null =
+    preferred
+    ?? (bridgeConfig.config?.hasInstallToken ? 'local' : null)
+    ?? (cloudMachine.machine ? 'cloud' : null);
+
+  // Target = the bridge we want to be connected to, period. No auto-switching
+  // based on what's reachable — if the user picked local and it's offline,
+  // the UI shows that and waits. Explicit choice, explicit state.
   const target = useMemo(() => {
-    const localOnline =
-      !!bridgeConfig.config?.bridgeUrl &&
-      !!bridgeConfig.config.apiKey &&
-      isRecent(bridgeConfig.config.lastSeenAt);
-
-    if (localOnline && bridgeConfig.config?.bridgeUrl) {
-      return {
-        source: 'local' as const,
-        bridgeUrl: bridgeConfig.config.bridgeUrl,
-        bridgeApiKey: bridgeConfig.config.apiKey,
-      };
+    if (effectivePreferred === 'local') {
+      if (bridgeConfig.config?.bridgeUrl && bridgeConfig.config.apiKey) {
+        return {
+          source: 'local' as const,
+          bridgeUrl: bridgeConfig.config.bridgeUrl,
+          bridgeApiKey: bridgeConfig.config.apiKey,
+        };
+      }
+      return null;
     }
-    if (
-      cloudMachine.machine?.status === 'running' &&
-      cloudMachine.machine.bridgeUrl &&
-      cloudMachine.machine.bridgeApiKey
-    ) {
-      return {
-        source: 'cloud' as const,
-        bridgeUrl: cloudMachine.machine.bridgeUrl,
-        bridgeApiKey: cloudMachine.machine.bridgeApiKey,
-      };
+    if (effectivePreferred === 'cloud') {
+      if (
+        cloudMachine.machine?.status === 'running' &&
+        cloudMachine.machine.bridgeUrl &&
+        cloudMachine.machine.bridgeApiKey
+      ) {
+        return {
+          source: 'cloud' as const,
+          bridgeUrl: cloudMachine.machine.bridgeUrl,
+          bridgeApiKey: cloudMachine.machine.bridgeApiKey,
+        };
+      }
+      return null;
     }
     return null;
-  }, [bridgeConfig.config, cloudMachine.machine]);
+  }, [effectivePreferred, bridgeConfig.config, cloudMachine.machine]);
 
-  /** User has a local bridge configured (install token issued), regardless of
-   *  whether it's currently online — the workspace should wait for it rather
-   *  than pop the environment picker. */
-  const hasLocalEnvironment = !!bridgeConfig.config?.hasInstallToken;
-
-  // Keep polling while we have a local bridge that isn't reporting in yet, so
-  // the UI flips to "connected" as soon as the user's laptop comes back online.
+  // Poll bridge_configs while local is preferred but not yet reachable, so the
+  // workspace flips to connected as soon as the laptop heartbeats.
+  const localPreferredButOffline =
+    effectivePreferred === 'local' &&
+    !isRecent(bridgeConfig.config?.lastSeenAt);
   useEffect(() => {
-    if (hasLocalEnvironment && target?.source !== 'local') {
+    if (localPreferredButOffline) {
       bridgeConfig.startPolling();
       return bridgeConfig.stopPolling;
     }
     bridgeConfig.stopPolling();
-  }, [hasLocalEnvironment, target?.source, bridgeConfig]);
+  }, [localPreferredButOffline, bridgeConfig]);
 
   const attemptCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -155,6 +165,24 @@ export function CodeViewWrapper() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionHealth, connectionError, target?.source]);
 
+  // Auto-switch: if we're connected to one URL and the resolved target has a
+  // different URL (local bridge just came online, or cloud machine was
+  // reprovisioned), disconnect so the auto-connect effect below can reconnect
+  // to the new target. This is what flips the user from cloud → local the
+  // moment their laptop heartbeats.
+  const connectedUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (status === 'connected' && target && target.bridgeUrl !== connectedUrlRef.current) {
+      disconnect();
+    }
+    if (status === 'connecting' || status === 'connected') {
+      connectedUrlRef.current = target?.bridgeUrl ?? null;
+    }
+    if (status === 'disconnected') {
+      connectedUrlRef.current = null;
+    }
+  }, [status, target, disconnect]);
+
   // Auto-connect with limited retries and exponential backoff.
   // Skip in demo preview mode and during cloud stop/start transitions.
   useEffect(() => {
@@ -181,25 +209,24 @@ export function CodeViewWrapper() {
     return clearRetryTimer;
   }, [isSignedIn, isDemoPreview, status, target, cloudMachine.isWorking, connect, clearRetryTimer]);
 
-  // Show environment dialog only when the user has picked NEITHER a cloud
-  // machine NOR a local bridge. If a local bridge is configured but offline,
-  // we stay quiet and let the polling bring it back.
+  // Show environment picker only when the user hasn't chosen or set up
+  // anything. If they've picked local (even if offline) or have a cloud
+  // machine, stay quiet — they already decided.
   useEffect(() => {
     if (
       isSignedIn &&
       !isDemoPreview &&
       status === 'disconnected' &&
-      !cloudMachine.machine &&
       !cloudMachine.isLoading &&
-      !hasLocalEnvironment &&
-      !bridgeConfig.isLoading
+      !bridgeConfig.isLoading &&
+      effectivePreferred === null
     ) {
       const timer = setTimeout(() => {
         showEnvironmentDialog();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isSignedIn, isDemoPreview, status, cloudMachine.machine, cloudMachine.isLoading, hasLocalEnvironment, bridgeConfig.isLoading, showEnvironmentDialog]);
+  }, [isSignedIn, isDemoPreview, status, cloudMachine.isLoading, bridgeConfig.isLoading, effectivePreferred, showEnvironmentDialog]);
 
 
   // Listen for custom event to open environment dialog

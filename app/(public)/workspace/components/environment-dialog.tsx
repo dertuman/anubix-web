@@ -12,6 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+import { usePreferredEnvironment } from '@/hooks/usePreferredEnvironment';
+
 import { BridgeSetup } from '../../code/components/bridge-setup';
 import { CloudProvision } from '../../code/components/cloud-provision';
 import { LocalBridgeSetup } from '../../code/components/local-bridge-setup';
@@ -34,17 +36,25 @@ export function EnvironmentDialog({
   connectionError,
 }: EnvironmentDialogProps) {
   const { isSignedIn } = useAuth();
+  const { setPreferred } = usePreferredEnvironment();
   const [mode, setMode] = useState<Mode>('picker');
+
+  const pickCloud = () => { setPreferred('cloud'); setMode('cloud'); };
+  const pickLocal = () => { setPreferred('local'); setMode('local'); };
 
   // Reset to picker each time the dialog opens
   useEffect(() => {
     if (isOpen) setMode('picker');
   }, [isOpen]);
 
-  // Close dialog when connection succeeds
+  // Close dialog when connection succeeds — but NOT while the user is in the
+  // local-setup flow, otherwise a stale cloud connection slams the dialog shut
+  // before they can paste their .env or "Start over". LocalBridgeSetup calls
+  // onConnected itself when the local bridge heartbeats, which closes the
+  // dialog through the onConnected prop wired in workspace-view.
   useEffect(() => {
-    if (connectionStatus === 'connected') onClose();
-  }, [connectionStatus, onClose]);
+    if (connectionStatus === 'connected' && mode !== 'local') onClose();
+  }, [connectionStatus, mode, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -54,7 +64,7 @@ export function EnvironmentDialog({
         {!isSignedIn ? (
           <LoginGate onClose={onClose} />
         ) : mode === 'picker' ? (
-          <EnvironmentPicker onPick={setMode} />
+          <EnvironmentPicker onPickCloud={pickCloud} onPickLocal={pickLocal} />
         ) : mode === 'cloud' ? (
           <WithBack onBack={() => setMode('picker')}>
             <DialogHeader className="sr-only">
@@ -93,7 +103,7 @@ export function EnvironmentDialog({
 
 // ────────────────────────────────────────────────────────────
 
-function EnvironmentPicker({ onPick }: { onPick: (_mode: Mode) => void }) {
+function EnvironmentPicker({ onPickCloud, onPickLocal }: { onPickCloud: () => void; onPickLocal: () => void }) {
   return (
     <div className="space-y-6 p-8">
       <DialogHeader>
@@ -108,13 +118,13 @@ function EnvironmentPicker({ onPick }: { onPick: (_mode: Mode) => void }) {
           icon={<Cloud className="size-8" />}
           title="Run in the cloud"
           description="Anubix provisions a machine on Fly.io. Works from anywhere, needs a subscription."
-          onClick={() => onPick('cloud')}
+          onClick={onPickCloud}
         />
         <PickerCard
           icon={<Laptop className="size-8" />}
           title="Connect my computer"
           description="Bridge runs locally. Free, full access to your files. Your laptop must be on."
-          onClick={() => onPick('local')}
+          onClick={onPickLocal}
         />
       </div>
     </div>

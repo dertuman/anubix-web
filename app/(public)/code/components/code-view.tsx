@@ -11,6 +11,7 @@ import { useBridgeConfig } from '@/hooks/useBridgeConfig';
 import { useClaudeConnection } from '@/hooks/useClaudeConnection';
 import { useCloudMachineContext } from '../../workspace/context/cloud-machine-context';
 import { useEnvironmentDialog } from '../../workspace/context/environment-dialog-context';
+import { usePreferredEnvironment } from '@/hooks/usePreferredEnvironment';
 import type { FileAttachment, CodeMessage, BridgeSession } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
 import { cn } from '@/lib/utils';
@@ -63,20 +64,29 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const claudeConnection = useClaudeConnection();
   const bridgeConfig = useBridgeConfig();
   const { showEnvironmentDialog } = useEnvironmentDialog();
+  const { preferred } = usePreferredEnvironment();
 
-  // Determine which environment is currently active (local if online, else cloud).
-  const activeEnvironment: 'local' | 'cloud' | null = useMemo(() => {
-    const localOnline =
-      !!bridgeConfig.config?.bridgeUrl &&
-      !!bridgeConfig.config.apiKey &&
-      !!bridgeConfig.config.lastSeenAt &&
-      Date.now() - Date.parse(bridgeConfig.config.lastSeenAt) < 2 * 60 * 1000;
-    if (localOnline) return 'local';
-    if (cloudMachine.machine?.status === 'running') return 'cloud';
-    if (bridgeConfig.config?.hasInstallToken) return 'local';
-    if (cloudMachine.machine) return 'cloud';
-    return null;
-  }, [bridgeConfig.config, cloudMachine.machine]);
+  // Simple: user's preference is the source. If they haven't picked, fall
+  // back to whatever exists. Label shows connected state + a status hint when
+  // the chosen environment isn't reachable yet.
+  const activeEnvironment = useMemo(() => {
+    const source: 'local' | 'cloud' | null =
+      preferred
+      ?? (bridgeConfig.config?.hasInstallToken ? 'local' : null)
+      ?? (cloudMachine.machine ? 'cloud' : null);
+    if (!source) return null;
+
+    const connected = connectionHealth === 'connected';
+
+    let statusHint: string | undefined;
+    if (source === 'local' && !connected) {
+      statusHint = bridgeConfig.config?.lastSeenAt ? 'laptop offline' : 'waiting for bridge';
+    } else if (source === 'cloud' && !connected) {
+      const s = cloudMachine.machine?.status;
+      statusHint = s === 'stopped' ? 'suspended' : s === 'starting' ? 'starting' : s === 'provisioning' ? 'provisioning' : undefined;
+    }
+    return { source, connected, statusHint };
+  }, [preferred, bridgeConfig.config, cloudMachine.machine, connectionHealth]);
 
   // Derive whether any session is busy (agent actively working)
   const anySessionBusy = useMemo(() => {
