@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 import type { CodeMessage } from '@/types/code';
 import { cn } from '@/lib/utils';
 import type { useScopedI18n } from '@/locales/client';
-import { renderMarkdown } from './message-utils';
+import { MarkdownContent } from './markdown-content';
 
 export interface ResultMessageProps {
   message: CodeMessage & { type: 'result' };
@@ -22,8 +22,8 @@ export function ResultMessage({ message, isFree, t }: ResultMessageProps) {
       {hasResultText && (
         <div className="flex justify-start">
           <div className="overflow-hidden rounded-xl rounded-bl-none bg-muted px-4 py-2.5">
-            <div className="min-w-0 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
-              {renderMarkdown(message.resultText)}
+            <div className="min-w-0 wrap-break-word">
+              <MarkdownContent text={message.resultText!} />
             </div>
           </div>
         </div>

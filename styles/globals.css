@@ -464,6 +464,13 @@
   will-change: transform, opacity;
 }
 
+/* Shiki dual-theme: switch palette under .dark using CSS variables */
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+
 /* Indeterminate progress bar */
 @keyframes indeterminate {
   0% {

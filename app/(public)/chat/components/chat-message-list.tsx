@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 
-import { ChatMessage, renderMarkdown } from './chat-message';
+import { ChatMessage } from './chat-message';
+import { MarkdownContent } from '@/app/(public)/code/components/messages/markdown-content';
 
 // Breathing room between the top of the user's message and the top of the
 // visible scroll area (px). Keeps it consistent regardless of message length.
@@ -223,8 +224,8 @@ export const ChatMessageList = memo(function ChatMessageList({
               )}
             >
               {streamingContent ? (
-                <div className="min-w-0 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
-                  {renderMarkdown(streamingContent)}
+                <div className="min-w-0 wrap-break-word">
+                  <MarkdownContent text={streamingContent} isStreaming />
                   <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-foreground/60" />
                 </div>
               ) : (

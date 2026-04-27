@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ChevronDown,
@@ -18,6 +18,7 @@ import { getCategoryIcon } from '@/lib/ui-utils';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { MarkdownContent } from '@/app/(public)/code/components/messages/markdown-content';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -34,40 +35,6 @@ interface SharedConversationViewProps {
   messages: ChatMessageType[];
 }
 
-// ── Markdown renderer (mirrors chat-message.tsx) ───────────────
-
-function renderMarkdown(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  const regex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|^---$/gm;
-  let lastIndex = 0;
-  let match;
-  let keyIndex = 0;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    if (match[1] && match[2]) {
-      parts.push(
-        <a
-          key={keyIndex++}
-          href={match[2]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-info underline underline-offset-2 hover:text-info/80"
-        >
-          {match[1]}
-        </a>,
-      );
-    } else if (match[3]) {
-      parts.push(<strong key={keyIndex++}>{match[3]}</strong>);
-    } else if (match[0] === '---') {
-      parts.push(<hr key={keyIndex++} className="my-2 border-border/30" />);
-    }
-    lastIndex = regex.lastIndex;
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts;
-}
-
 // ── Collapsible text ───────────────────────────────────────────
 
 function CollapsibleText({ text, maxLines = 30 }: { text: string; maxLines?: number }) {
@@ -80,9 +47,7 @@ function CollapsibleText({ text, maxLines = 30 }: { text: string; maxLines?: num
 
   return (
     <div>
-      <div className="whitespace-pre-wrap text-sm leading-relaxed">
-        {renderMarkdown(displayText)}
-      </div>
+      <MarkdownContent text={displayText} />
       {needsCollapse && (
         <button
           onClick={() => setExpanded(!expanded)}

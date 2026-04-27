@@ -2,28 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 
-export function renderMarkdown(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  const regex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|^---$/gm;
-  let lastIndex = 0;
-  let match;
-  let keyIndex = 0;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    if (match[1] && match[2]) {
-      parts.push(<a key={keyIndex++} href={match[2]} target="_blank" rel="noopener noreferrer" className="text-info underline underline-offset-2 hover:text-info/80">{match[1]}</a>);
-    } else if (match[3]) {
-      parts.push(<strong key={keyIndex++}>{match[3]}</strong>);
-    } else if (match[0] === '---') {
-      parts.push(<hr key={keyIndex++} className="my-2 border-border/30" />);
-    }
-    lastIndex = regex.lastIndex;
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts;
-}
-
 export function ElapsedTimer({ startTs, stopped, durationMs }: { startTs: number; stopped?: boolean; durationMs?: number }) {
   const persistedSecs = durationMs != null ? Math.floor(durationMs / 1000) : null;
 
