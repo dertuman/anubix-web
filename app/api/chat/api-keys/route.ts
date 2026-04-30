@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
 import { encrypt, decrypt } from '@/lib/crypto';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 /**
  * GET /api/chat/api-keys — List providers the user has keys for.
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const includeKeys = req.nextUrl.searchParams.get('include') === 'keys';
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   try {
@@ -130,7 +130,7 @@ export async function DELETE(req: NextRequest) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   try {

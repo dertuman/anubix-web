@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
 
 /**
@@ -18,7 +18,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
     }
 
-    const supabase = await createClerkSupabaseClient();
+    const supabase = createSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }

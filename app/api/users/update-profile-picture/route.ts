@@ -2,7 +2,6 @@ import { File } from 'buffer';
 import { NextResponse } from 'next/server';
 
 import { getAuthEmail } from '@/lib/auth-utils';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
 import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { randomUppercaseString } from '@/lib/utils';
 
@@ -57,7 +56,7 @@ export async function POST(req: Request) {
       path = urlData.publicUrl;
     }
 
-    const supabase = await createClerkSupabaseClient();
+    const supabase = createSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });

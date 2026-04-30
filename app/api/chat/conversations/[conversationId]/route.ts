@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
 import { deleteConversation, fetchMessages, getConversation, updateConversation } from '@/lib/chat-db';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 interface Params { params: Promise<{ conversationId: string }> }
 
@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { conversationId } = await params;
@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { conversationId } = await params;
@@ -69,7 +69,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { conversationId } = await params;

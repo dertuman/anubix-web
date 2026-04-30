@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
 
 const CLAUDE_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
@@ -123,7 +123,7 @@ async function handleCallback(req: NextRequest) {
   });
 
   // Save to database
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }

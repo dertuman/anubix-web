@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { encrypt, decrypt } from '@/lib/encryption';
 
 /**
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
@@ -71,7 +71,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
@@ -123,7 +123,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }

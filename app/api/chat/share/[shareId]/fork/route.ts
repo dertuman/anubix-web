@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthEmail } from '@/lib/auth-utils';
 import { createConversation, fetchMessages, getConversationByShareId, saveMessage } from '@/lib/chat-db';
-import { createClerkSupabaseClient, createSupabaseAdmin } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 interface Params { params: Promise<{ shareId: string }> }
 
@@ -18,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const adminSb = createSupabaseAdmin();
   if (!adminSb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
-  const userSb = await createClerkSupabaseClient();
+  const userSb = createSupabaseAdmin();
   if (!userSb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const { shareId } = await params;

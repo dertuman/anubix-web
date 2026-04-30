@@ -13,7 +13,7 @@ import {
   waitForBridgeHealth,
   waitForMachineState,
 } from '@/lib/fly-machines';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 // Allow up to 300s for Fly.io provisioning (app + volume + machine + template install + health check)
 // Heavy templates like talkartech-fullstack need 3-5 min for git clone + npm install before the server starts.
@@ -45,7 +45,7 @@ async function handleProvision(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json(
       { error: 'Database not configured' },

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/encryption';
 import { getAuthEmail } from '@/lib/auth-utils';
 import { getMachineStatus } from '@/lib/fly-machines';
@@ -24,7 +24,7 @@ async function handleStatus() {
     return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
   }
 
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthEmail } from '@/lib/auth-utils';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   const email = await getAuthEmail();
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const { locale } = await req.json();
 
-    const supabase = await createClerkSupabaseClient();
+    const supabase = createSupabaseAdmin();
 
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 503 });

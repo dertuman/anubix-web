@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
 import { createConversation, fetchConversations } from '@/lib/chat-db';
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 
 /**
  * GET /api/chat/conversations — List all conversations for the user.
@@ -11,7 +11,7 @@ export async function GET() {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   try {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const email = await getAuthEmail();
   if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = await createClerkSupabaseClient();
+  const sb = createSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   try {

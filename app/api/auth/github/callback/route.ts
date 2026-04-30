@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthEmail } from '@/lib/auth-utils';
 
-import { createClerkSupabaseClient } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/encryption';
 
 /**
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
   const ghUser = await userRes.json();
 
   // Save to database
-  const supabase = await createClerkSupabaseClient();
+  const supabase = createSupabaseAdmin();
   if (!supabase) {
     return NextResponse.redirect(
       new URL('/profile/integrations?error=db_not_configured', req.nextUrl.origin),
