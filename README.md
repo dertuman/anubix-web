@@ -1,3 +1,5 @@
+# From Alexander T. Karslake, CEO of TalkarTech [https://talkartech.com](https://talkartech.com)
+
 # Anubix Platform — Architecture & State
 
 ## What Anubix Is
@@ -205,6 +207,14 @@ Run codegen to record your actions to a test
 
 ```bash
 npx playwright codegen http://localhost:3000/
+```
+
+## DB Migration Scripts
+
+We can create scripts to migrate users, under the scripts folder. This can be useful if we want to add new properties to our data models, or if we want to reset data. For example, to reset all users, we can run the following command:
+
+```bash
+npm run reset-users
 ```
 
 ### To delete nul file
