@@ -36,6 +36,10 @@ export interface QueuedMessage {
   id: string;
   text: string;
   files?: FileAttachment[];
+  /** Session this message was queued against. Queue is scoped per-session
+   *  so switching sessions doesn't redirect a queued message into a
+   *  different conversation. */
+  sessionId: string | null;
 }
 
 export interface CodeInputHandle {

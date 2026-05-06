@@ -148,14 +148,20 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   }, []);
 
   // ── Message queue ──────────────────────────────────────────
+  // Queue is stored globally but each entry is tagged with the session it was
+  // queued against. The UI only shows the active session's items, and only
+  // the active session's items auto-flush when its agent goes idle. This
+  // prevents a queued message from being redirected into a different session
+  // when the user switches tabs while the original session is still busy.
   const [queuedMessages, setQueuedMessages] = useState<QueuedMessage[]>([]);
   const queueIdCounter = useRef(0);
 
   const handleQueue = useCallback((text: string, files?: FileAttachment[]) => {
     const id = `q-${++queueIdCounter.current}-${Date.now()}`;
-    setQueuedMessages((prev) => [...prev, { id, text, files }]);
+    const sessionId = activeSessionId;
+    setQueuedMessages((prev) => [...prev, { id, text, files, sessionId }]);
     setAttachedFiles([]);
-  }, []);
+  }, [activeSessionId]);
 
   const handleDequeue = useCallback((id: string) => setQueuedMessages((prev) => prev.filter((m) => m.id !== id)), []);
 
@@ -167,16 +173,23 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     setTimeout(() => sendMessage(msg.text, msg.files), 100);
   }, [queuedMessages, abort, sendMessage]);
 
+  // Queue items belonging to the currently-active session — used both for
+  // the visible queue bar and for auto-flush gating.
+  const activeQueuedMessages = useMemo(
+    () => queuedMessages.filter((m) => m.sessionId === activeSessionId),
+    [queuedMessages, activeSessionId],
+  );
+
   const prevBusyRef = useRef(isBusy);
   useEffect(() => {
     const wasBusy = prevBusyRef.current;
     prevBusyRef.current = isBusy;
-    if (wasBusy && !isBusy && queuedMessages.length > 0) {
-      const [first, ...rest] = queuedMessages;
-      setQueuedMessages(rest);
+    if (wasBusy && !isBusy && activeQueuedMessages.length > 0) {
+      const first = activeQueuedMessages[0];
+      setQueuedMessages((prev) => prev.filter((m) => m.id !== first.id));
       setTimeout(() => sendMessage(first.text, first.files), 200);
     }
-  }, [isBusy, queuedMessages, sendMessage]);
+  }, [isBusy, activeQueuedMessages, sendMessage]);
 
   useEffect(() => {
     if (activeSessionId && !demoPreviewMode) setTimeout(() => codeInputRef.current?.focus(), 80);
@@ -542,7 +555,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
 
         <CodeInput ref={codeInputRef} onSend={handleSend} onStop={abort} isBusy={isBusy} disabled={!displayActiveSessionId && !demoPreviewMode}
           files={attachedFiles} onAddFiles={handleFilesAdded} onRemoveFile={handleRemoveFile} slashCommands={slashCommands}
-          activeSessionId={displayActiveSessionId} queuedMessages={queuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={false} />
+          activeSessionId={displayActiveSessionId} queuedMessages={activeQueuedMessages} onQueue={handleQueue} onDequeue={handleDequeue} onBypass={handleBypass} isPreviewMode={false} />
       </div>
 
       {/* Multi-file changes panel */}
