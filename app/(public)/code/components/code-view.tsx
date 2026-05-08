@@ -190,10 +190,19 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const handleBypass = useCallback((id: string) => {
     const msg = queuedMessages.find((m) => m.id === id);
     if (!msg) return;
+    // Mark as bypassed so the auto-flush effect doesn't also send this message.
+    bypassedIdsRef.current.add(id);
     setQueuedMessages((prev) => prev.filter((m) => m.id !== id));
-    abort();
-    setTimeout(() => sendMessage(msg.text, msg.files), 100);
-  }, [queuedMessages, abort, sendMessage]);
+    // Only abort if the agent is actually busy — sending an abort frame when
+    // the agent is idle can kill the subsequent sendMessage and leave the chat
+    // stuck in a dead state.
+    if (isBusy) {
+      abort();
+      setTimeout(() => sendMessage(msg.text, msg.files), 100);
+    } else {
+      sendMessage(msg.text, msg.files);
+    }
+  }, [queuedMessages, isBusy, abort, sendMessage]);
 
   // Queue items belonging to the currently-active session — used both for
   // the visible queue bar and for auto-flush gating.
@@ -203,11 +212,20 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   );
 
   const prevBusyRef = useRef(isBusy);
+  // Track IDs of messages already claimed by handleBypass so the auto-flush
+  // effect doesn't double-send the same message.
+  const bypassedIdsRef = useRef(new Set<string>());
+
   useEffect(() => {
     const wasBusy = prevBusyRef.current;
     prevBusyRef.current = isBusy;
     if (wasBusy && !isBusy && activeQueuedMessages.length > 0) {
       const first = activeQueuedMessages[0];
+      // If handleBypass already claimed this message, skip to avoid double-send.
+      if (bypassedIdsRef.current.has(first.id)) {
+        bypassedIdsRef.current.delete(first.id);
+        return;
+      }
       setQueuedMessages((prev) => prev.filter((m) => m.id !== first.id));
       setTimeout(() => sendMessage(first.text, first.files), 200);
     }
