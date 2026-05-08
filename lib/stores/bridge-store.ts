@@ -1,6 +1,8 @@
 // localStorage persistence for Claude Code Bridge.
 // Bridge server is the source of truth — this is just a cache.
 
+import type { FileAttachment } from '@/types/code';
+
 const PREFIX = 'ccb_';
 
 function get(key: string): string | null {
@@ -62,6 +64,28 @@ export function setSessionDraft(sessionId: string, text: string) {
     set(`draft_${sessionId}`, text);
   } else {
     remove(`draft_${sessionId}`);
+  }
+}
+
+// ── Per-session attached files ──────────────────────────────
+// Images / files attached to the input are scoped per-session, just like
+// text drafts. We serialise the FileAttachment[] to JSON.
+
+export function getSessionFiles(sessionId: string): FileAttachment[] {
+  const raw = get(`files_${sessionId}`);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as FileAttachment[];
+  } catch {
+    return [];
+  }
+}
+
+export function setSessionFiles(sessionId: string, files: FileAttachment[]) {
+  if (files.length > 0) {
+    set(`files_${sessionId}`, JSON.stringify(files));
+  } else {
+    remove(`files_${sessionId}`);
   }
 }
 

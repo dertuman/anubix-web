@@ -14,6 +14,7 @@ import { useEnvironmentDialog } from '../../workspace/context/environment-dialog
 import { usePreferredEnvironment } from '@/hooks/usePreferredEnvironment';
 import type { FileAttachment, CodeMessage, BridgeSession } from '@/types/code';
 import { MAX_FILE_SIZE, readFileAsAttachment, formatFileSize } from '@/lib/file-utils';
+import { getSessionFiles, setSessionFiles } from '@/lib/stores/bridge-store';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -141,6 +142,26 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
   const [changesOpen, setChangesOpen] = useState(false);
   const dragCounterRef = useRef(0);
   const codeInputRef = useRef<CodeInputHandle>(null);
+  const prevFilesSessionRef = useRef<string | null>(null);
+  const attachedFilesRef = useRef(attachedFiles);
+  useEffect(() => { attachedFilesRef.current = attachedFiles; }, [attachedFiles]);
+
+  // ── Save / restore attached files per session ──────────────
+  // Mirrors the text-draft pattern: when the user switches sessions we persist
+  // the current file list and restore the target session's files.
+  useEffect(() => {
+    const prev = prevFilesSessionRef.current;
+    if (prev && prev !== activeSessionId) {
+      setSessionFiles(prev, attachedFilesRef.current);
+    }
+    if (activeSessionId && activeSessionId !== prev) {
+      setAttachedFiles(getSessionFiles(activeSessionId));
+    } else if (!activeSessionId) {
+      setAttachedFiles([]);
+    }
+    prevFilesSessionRef.current = activeSessionId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSessionId]);
 
   const [questionSelectionsMap, setQuestionSelectionsMap] = useState<Map<string, Record<number, string>>>(new Map());
   const handleQuestionSelect = useCallback((messageId: string, selections: Record<number, string>) => {
@@ -161,6 +182,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     const sessionId = activeSessionId;
     setQueuedMessages((prev) => [...prev, { id, text, files, sessionId }]);
     setAttachedFiles([]);
+    if (activeSessionId) setSessionFiles(activeSessionId, []);
   }, [activeSessionId]);
 
   const handleDequeue = useCallback((id: string) => setQueuedMessages((prev) => prev.filter((m) => m.id !== id)), []);
@@ -218,12 +240,22 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
       }
       try {
         const attachment = await readFileAsAttachment(file);
-        setAttachedFiles((prev) => [...prev, attachment]);
+        setAttachedFiles((prev) => {
+          const next = [...prev, attachment];
+          if (activeSessionId) setSessionFiles(activeSessionId, next);
+          return next;
+        });
       } catch { toast({ title: 'Failed to read file', description: `Could not read "${file.name}".`, variant: 'destructive' }); }
     }
-  }, []);
+  }, [activeSessionId]);
 
-  const handleRemoveFile = useCallback((id: string) => setAttachedFiles((prev) => prev.filter((f) => f.id !== id)), []);
+  const handleRemoveFile = useCallback((id: string) => {
+    setAttachedFiles((prev) => {
+      const next = prev.filter((f) => f.id !== id);
+      if (activeSessionId) setSessionFiles(activeSessionId, next);
+      return next;
+    });
+  }, [activeSessionId]);
 
   // ── Drag and drop ──────────────────────────────────────────
   const handleDragEnter = useCallback((e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); dragCounterRef.current++; if (e.dataTransfer.types.includes('Files')) setIsDragging(true); }, []);
@@ -244,6 +276,7 @@ export function CodeView({ modeToggle, onPromptSent, demoPreviewMode = false, mo
     }
     if (!activeSessionId) return;
     setAttachedFiles([]);
+    setSessionFiles(activeSessionId, []);
     await sendMessage(text, files);
     // Notify parent about prompt being sent (for demo mode tracking)
     onPromptSent?.();

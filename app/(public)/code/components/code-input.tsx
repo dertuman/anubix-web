@@ -327,31 +327,44 @@ export const CodeInput = forwardRef<CodeInputHandle, CodeInputProps>(
         <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
           Queued ({queuedMessages.length})
         </p>
-        {queuedMessages.map((qm) => (
-          <div key={qm.id} className="group flex items-center gap-2 rounded-lg border border-border/30 bg-muted/30 px-3 py-1.5">
-            <p className="min-w-0 flex-1 truncate text-xs text-foreground/80">
-              {qm.text}
-              {qm.files && qm.files.length > 0 && (
-                <span className="ml-1 text-muted-foreground">+{qm.files.length} file{qm.files.length > 1 ? 's' : ''}</span>
+        {queuedMessages.map((qm) => {
+          const queuedImages = qm.files?.filter((f) => f.category === 'image') ?? [];
+          const queuedOtherFiles = qm.files?.filter((f) => f.category !== 'image') ?? [];
+          return (
+            <div key={qm.id} className="group flex items-center gap-2 rounded-lg border border-border/30 bg-muted/30 px-3 py-1.5">
+              {/* Image thumbnails */}
+              {queuedImages.length > 0 && (
+                <div className="flex shrink-0 gap-1">
+                  {queuedImages.map((img) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={img.id} src={img.data} alt={img.name} className="size-7 rounded border border-border/30 object-cover" />
+                  ))}
+                </div>
               )}
-            </p>
-            <button
-              onClick={() => onBypass(qm.id)}
-              title="Send now (aborts current task)"
-              className="flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium text-primary opacity-0 transition-all hover:bg-primary/10 group-hover:opacity-100"
-            >
-              <Zap className="size-3" />
-              Send now
-            </button>
-            <button
-              onClick={() => onDequeue(qm.id)}
-              title="Remove from queue"
-              className="shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-            >
-              <X className="size-3" />
-            </button>
-          </div>
-        ))}
+              <p className="min-w-0 flex-1 truncate text-xs text-foreground/80">
+                {qm.text}
+                {queuedOtherFiles.length > 0 && (
+                  <span className="ml-1 text-muted-foreground">+{queuedOtherFiles.length} file{queuedOtherFiles.length > 1 ? 's' : ''}</span>
+                )}
+              </p>
+              <button
+                onClick={() => onBypass(qm.id)}
+                title="Send now (aborts current task)"
+                className="flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium text-primary opacity-0 transition-all hover:bg-primary/10 group-hover:opacity-100"
+              >
+                <Zap className="size-3" />
+                Send now
+              </button>
+              <button
+                onClick={() => onDequeue(qm.id)}
+                title="Remove from queue"
+                className="shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          );
+        })}
       </div>
     );
 
