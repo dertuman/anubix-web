@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileCode2, Minus, Plus } from 'lucide-react';
 import * as Diff from 'diff';
 
@@ -163,12 +163,63 @@ interface ChangesPanelProps {
   fileChanges: FileChange[];
 }
 
+const MIN_WIDTH = 480;
+const MAX_WIDTH_VW = 92; // % of viewport
+const DEFAULT_WIDTH = 720;
+const STORAGE_KEY = 'changes-panel-width';
+
+function getInitialWidth(): number {
+  if (typeof window === 'undefined') return DEFAULT_WIDTH;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    const n = Number(stored);
+    if (n >= MIN_WIDTH && n <= window.innerWidth * (MAX_WIDTH_VW / 100)) return n;
+  }
+  return DEFAULT_WIDTH;
+}
+
 export const ChangesPanel = memo(function ChangesPanel({
   open,
   onOpenChange,
   fileChanges,
 }: ChangesPanelProps) {
   const fileRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [width, setWidth] = useState(getInitialWidth);
+  const isDragging = useRef(false);
+
+  // Persist width to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, String(width));
+  }, [width]);
+
+  // Drag-to-resize handler
+  const handleResizeStart = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    const startX = e.clientX;
+    const startWidth = width;
+
+    const onPointerMove = (ev: PointerEvent) => {
+      if (!isDragging.current) return;
+      const delta = startX - ev.clientX; // dragging left = wider
+      const maxWidth = window.innerWidth * (MAX_WIDTH_VW / 100);
+      const newWidth = Math.min(maxWidth, Math.max(MIN_WIDTH, startWidth + delta));
+      setWidth(newWidth);
+    };
+
+    const onPointerUp = () => {
+      isDragging.current = false;
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  }, [width]);
 
   const totals = useMemo(() => {
     let additions = 0;
@@ -194,8 +245,14 @@ export const ChangesPanel = memo(function ChangesPanel({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[min(90vw,720px)]"
+        className="flex w-full flex-col gap-0 p-0"
+        style={{ maxWidth: width }}
       >
+        {/* Resize drag handle */}
+        <div
+          onPointerDown={handleResizeStart}
+          className="absolute inset-y-0 left-0 z-50 w-1.5 cursor-col-resize transition-colors hover:bg-primary/20 active:bg-primary/30"
+        />
         {/* Header */}
         <SheetHeader className="shrink-0 border-b border-border/30 px-4 py-3">
           <div className="flex items-center gap-2">
